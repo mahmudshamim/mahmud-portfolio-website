@@ -7,7 +7,7 @@ import CVPreview from '@/components/cv/CVPreview'
 import Cursor from '@/components/Cursor'
 import MahmudLogo from '@/components/MahmudLogo'
 
-export type CVTemplate = 'dark-pro' | 'clean-minimal' | 'tech-blue' | 'executive'
+export type CVTemplate = 'dark-pro' | 'clean-minimal' | 'tech-blue' | 'executive' | 'sidebar-light' | 'timeline' | 'bold-header' | 'creative-panel'
 
 export type CVData = {
   personal: typeof portfolioData.personal

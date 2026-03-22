@@ -1,11 +1,18 @@
 import type { Metadata } from 'next'
-import { Montserrat, Poppins } from 'next/font/google'
+import { Montserrat, Poppins, Satisfy } from 'next/font/google'
 import './globals.css'
 
 const montserrat = Montserrat({
   weight: ['700', '800', '900'],
   subsets: ['latin'],
   variable: '--font-bebas',
+  display: 'swap',
+})
+
+const satisfy = Satisfy({
+  weight: ['400'],
+  subsets: ['latin'],
+  variable: '--font-signature',
   display: 'swap',
 })
 
@@ -28,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${montserrat.variable} ${poppins.variable}`}>
+    <html lang="en" className={`${montserrat.variable} ${poppins.variable} ${satisfy.variable}`}>
       <body>{children}</body>
     </html>
   )

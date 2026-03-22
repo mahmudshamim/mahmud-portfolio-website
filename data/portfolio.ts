@@ -99,10 +99,10 @@ export const portfolioData = {
       current: false,
     },
     {
-      role: "Salesman & Entrepreneur",
+      role: "Entrepreneur",
       company: "Chosma Gallery",
       date: "2022 — 2024",
-      desc: "3 years of direct customer-facing experience in sales and business operations. Developed deep understanding of user behavior, communication, and customer needs — a natural foundation for UX thinking.",
+      desc: "3 years of direct customer-facing experience in business operations. Developed deep understanding of user behavior, communication, and customer needs — a natural foundation for UX thinking.",
       current: false,
     },
   ],

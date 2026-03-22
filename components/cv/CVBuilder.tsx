@@ -8,6 +8,10 @@ const templates: { id: CVTemplate; label: string; desc: string }[] = [
   { id: 'clean-minimal', label: 'Clean Minimal',  desc: 'White, two-column elegant' },
   { id: 'tech-blue',     label: 'Tech Blue',       desc: 'Monospace, code aesthetic' },
   { id: 'executive',     label: 'Executive',       desc: 'Dark header, single column' },
+  { id: 'sidebar-light',  label: 'Sidebar Light',   desc: 'Blue sidebar, photo header' },
+  { id: 'timeline',       label: 'Timeline',         desc: 'Minimal with timeline dots' },
+  { id: 'bold-header',    label: 'Bold Header',      desc: 'Dark banner, photo overlap' },
+  { id: 'creative-panel', label: 'Creative Panel',   desc: 'Dark left, white right' },
 ]
 
 type Props = {
