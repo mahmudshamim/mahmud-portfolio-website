@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest mahmud-portfolio --typescript --tailwind --app --no-src-dir --eslint --no-import-alias --no-turbopack 2)",
+      "Bash(1:*)",
+      "Bash(npx create-next-app@latest mahmud-portfolio --typescript --tailwind --app --no-src-dir --eslint --no-import-alias)",
+      "Bash(npx tsc:*)",
+      "Bash(curl -s http://localhost:3000 -o /dev/null -w \"%{http_code}\")",
+      "Bash(npm install:*)",
+      "Bash(node -e \"console.log\\(require\\(''./node_modules/next/package.json''\\).version\\)\")",
+      "Bash(npm run:*)",
+      "Bash(node -e \"require\\(''matter-js''\\); console.log\\(''ok''\\)\")",
+      "Bash(node -e \"console.log\\(require\\(''./node_modules/react/package.json''\\).version\\)\")"
+    ]
+  }
+}
