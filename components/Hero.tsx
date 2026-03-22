@@ -195,9 +195,9 @@ export default function Hero() {
       />
 
       {/* Color blobs */}
-      <div style={{ position: 'absolute', top: '15%', left: '10%', width: 400, height: 400, borderRadius: '50%', background: 'rgba(79,142,247,0.12)', filter: 'blur(80px)', animation: 'blobFloat 8s ease-in-out infinite', pointerEvents: 'none', zIndex: 1 }} />
-      <div style={{ position: 'absolute', top: '50%', right: '5%', width: 350, height: 350, borderRadius: '50%', background: 'rgba(167,139,250,0.1)', filter: 'blur(80px)', animation: 'blobFloat 10s ease-in-out infinite reverse', pointerEvents: 'none', zIndex: 1 }} />
-      <div style={{ position: 'absolute', bottom: '10%', left: '40%', width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,45,120,0.08)', filter: 'blur(80px)', animation: 'blobFloat 12s ease-in-out infinite 2s', pointerEvents: 'none', zIndex: 1 }} />
+      <div style={{ position: 'absolute', top: '15%', left: '10%', width: 'clamp(180px, 30vw, 400px)', height: 'clamp(180px, 30vw, 400px)', borderRadius: '50%', background: 'rgba(79,142,247,0.12)', filter: 'blur(80px)', animation: 'blobFloat 8s ease-in-out infinite', pointerEvents: 'none', zIndex: 1 }} />
+      <div style={{ position: 'absolute', top: '50%', right: '5%', width: 'clamp(150px, 25vw, 350px)', height: 'clamp(150px, 25vw, 350px)', borderRadius: '50%', background: 'rgba(167,139,250,0.1)', filter: 'blur(80px)', animation: 'blobFloat 10s ease-in-out infinite reverse', pointerEvents: 'none', zIndex: 1 }} />
+      <div style={{ position: 'absolute', bottom: '10%', left: '40%', width: 'clamp(120px, 20vw, 300px)', height: 'clamp(120px, 20vw, 300px)', borderRadius: '50%', background: 'rgba(255,45,120,0.08)', filter: 'blur(80px)', animation: 'blobFloat 12s ease-in-out infinite 2s', pointerEvents: 'none', zIndex: 1 }} />
 
       {/* Floating words */}
       {floatingWords.map(({ word, speed, x, y }) => (
@@ -228,7 +228,7 @@ export default function Hero() {
           position: 'relative',
           zIndex: 10,
           textAlign: 'center',
-          padding: '0 24px',
+          padding: '0 clamp(16px, 5vw, 24px)',
           transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
           transition: 'transform 0.1s linear',
         }}

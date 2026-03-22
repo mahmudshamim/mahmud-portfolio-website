@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Matter, { Engine, World, Bodies, Body, Runner, Mouse, MouseConstraint } from 'matter-js'
 import { portfolioData } from '@/data/portfolio'
 
@@ -37,6 +37,7 @@ const allSkills = [...portfolioData.skills, ...additionalTech].filter(s => s.nam
 export default function Skills() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const [canvasHeight, setCanvasHeight] = useState(500)
 
   useEffect(() => {
     const container = containerRef.current
@@ -44,7 +45,9 @@ export default function Skills() {
     if (!container || !canvas) return
 
     let canvasWidth = container.clientWidth
-    let canvasHeight = 600
+    const computedH = Math.min(600, Math.max(360, window.innerHeight * 0.6))
+    setCanvasHeight(computedH)
+    let canvasHeight = computedH
     const floorY = canvasHeight
 
     canvas.width = canvasWidth
@@ -313,9 +316,9 @@ export default function Skills() {
     <section
       style={{
         background: '#050508',
-        padding: '120px 24px 80px',
+        padding: 'clamp(60px, 10vw, 120px) clamp(16px, 4vw, 24px) clamp(40px, 6vw, 80px)',
         position: 'relative',
-        minHeight: '800px',
+        minHeight: 'clamp(500px, 80vw, 800px)',
       }}
     >
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
@@ -355,7 +358,7 @@ export default function Skills() {
             style={{
               display: 'block',
               width: '100%',
-              height: '600px',
+              height: `${canvasHeight}px`,
               cursor: 'grab',
               borderRadius: 12,
             }}

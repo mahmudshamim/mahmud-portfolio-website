@@ -24,9 +24,9 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: 'Mahmud — Full-Stack Developer',
+  title: 'Mahmud — Full-Stack Developer & UI/UX Designer',
   description:
-    'Full-Stack Developer & Creative Technologist based in Dhaka, Bangladesh. Building high-performance web apps and AI-powered products.',
+    'Full-Stack Developer at Khulna Technologies LLC. Building full-stack apps with React, Next.js, Node.js, and MongoDB.',
 }
 
 export default function RootLayout({

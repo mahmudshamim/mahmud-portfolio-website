@@ -18,15 +18,21 @@ export default function CVPreview({ cvData, selectedTemplate }: Props) {
       const html2pdf = (await import('html2pdf.js')).default as any
       const element = document.getElementById('cv-preview-content')
       if (!element) return
-      const w = element.offsetWidth
-      const h = element.offsetHeight
+      // A4 at 96dpi = 794 × 1122px. Clamp canvas capture to exactly one A4 page
+      // so html2pdf never overflows into a second blank page.
+      const A4_H = 1122
       await html2pdf()
         .set({
           margin: 0,
           filename: `Mahmud-CV-${selectedTemplate}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true },
-          jsPDF: { unit: 'px', format: [w, h], orientation: 'portrait' },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            height: A4_H,
+            windowHeight: A4_H,
+          },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         })
         .from(element)
         .save()
@@ -35,8 +41,8 @@ export default function CVPreview({ cvData, selectedTemplate }: Props) {
     }
   }
 
-  const { personal, skills, projects, experience, education, selectedSkills, showSections, photo } = cvData
-  const activeSkills = skills.filter((s) => selectedSkills.includes(s.name))
+  const { personal, skills, projects, experience, education, showSections, photo } = cvData
+  const activeSkills = skills.filter((s: any) => s.included !== false)
 
   return (
     <div>

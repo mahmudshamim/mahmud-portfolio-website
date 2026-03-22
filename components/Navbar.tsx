@@ -3,17 +3,20 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import MahmudLogo from '@/components/MahmudLogo'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 const navLinks = [
-  { label: 'Work', href: '#projects' },
-  { label: 'Skills', href: '#skills' },
+  { label: 'Work',    href: '#projects' },
+  { label: 'Skills',  href: '#skills' },
   { label: 'Contact', href: '#contact' },
 ]
 
 export default function Navbar() {
-  const [visible, setVisible] = useState(true)
+  const [visible, setVisible]           = useState(true)
   const [activeSection, setActiveSection] = useState('hero')
-  const lastScrollY = useRef(0)
+  const [menuOpen, setMenuOpen]         = useState(false)
+  const lastScrollY                     = useRef(0)
+  const isMobile                        = useIsMobile()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,83 +37,119 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Close menu on resize to desktop
+  useEffect(() => {
+    if (!isMobile) setMenuOpen(false)
+  }, [isMobile])
+
   const scrollTo = (href: string) => {
     const id = href.replace('#', '')
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+    setMenuOpen(false)
   }
 
   return (
-    <nav
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1000,
-        transform: visible ? 'translateY(0)' : 'translateY(-100%)',
-        transition: 'transform 0.3s ease',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        backgroundColor: 'rgba(5,5,8,0.8)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-      }}
-    >
-      <div
+    <>
+      <nav
         style={{
-          maxWidth: 1200,
-          margin: '0 auto',
-          padding: '0 24px',
-          height: 64,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
+          transform: visible ? 'translateY(0)' : 'translateY(-100%)',
+          transition: 'transform 0.3s ease',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          backgroundColor: 'rgba(5,5,8,0.9)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        <button
-          onClick={() => scrollTo('#hero')}
-          style={{ background: 'none', border: 'none', padding: 0 }}
+        <div
+          style={{
+            maxWidth: 1200, margin: '0 auto',
+            padding: '0 20px', height: 60,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}
         >
-          <MahmudLogo size="md" />
-        </button>
+          <button onClick={() => scrollTo('#hero')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+            <MahmudLogo size="md" />
+          </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-          {navLinks.map((link) => (
-            <button
-              key={link.label}
-              onClick={() => scrollTo(link.href)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: activeSection === link.href.replace('#', '') ? '#4f8ef7' : '#e2e2f0',
-                fontSize: 14,
-                fontFamily: 'var(--font-dm-sans)',
-                fontWeight: 500,
-                letterSpacing: '0.05em',
-                opacity: activeSection === link.href.replace('#', '') ? 1 : 0.7,
-                transition: 'color 0.2s, opacity 0.2s',
-              }}
-            >
-              {link.label}
-            </button>
-          ))}
-          <Link
-            href="/cv"
-            style={{
-              fontFamily: 'var(--font-dm-sans)',
-              fontSize: 14,
-              fontWeight: 600,
-              color: '#4f8ef7',
-              border: '1px solid #4f8ef7',
-              borderRadius: 6,
-              padding: '6px 16px',
-              textDecoration: 'none',
-              transition: 'background 0.2s',
-            }}
-          >
-            CV
-          </Link>
+          {/* Desktop nav */}
+          {!isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
+              {navLinks.map((link) => (
+                <button
+                  key={link.label}
+                  onClick={() => scrollTo(link.href)}
+                  style={{
+                    background: 'none', border: 'none',
+                    color: activeSection === link.href.replace('#', '') ? '#4f8ef7' : '#e2e2f0',
+                    fontSize: 14, fontFamily: 'var(--font-dm-sans)', fontWeight: 500,
+                    letterSpacing: '0.05em', cursor: 'pointer',
+                    opacity: activeSection === link.href.replace('#', '') ? 1 : 0.7,
+                    transition: 'color 0.2s, opacity 0.2s',
+                  }}
+                >
+                  {link.label}
+                </button>
+              ))}
+              <Link
+                href="/cv"
+                style={{
+                  fontFamily: 'var(--font-dm-sans)', fontSize: 14, fontWeight: 600,
+                  color: '#4f8ef7', border: '1px solid #4f8ef7', borderRadius: 6,
+                  padding: '6px 16px', textDecoration: 'none', transition: 'background 0.2s',
+                }}
+              >
+                CV
+              </Link>
+            </div>
+          )}
+
+          {/* Mobile: CV link + hamburger */}
+          {isMobile && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Link href="/cv" style={{ fontFamily: 'var(--font-dm-sans)', fontSize: 13, fontWeight: 600, color: '#4f8ef7', border: '1px solid #4f8ef7', borderRadius: 6, padding: '5px 12px', textDecoration: 'none' }}>
+                CV
+              </Link>
+              <button
+                onClick={() => setMenuOpen(o => !o)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', flexDirection: 'column', gap: 5 }}
+                aria-label="Menu"
+              >
+                <span style={{ display: 'block', width: 22, height: 2, background: menuOpen ? '#4f8ef7' : '#e2e2f0', transition: 'all 0.2s', transform: menuOpen ? 'rotate(45deg) translate(5px, 5px)' : 'none' }} />
+                <span style={{ display: 'block', width: 22, height: 2, background: menuOpen ? '#4f8ef7' : '#e2e2f0', transition: 'all 0.2s', opacity: menuOpen ? 0 : 1 }} />
+                <span style={{ display: 'block', width: 22, height: 2, background: menuOpen ? '#4f8ef7' : '#e2e2f0', transition: 'all 0.2s', transform: menuOpen ? 'rotate(-45deg) translate(5px, -5px)' : 'none' }} />
+              </button>
+            </div>
+          )}
         </div>
-      </div>
-    </nav>
+
+        {/* Mobile dropdown menu */}
+        {isMobile && (
+          <div style={{
+            maxHeight: menuOpen ? 200 : 0,
+            overflow: 'hidden',
+            transition: 'max-height 0.3s ease',
+            borderTop: menuOpen ? '1px solid rgba(255,255,255,0.06)' : 'none',
+            background: 'rgba(5,5,8,0.97)',
+          }}>
+            {navLinks.map((link) => (
+              <button
+                key={link.label}
+                onClick={() => scrollTo(link.href)}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left',
+                  padding: '14px 20px', background: 'none', border: 'none',
+                  color: activeSection === link.href.replace('#', '') ? '#4f8ef7' : 'rgba(255,255,255,0.75)',
+                  fontSize: 16, fontFamily: 'var(--font-dm-sans)', fontWeight: 500,
+                  cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)',
+                }}
+              >
+                {link.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </nav>
+    </>
   )
 }

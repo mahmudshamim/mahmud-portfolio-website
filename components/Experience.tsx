@@ -3,6 +3,7 @@
 import { useRef, useEffect } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { portfolioData } from '@/data/portfolio'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 function EduCard({ ed, i }: { ed: typeof portfolioData.education[0]; i: number }) {
   const cardRef = useRef<HTMLDivElement>(null)
@@ -117,6 +118,7 @@ type RopePoint = {
 
 export default function Experience() {
   const { experience, education } = portfolioData
+  const isMobile = useIsMobile()
 
   const timelineRef  = useRef<HTMLDivElement>(null)
   const canvasRef    = useRef<HTMLCanvasElement>(null)
@@ -296,7 +298,7 @@ export default function Experience() {
   }, [])
 
   return (
-    <section style={{ background: '#050508', padding: '120px 24px' }}>
+    <section style={{ background: '#050508', padding: 'clamp(60px, 10vw, 120px) clamp(16px, 4vw, 24px)' }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
 
         {/* Heading */}
@@ -344,30 +346,31 @@ export default function Experience() {
           {experience.map((item, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, x: i % 2 === 0 ? -40 : 40 }}
+              initial={{ opacity: 0, x: isMobile ? 0 : (i % 2 === 0 ? -40 : 40) }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.15 }}
               style={{
                 display: 'flex',
-                justifyContent: i % 2 === 0 ? 'flex-start' : 'flex-end',
-                marginBottom: 48,
+                justifyContent: isMobile ? 'flex-start' : (i % 2 === 0 ? 'flex-start' : 'flex-end'),
+                marginBottom: isMobile ? 24 : 48,
                 position: 'relative',
                 zIndex: 1,
+                paddingLeft: isMobile ? 24 : 0,
               }}
             >
-              {/* Dot — kept as-is, rendered above canvas */}
+              {/* Dot */}
               <div
                 style={{
                   position: 'absolute',
-                  left: '50%',
+                  left: isMobile ? 0 : '50%',
                   top: 20,
                   width: 12,
                   height: 12,
                   borderRadius: '50%',
                   background: item.current ? '#34d399' : '#4f8ef7',
                   border: '2px solid #050508',
-                  transform: 'translateX(-50%)',
+                  transform: isMobile ? 'translateX(-50%)' : 'translateX(-50%)',
                   boxShadow: item.current ? '0 0 12px #34d399' : '0 0 12px #4f8ef7',
                   zIndex: 2,
                 }}
@@ -375,11 +378,11 @@ export default function Experience() {
 
               <div
                 style={{
-                  width: '44%',
+                  width: isMobile ? '100%' : '44%',
                   background: '#0d0d18',
                   border: '1px solid rgba(255,255,255,0.06)',
                   borderRadius: 12,
-                  padding: 24,
+                  padding: isMobile ? 16 : 24,
                 }}
               >
                 <div
@@ -474,7 +477,7 @@ export default function Experience() {
             </h3>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: 20 }}>
             {education.map((ed, i) => (
               <EduCard key={i} ed={ed} i={i} />
             ))}

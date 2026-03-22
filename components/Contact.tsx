@@ -38,7 +38,7 @@ export default function Contact() {
   }
 
   return (
-    <section style={{ background: '#07070d', padding: '120px 24px' }}>
+    <section style={{ background: '#07070d', padding: 'clamp(60px, 10vw, 120px) clamp(16px, 4vw, 24px)' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -76,8 +76,8 @@ export default function Contact() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: 64,
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
+            gap: 'clamp(32px, 6vw, 64px)',
           }}
         >
           {/* Left column */}

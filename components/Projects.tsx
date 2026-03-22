@@ -103,7 +103,7 @@ export default function Projects() {
   }, [])
 
   return (
-    <section style={{ background: '#07070d', padding: '120px 24px' }}>
+    <section style={{ background: '#07070d', padding: 'clamp(60px, 10vw, 120px) clamp(16px, 4vw, 24px)' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <div style={{ marginBottom: 64 }}>
           <p
@@ -132,7 +132,7 @@ export default function Projects() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 420px), 1fr))',
             gap: 24,
           }}
         >
