@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { CVData, CVTemplate } from '@/app/cv/page'
+import { MdEmail, MdPhone, MdLocationOn, MdLanguage, MdPerson, MdWork, MdSchool, MdCode, MdBuild } from 'react-icons/md'
 
 type Props = {
   cvData: CVData
@@ -590,9 +591,9 @@ function SidebarLightTemplate({ personal, skills, projects, experience, educatio
         <div>
           <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#555', borderBottom: '1px solid #b0c4d0', paddingBottom: 6, marginBottom: 10 }}>Contact</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontSize: 11, color: '#444' }}>📞 {personal.phone || personal.email}</span>
-            <span style={{ fontSize: 11, color: '#444' }}>✉ {personal.email}</span>
-            <span style={{ fontSize: 11, color: '#444' }}>📍 {personal.location}</span>
+            <span style={{ fontSize: 11, color: '#444', display: 'flex', alignItems: 'center', gap: 5 }}><MdPhone size={13} /> {personal.phone || personal.email}</span>
+            <span style={{ fontSize: 11, color: '#444', display: 'flex', alignItems: 'center', gap: 5 }}><MdEmail size={13} /> {personal.email}</span>
+            <span style={{ fontSize: 11, color: '#444', display: 'flex', alignItems: 'center', gap: 5 }}><MdLocationOn size={13} /> {personal.location}</span>
           </div>
         </div>
 
@@ -711,10 +712,10 @@ function TimelineTemplate({ personal, skills, projects, experience, education, s
           {/* Contact */}
           <div style={{ marginBottom: 22 }}>
             <p style={{ fontSize: 11, fontWeight: 700, fontFamily: 'sans-serif', letterSpacing: '0.12em', textTransform: 'uppercase', borderBottom: '1.5px solid #1a1a1a', paddingBottom: 4, marginBottom: 10 }}>Contact</p>
-            <p style={{ fontSize: 11, color: '#555', marginBottom: 5 }}>✆ {personal.phone || personal.email}</p>
-            <p style={{ fontSize: 11, color: '#555', marginBottom: 5 }}>✉ {personal.email}</p>
-            <p style={{ fontSize: 11, color: '#555', marginBottom: 5 }}>⌂ {personal.location}</p>
-            <p style={{ fontSize: 11, color: '#555' }}>⊕ {personal.portfolio}</p>
+            <p style={{ fontSize: 11, color: '#555', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 5 }}><MdPhone size={13} /> {personal.phone || personal.email}</p>
+            <p style={{ fontSize: 11, color: '#555', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 5 }}><MdEmail size={13} /> {personal.email}</p>
+            <p style={{ fontSize: 11, color: '#555', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 5 }}><MdLocationOn size={13} /> {personal.location}</p>
+            <p style={{ fontSize: 11, color: '#555', display: 'flex', alignItems: 'center', gap: 5 }}><MdLanguage size={13} /> {personal.portfolio}</p>
           </div>
 
           {/* Skills */}
@@ -746,13 +747,13 @@ function TimelineTemplate({ personal, skills, projects, experience, education, s
         <div style={{ flex: 1, padding: '0 32px 32px 28px' }}>
 
           {showSections.summary && (
-            <TimelineSection title="Profile" icon="👤">
+            <TimelineSection title="Profile" icon={<MdPerson size={14} color="#fff" />}>
               <p style={{ lineHeight: 1.8, color: '#444', fontSize: 12 }}>{personal.summary}</p>
             </TimelineSection>
           )}
 
           {showSections.experience && (
-            <TimelineSection title="Work Experience" icon="💼">
+            <TimelineSection title="Work Experience" icon={<MdWork size={14} color="#fff" />}>
               {experience.map((e, i) => (
                 <div key={i} style={{ marginBottom: 20, paddingLeft: 16, position: 'relative' }}>
                   {/* Timeline dot */}
@@ -769,7 +770,7 @@ function TimelineTemplate({ personal, skills, projects, experience, education, s
           )}
 
           {showSections.projects && (
-            <TimelineSection title="Projects" icon="⚙">
+            <TimelineSection title="Projects" icon={<MdCode size={14} color="#fff" />}>
               {projects.filter((p) => p.featured).map((p, i) => (
                 <div key={p.id} style={{ marginBottom: 16, paddingLeft: 16, position: 'relative' }}>
                   <div style={{ position: 'absolute', left: -20, top: 4, width: 8, height: 8, borderRadius: '50%', border: '2px solid #1a1a1a', background: '#fff' }} />
@@ -816,9 +817,9 @@ function BoldHeaderTemplate({ personal, skills, projects, experience, education,
         </h1>
         <p style={{ fontSize: 13, color: '#7eb8d4', margin: '0 0 14px', fontWeight: 600 }}>{personal.role}</p>
         <div style={{ display: 'flex', gap: 20, fontSize: 11, color: '#aac4d4', flexWrap: 'wrap' }}>
-          <span>✉ {personal.email}</span>
-          <span>📍 {personal.location}</span>
-          {personal.portfolio && <span>🌐 {personal.portfolio}</span>}
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><MdEmail size={13} /> {personal.email}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><MdLocationOn size={13} /> {personal.location}</span>
+          {personal.portfolio && <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><MdLanguage size={13} /> {personal.portfolio}</span>}
         </div>
       </div>
 
@@ -930,9 +931,9 @@ function CreativePanelTemplate({ personal, skills, projects, experience, educati
         <div>
           <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#4a90d9', marginBottom: 12 }}>Contact</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <span style={{ fontSize: 11, color: '#c0cce0' }}>✉ {personal.email}</span>
-            <span style={{ fontSize: 11, color: '#c0cce0' }}>📍 {personal.location}</span>
-            {personal.portfolio && <span style={{ fontSize: 11, color: '#c0cce0' }}>🌐 {personal.portfolio}</span>}
+            <span style={{ fontSize: 11, color: '#c0cce0', display: 'flex', alignItems: 'center', gap: 5 }}><MdEmail size={13} /> {personal.email}</span>
+            <span style={{ fontSize: 11, color: '#c0cce0', display: 'flex', alignItems: 'center', gap: 5 }}><MdLocationOn size={13} /> {personal.location}</span>
+            {personal.portfolio && <span style={{ fontSize: 11, color: '#c0cce0', display: 'flex', alignItems: 'center', gap: 5 }}><MdLanguage size={13} /> {personal.portfolio}</span>}
           </div>
         </div>
 
@@ -1103,7 +1104,7 @@ function LightSection({ title, children }: { title: string; children: React.Reac
   )
 }
 
-function TimelineSection({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
+function TimelineSection({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 28 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
