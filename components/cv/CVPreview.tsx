@@ -17,13 +17,16 @@ export default function CVPreview({ cvData, selectedTemplate }: Props) {
     try {
       const html2pdf = (await import('html2pdf.js')).default as any
       const element = document.getElementById('cv-preview-content')
+      if (!element) return
+      const w = element.offsetWidth
+      const h = element.offsetHeight
       await html2pdf()
         .set({
           margin: 0,
           filename: `Mahmud-CV-${selectedTemplate}.pdf`,
           image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'px', format: [w, h], orientation: 'portrait' },
         })
         .from(element)
         .save()
@@ -71,7 +74,7 @@ export default function CVPreview({ cvData, selectedTemplate }: Props) {
           overflow: 'hidden',
         }}
       >
-        <div id="cv-preview-content" style={{ width: '100%', minHeight: 1123 }}>
+        <div id="cv-preview-content" style={{ width: '100%' }}>
           {selectedTemplate === 'dark-pro' && (
             <DarkProTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} showSections={showSections} photo={photo} />
           )}
@@ -339,7 +342,7 @@ function TechBlueTemplate({ personal, skills, projects, experience, education, s
   )
 
   return (
-    <div style={{ fontFamily: '"Fira Code", "Cascadia Code", "Courier New", monospace', fontSize: 11.5, color: c.dimWhite, background: c.bg, minHeight: 1123 }}>
+    <div style={{ fontFamily: '"Fira Code", "Cascadia Code", "Courier New", monospace', fontSize: 11.5, color: c.dimWhite, background: c.bg }}>
 
       {/* Editor chrome — window bar */}
       <div style={{ background: c.sidebar, borderBottom: `1px solid ${c.line}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -582,7 +585,7 @@ function SidebarLightTemplate({ personal, skills, projects, experience, educatio
   const accentBg  = '#b0cfe0'
 
   return (
-    <div style={{ fontFamily: 'sans-serif', fontSize: 12, color: '#2a2a2a', background: '#fff', display: 'flex', minHeight: 1123 }}>
+    <div style={{ fontFamily: 'sans-serif', fontSize: 12, color: '#2a2a2a', background: '#fff', display: 'flex' }}>
 
       {/* Left sidebar */}
       <div style={{ width: 230, background: sidebarBg, padding: '140px 20px 32px', display: 'flex', flexDirection: 'column', gap: 24, flexShrink: 0 }}>
@@ -692,7 +695,7 @@ function SidebarLightTemplate({ personal, skills, projects, experience, educatio
 // ─── Template 6: Timeline ─────────────────────────────────────────────────────
 function TimelineTemplate({ personal, skills, projects, experience, education, showSections, photo }: TemplateProps) {
   return (
-    <div style={{ fontFamily: '"Georgia", serif', fontSize: 12, color: '#1a1a1a', background: '#fff', padding: '36px 0', minHeight: 1123 }}>
+    <div style={{ fontFamily: '"Georgia", serif', fontSize: 12, color: '#1a1a1a', background: '#fff', padding: '36px 0' }}>
 
       {/* Top name block */}
       <div style={{ padding: '0 32px 24px', borderBottom: '2px solid #1a1a1a', marginBottom: 28 }}>
@@ -790,7 +793,7 @@ function TimelineTemplate({ personal, skills, projects, experience, education, s
 // ─── Template 7: Bold Header ──────────────────────────────────────────────────
 function BoldHeaderTemplate({ personal, skills, projects, experience, education, showSections, photo }: TemplateProps) {
   return (
-    <div style={{ fontFamily: 'sans-serif', fontSize: 12, color: '#222', background: '#fff', minHeight: 1123 }}>
+    <div style={{ fontFamily: 'sans-serif', fontSize: 12, color: '#222', background: '#fff' }}>
 
       {/* Dark header banner */}
       <div style={{ background: '#1c2b3a', position: 'relative', padding: '32px 40px 32px 180px', minHeight: 120 }}>
@@ -906,7 +909,7 @@ function BoldHeaderTemplate({ personal, skills, projects, experience, education,
 // ─── Template 8: Creative Panel ───────────────────────────────────────────────
 function CreativePanelTemplate({ personal, skills, projects, experience, education, showSections, photo }: TemplateProps) {
   return (
-    <div style={{ fontFamily: 'sans-serif', fontSize: 12, color: '#222', background: '#fff', display: 'flex', minHeight: 1123 }}>
+    <div style={{ fontFamily: 'sans-serif', fontSize: 12, color: '#222', background: '#fff', display: 'flex' }}>
 
       {/* Dark left panel */}
       <div style={{ width: 250, background: '#1a1f2e', color: '#e0e6f0', padding: '40px 24px', display: 'flex', flexDirection: 'column', gap: 28, flexShrink: 0 }}>

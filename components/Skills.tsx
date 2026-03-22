@@ -30,10 +30,6 @@ const SKILL_ICONS: Record<string, string> = {
   'AWS Amplify': `${DEVICONS}/amazonwebservices/amazonwebservices-original-wordmark.svg`,
   'Cloudinary': `${DEVICONS}/cloudinary/cloudinary-original.svg`,
   'Graphic Design': `${DEVICONS}/photoshop/photoshop-original.svg`,
-  'UI Design': `${DEVICONS}/figma/figma-original.svg`,
-  'UX Design': `${DEVICONS}/adobexd/adobexd-original.svg`,
-  'Wireframing': `${DEVICONS}/framer/framer-original.svg`,
-  'Prototyping': `${DEVICONS}/framer/framer-original.svg`,
 }
 
 const allSkills = [...portfolioData.skills, ...additionalTech].filter(s => s.name in SKILL_ICONS)
