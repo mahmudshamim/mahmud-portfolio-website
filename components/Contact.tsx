@@ -14,6 +14,8 @@ export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', message: '' })
   const [errors, setErrors] = useState({ name: false, email: false, message: false })
   const [success, setSuccess] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState(false)
   const [copied, setCopied] = useState(false)
 
   const copyEmail = async () => {
@@ -22,7 +24,7 @@ export default function Contact() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const newErrors = {
       name: !form.name.trim(),
@@ -31,9 +33,23 @@ export default function Contact() {
     }
     setErrors(newErrors)
     if (Object.values(newErrors).some(Boolean)) return
-    console.log('Contact form submission:', form)
-    setSuccess(true)
-    setForm({ name: '', email: '', message: '' })
+
+    setSending(true)
+    setSendError(false)
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) throw new Error()
+      setSuccess(true)
+      setForm({ name: '', email: '', message: '' })
+    } catch {
+      setSendError(true)
+    } finally {
+      setSending(false)
+    }
     setTimeout(() => setSuccess(false), 5000)
   }
 
@@ -313,8 +329,26 @@ export default function Contact() {
                   e.currentTarget.style.boxShadow = 'none'
                 }}
               >
-                Send Message
+                {sending ? 'Sending...' : 'Send Message'}
               </button>
+
+              {sendError && (
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    fontFamily: 'var(--font-dm-sans)',
+                    fontSize: 14,
+                    color: '#ff5f57',
+                    background: 'rgba(255,95,87,0.08)',
+                    border: '1px solid rgba(255,95,87,0.2)',
+                    borderRadius: 8,
+                    padding: '12px 16px',
+                  }}
+                >
+                  Something went wrong. Please try again or email directly.
+                </motion.p>
+              )}
 
               {success && (
                 <motion.p
