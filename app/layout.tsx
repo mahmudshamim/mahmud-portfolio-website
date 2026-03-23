@@ -96,7 +96,7 @@ export const metadata: Metadata = {
     canonical: 'https://mahmud.dev',
   },
   verification: {
-    google: '_Wueaab-dGfpK_s6GzVhrJEwHpJ4jcf98jdTPikEj24',
+    google: '7bTKVfMA9Ne4QaOGURw8QEoBuGcqQ0aWmmBhk4WD3Cs',
   },
 }
 

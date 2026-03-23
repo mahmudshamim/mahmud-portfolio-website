@@ -459,30 +459,6 @@ export default function Experience() {
           ))}
         </div>
 
-        {/* Education */}
-        <div style={{ marginTop: 100, position: 'relative', zIndex: 1 }}>
-          <div style={{ marginBottom: 40 }}>
-            <p style={{ fontFamily: 'var(--font-dm-sans)', fontSize: 13, color: '#4f8ef7', letterSpacing: '0.15em', marginBottom: 8 }}>
-              // Academic Background
-            </p>
-            <h3
-              style={{
-                fontFamily: 'var(--font-bebas)',
-                fontSize: 'clamp(2rem, 4vw, 3rem)',
-                color: '#e2e2f0',
-                lineHeight: 1,
-              }}
-            >
-              EDUCATION
-            </h3>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: 20 }}>
-            {education.map((ed, i) => (
-              <EduCard key={i} ed={ed} i={i} />
-            ))}
-          </div>
-        </div>
       </div>
 
       <style>{`
