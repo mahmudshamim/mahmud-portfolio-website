@@ -229,6 +229,7 @@ export default function Hero() {
           zIndex: 10,
           textAlign: 'center',
           padding: '0 clamp(16px, 5vw, 24px)',
+          marginTop: 'clamp(-120px, -15vh, 0px)',
           transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
           transition: 'transform 0.1s linear',
         }}

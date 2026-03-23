@@ -3,8 +3,6 @@
 import { useEffect, useRef } from 'react'
 
 const NAME = 'MAHMUD'
-const FONT_SIZE = 120
-const FONT = `900 ${FONT_SIZE}px 'Bebas Neue', sans-serif`
 const ACCENT = '#4f8ef7'
 
 type LetterBody = {
@@ -29,7 +27,10 @@ export default function NameReveal() {
     if (!canvas || !container) return
 
     const W = container.offsetWidth || 700
-    const H = 200
+    // Responsive font size: scale so name fills ~88% of container width
+    const FONT_SIZE = Math.min(120, Math.floor(W * 0.88 / NAME.length * 1.18))
+    const FONT = `900 ${FONT_SIZE}px 'Bebas Neue', sans-serif`
+    const H = Math.round(FONT_SIZE * 1.7)
     canvas.width = W
     canvas.height = H
 
@@ -216,7 +217,7 @@ export default function NameReveal() {
   return (
     <div
       ref={containerRef}
-      style={{ width: '100%', height: 200, position: 'relative' }}
+      style={{ width: '100%', height: 'clamp(120px, 22vw, 200px)', position: 'relative' }}
       title="Click to explode"
     >
       <canvas

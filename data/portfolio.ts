@@ -3,7 +3,7 @@ export const portfolioData = {
     name: "Md. Abdulla Al Mahmud",
     shortName: "Mahmud",
     fullName: "Md. Abdulla Al Mahmud",
-    role: "Full-Stack Developer & UI/UX Designer",
+    role: "Full-Stack Developer",
     tagline: "Building full-stack web applications with clean UI and real-world impact.",
     email: "mahmud.shamim.codes@gmail.com",
     phone: "+880 1963152981",

@@ -24,7 +24,7 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: 'Mahmud — Full-Stack Developer & UI/UX Designer',
+  title: 'Mahmud — Full-Stack Developer',
   description:
     'Full-Stack Developer at Khulna Technologies LLC. Building full-stack apps with React, Next.js, Node.js, and MongoDB.',
   icons: {
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Mahmud — Full-Stack Developer',
-    description: 'Full-Stack Developer & UI/UX Designer based in Dhaka, Bangladesh.',
+    description: 'Full-Stack Developer based in Dhaka, Bangladesh.',
     url: 'https://mahmud.dev',
     siteName: 'Mahmud Portfolio',
     locale: 'en_US',

@@ -48,6 +48,8 @@ export default function Skills() {
     if (!container || !canvas) return
 
     let canvasWidth = container.clientWidth
+    // Scale ball sizes based on screen width (mobile: smaller, desktop: full size)
+    const ballScale = Math.min(1, canvasWidth / 900)
     let canvasHeight = 600
     const floorY = canvasHeight
 
@@ -82,7 +84,7 @@ export default function Skills() {
     const skillBalls: { body: Matter.Body; skill: typeof allSkills[0]; R: number }[] = []
 
     allSkills.forEach((skill, i) => {
-      const R = 35 + (skill.level / 100) * 25
+      const R = (35 + (skill.level / 100) * 25) * ballScale
       const x = 100 + Math.random() * (canvasWidth - 200)
       const y = -100 - i * 90 - Math.random() * 150
 
@@ -320,6 +322,7 @@ export default function Skills() {
         padding: '120px 24px 80px',
         position: 'relative',
         minHeight: '800px',
+        overflow: 'hidden',
       }}
     >
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
@@ -353,7 +356,7 @@ export default function Skills() {
           </p>
         </div>
 
-        <div ref={containerRef} style={{ width: '100%', background: '#050508', borderRadius: 12 }}>
+        <div ref={containerRef} style={{ width: '100%', background: '#050508', borderRadius: 12, overflow: 'hidden' }}>
           <canvas
             ref={canvasRef}
             style={{
