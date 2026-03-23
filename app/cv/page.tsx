@@ -35,7 +35,7 @@ const defaultCVData: CVData = {
   experience: portfolioData.experience,
   education: portfolioData.education,
   selectedSkills: portfolioData.skills.map((s) => s.name),
-  photo: '',
+  photo: '/images/mahmud-profile.jpg',
   showSections: {
     summary: true,
     experience: true,
