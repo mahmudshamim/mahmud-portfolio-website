@@ -594,7 +594,7 @@ function SidebarLightTemplate({ personal, skills, projects, experience, educatio
     <div style={{ fontFamily: 'sans-serif', fontSize: 12, color: '#2a2a2a', background: '#fff', display: 'flex' }}>
 
       {/* Left sidebar */}
-      <div style={{ width: 230, background: sidebarBg, padding: '140px 20px 32px', display: 'flex', flexDirection: 'column', gap: 24, flexShrink: 0 }}>
+      <div style={{ width: 230, background: sidebarBg, padding: '32px 20px 32px', display: 'flex', flexDirection: 'column', gap: 24, flexShrink: 0 }}>
 
         {/* Contact */}
         <div>
@@ -635,26 +635,25 @@ function SidebarLightTemplate({ personal, skills, projects, experience, educatio
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
         {/* Header banner */}
-        <div style={{ background: accentBg, padding: '28px 32px 28px 80px', position: 'relative', minHeight: 110 }}>
-          {/* Profile photo — overlaps sidebar/main boundary */}
+        <div style={{ background: accentBg, padding: '24px 32px', display: 'flex', alignItems: 'center', gap: 20, minHeight: 110 }}>
           {photo && (
             <img
               src={photo}
               alt="Profile"
               style={{
-                position: 'absolute',
-                left: -45,
-                top: 20,
-                width: 100,
-                height: 100,
+                width: 86,
+                height: 86,
                 borderRadius: '50%',
                 objectFit: 'cover',
-                border: '4px solid #fff',
+                border: '3px solid #fff',
+                flexShrink: 0,
               }}
             />
           )}
-          <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: '0.04em', color: '#1a2e3a' }}>{personal.name.toUpperCase()}</h1>
-          <p style={{ fontSize: 13, color: '#3a6070', margin: '6px 0 0', fontWeight: 500 }}>{personal.role}</p>
+          <div>
+            <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: '0.04em', color: '#1a2e3a' }}>{personal.name.toUpperCase()}</h1>
+            <p style={{ fontSize: 13, color: '#3a6070', margin: '6px 0 0', fontWeight: 500 }}>{personal.role}</p>
+          </div>
         </div>
 
         {/* Content */}

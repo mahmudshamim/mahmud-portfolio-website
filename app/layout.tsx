@@ -27,6 +27,19 @@ export const metadata: Metadata = {
   title: 'Mahmud — Full-Stack Developer & UI/UX Designer',
   description:
     'Full-Stack Developer at Khulna Technologies LLC. Building full-stack apps with React, Next.js, Node.js, and MongoDB.',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
+  openGraph: {
+    title: 'Mahmud — Full-Stack Developer',
+    description: 'Full-Stack Developer & UI/UX Designer based in Dhaka, Bangladesh.',
+    url: 'https://mahmud.dev',
+    siteName: 'Mahmud Portfolio',
+    locale: 'en_US',
+    type: 'website',
+  },
 }
 
 export default function RootLayout({

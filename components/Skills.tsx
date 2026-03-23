@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import Matter, { Engine, World, Bodies, Body, Runner, Mouse, MouseConstraint } from 'matter-js'
 import { portfolioData } from '@/data/portfolio'
 
@@ -30,6 +30,10 @@ const SKILL_ICONS: Record<string, string> = {
   'AWS Amplify': `${DEVICONS}/amazonwebservices/amazonwebservices-original-wordmark.svg`,
   'Cloudinary': `${DEVICONS}/cloudinary/cloudinary-original.svg`,
   'Graphic Design': `${DEVICONS}/photoshop/photoshop-original.svg`,
+  'UI Design': `${DEVICONS}/figma/figma-original.svg`,
+  'UX Design': `${DEVICONS}/adobexd/adobexd-original.svg`,
+  'Wireframing': `${DEVICONS}/framer/framer-original.svg`,
+  'Prototyping': `${DEVICONS}/framer/framer-original.svg`,
 }
 
 const allSkills = [...portfolioData.skills, ...additionalTech].filter(s => s.name in SKILL_ICONS)
@@ -37,7 +41,6 @@ const allSkills = [...portfolioData.skills, ...additionalTech].filter(s => s.nam
 export default function Skills() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const [canvasHeight, setCanvasHeight] = useState(500)
 
   useEffect(() => {
     const container = containerRef.current
@@ -45,9 +48,7 @@ export default function Skills() {
     if (!container || !canvas) return
 
     let canvasWidth = container.clientWidth
-    const computedH = Math.min(600, Math.max(360, window.innerHeight * 0.6))
-    setCanvasHeight(computedH)
-    let canvasHeight = computedH
+    let canvasHeight = 600
     const floorY = canvasHeight
 
     canvas.width = canvasWidth
@@ -316,9 +317,9 @@ export default function Skills() {
     <section
       style={{
         background: '#050508',
-        padding: 'clamp(60px, 10vw, 120px) clamp(16px, 4vw, 24px) clamp(40px, 6vw, 80px)',
+        padding: '120px 24px 80px',
         position: 'relative',
-        minHeight: 'clamp(500px, 80vw, 800px)',
+        minHeight: '800px',
       }}
     >
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
@@ -358,7 +359,7 @@ export default function Skills() {
             style={{
               display: 'block',
               width: '100%',
-              height: `${canvasHeight}px`,
+              height: '600px',
               cursor: 'grab',
               borderRadius: 12,
             }}
