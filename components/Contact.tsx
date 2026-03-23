@@ -2,6 +2,9 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { MdEmail, MdPhone } from 'react-icons/md'
+import { FaGithub, FaLinkedin } from 'react-icons/fa'
+import { SiUpwork } from 'react-icons/si'
 import { portfolioData } from '@/data/portfolio'
 import { useMagnetic } from '@/hooks/useMagnetic'
 import { useScramble } from '@/hooks/useScramble'
@@ -129,6 +132,7 @@ export default function Contact() {
                 EMAIL
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <MdEmail size={18} color="#4f8ef7" />
                 <span
                   style={{
                     fontFamily: 'var(--font-dm-sans)',
@@ -173,8 +177,9 @@ export default function Contact() {
               </p>
               <a
                 href={`tel:${(personal as any).phone?.replace(/\s/g, '')}`}
-                style={{ fontFamily: 'var(--font-dm-sans)', fontSize: 16, color: '#e2e2f0', textDecoration: 'none' }}
+                style={{ fontFamily: 'var(--font-dm-sans)', fontSize: 16, color: '#e2e2f0', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}
               >
+                <MdPhone size={18} color="#4f8ef7" />
                 {(personal as any).phone}
               </a>
             </div>
@@ -182,9 +187,9 @@ export default function Contact() {
             {/* Social links */}
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               {[
-                { label: 'GitHub', href: personal.github },
-                { label: 'Upwork', href: personal.upwork },
-                { label: 'LinkedIn', href: personal.linkedin },
+                { label: 'GitHub',   href: personal.github,   icon: <FaGithub size={16} /> },
+                { label: 'Upwork',   href: personal.upwork,   icon: <SiUpwork size={16} /> },
+                { label: 'LinkedIn', href: personal.linkedin, icon: <FaLinkedin size={16} /> },
               ]
                 .filter((l) => l.href)
                 .map((link) => (
@@ -201,6 +206,9 @@ export default function Contact() {
                       border: '1px solid rgba(255,255,255,0.08)',
                       borderRadius: 6,
                       padding: '8px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
                       transition: 'color 0.2s, border-color 0.2s',
                     }}
                     onMouseEnter={(e) => {
@@ -212,6 +220,7 @@ export default function Contact() {
                       e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
                     }}
                   >
+                    {link.icon}
                     {link.label}
                   </a>
                 ))}
