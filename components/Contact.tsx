@@ -155,9 +155,12 @@ export default function Contact() {
               <p style={{ fontFamily: 'var(--font-dm-sans)', fontSize: 11, color: 'rgba(226,226,240,0.3)', letterSpacing: '0.15em', marginBottom: 8 }}>
                 PHONE
               </p>
-              <span style={{ fontFamily: 'var(--font-dm-sans)', fontSize: 16, color: '#e2e2f0' }}>
+              <a
+                href={`tel:${(personal as any).phone?.replace(/\s/g, '')}`}
+                style={{ fontFamily: 'var(--font-dm-sans)', fontSize: 16, color: '#e2e2f0', textDecoration: 'none' }}
+              >
                 {(personal as any).phone}
-              </span>
+              </a>
             </div>
 
             {/* Social links */}
