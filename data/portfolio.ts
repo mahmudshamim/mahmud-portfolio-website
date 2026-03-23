@@ -13,7 +13,7 @@ export const portfolioData = {
     upwork: "https://www.upwork.com/freelancers/~019aac0b0b5967360a",
     linkedin: "https://www.linkedin.com/in/md-abdulla-al-mahmud/",
     summary:
-      "Full-Stack Developer with a UI/UX design background, currently working at Khulna Technologies LLC — building full-stack apps with React, Next.js, Node.js, and MongoDB. Completed Programming Hero's 6-month Complete Web Development bootcamp. 7 years of customer-facing experience means I build things that are not just functional, but genuinely usable.",
+      "Full-Stack Developer at Khulna Technologies LLC, specializing in React, Next.js, Node.js, and MongoDB. Background in UI/UX design and IT operations gives me a practical edge — I ship products that are fast, clean, and built for real users.",
     available: true,
   },
 
