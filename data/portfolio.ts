@@ -14,6 +14,7 @@ export const portfolioData = {
     linkedin: "https://www.linkedin.com/in/md-abdulla-al-mahmud/",
     summary:
       "Full-Stack Developer at Khulna Technologies LLC, specializing in React, Next.js, Node.js, and MongoDB. Background in UI/UX design and IT operations gives me a practical edge — I ship products that are fast, clean, and built for real users.",
+    photo: "/images/mahmud-profile.jpg",
     available: true,
   },
 
