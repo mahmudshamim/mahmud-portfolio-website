@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { portfolioData } from '@/data/portfolio'
 import CVBuilder from '@/components/cv/CVBuilder'
 import CVPreview from '@/components/cv/CVPreview'
@@ -17,6 +17,12 @@ export type CVData = {
   projects: typeof portfolioData.projects
   experience: typeof portfolioData.experience
   education: typeof portfolioData.education
+  customSections: {
+    id: string
+    title: string
+    content: string
+  }[]
+  sectionOrder: string[]
   selectedSkills: string[]
   photo: string
   showSections: {
@@ -28,21 +34,44 @@ export type CVData = {
   }
 }
 
-const defaultCVData: CVData = {
-  personal: { ...portfolioData.personal },
-  skills: portfolioData.skills,
-  projects: portfolioData.projects,
-  experience: portfolioData.experience,
-  education: portfolioData.education,
-  selectedSkills: portfolioData.skills.map((s) => s.name),
-  photo: '/images/mahmud-profile.jpg',
-  showSections: {
-    summary: true,
-    experience: true,
-    projects: true,
-    skills: true,
-    education: true,
-  },
+const defaultCVData: CVData = buildDefaultCVData()
+
+const CV_STORAGE_KEY = 'mahmud-cv-builder-data-v1'
+
+function isValidStoredCVData(value: unknown): value is CVData {
+  if (!value || typeof value !== 'object') return false
+
+  const data = value as CVData
+
+  return Boolean(
+    data.personal &&
+    data.skills &&
+    data.projects &&
+    data.experience &&
+    data.education &&
+    data.showSections
+  )
+}
+
+function buildDefaultCVData(): CVData {
+  return {
+    personal: { ...portfolioData.personal },
+    skills: portfolioData.skills,
+    projects: portfolioData.projects,
+    experience: portfolioData.experience,
+    education: portfolioData.education,
+    customSections: [],
+    sectionOrder: ['summary', 'experience', 'projects', 'education'],
+    selectedSkills: portfolioData.skills.map((s) => s.name),
+    photo: '/images/mahmud-profile.jpg',
+    showSections: {
+      summary: true,
+      experience: true,
+      projects: true,
+      skills: true,
+      education: true,
+    },
+  }
 }
 
 export default function CVPage() {
@@ -50,7 +79,80 @@ export default function CVPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<CVTemplate>('dark-pro')
   const [activeTab, setActiveTab]         = useState<'builder' | 'ats'>('builder')
   const [mobilePanel, setMobilePanel]     = useState<'controls' | 'preview'>('controls')
+  const [builderWidth, setBuilderWidth]   = useState(840)
+  const [isResizing, setIsResizing]       = useState(false)
+  const [hasHydrated, setHasHydrated]     = useState(false)
+  const [saveState, setSaveState]         = useState<'saving' | 'saved'>('saved')
+  const [savedAt, setSavedAt]             = useState<string>('Not saved yet')
   const isMobile                          = useIsMobile()
+  const builderControlsBg                 = '#0b0b13'
+  const builderPreviewBg                  = '#070811'
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(CV_STORAGE_KEY)
+      if (!stored) {
+        setHasHydrated(true)
+        return
+      }
+
+      const parsed = JSON.parse(stored)
+      if (!isValidStoredCVData(parsed)) {
+        setHasHydrated(true)
+        return
+      }
+
+      setCVData({
+        ...defaultCVData,
+        ...parsed,
+        personal: { ...defaultCVData.personal, ...parsed.personal },
+        showSections: { ...defaultCVData.showSections, ...parsed.showSections },
+        customSections: Array.isArray(parsed.customSections) ? parsed.customSections : [],
+        sectionOrder: Array.isArray(parsed.sectionOrder) ? parsed.sectionOrder : defaultCVData.sectionOrder,
+        selectedSkills: Array.isArray(parsed.selectedSkills) ? parsed.selectedSkills : defaultCVData.selectedSkills,
+      })
+    } catch {
+      // Ignore corrupted saved data and fall back to defaults.
+    } finally {
+      setHasHydrated(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!hasHydrated) return
+
+    setSaveState('saving')
+    window.localStorage.setItem(CV_STORAGE_KEY, JSON.stringify(cvData))
+    setSaveState('saved')
+    setSavedAt('Saved just now')
+  }, [cvData, hasHydrated])
+
+  useEffect(() => {
+    if (isMobile || activeTab !== 'builder' || !isResizing) return
+
+    const handlePointerMove = (event: MouseEvent) => {
+      const nextWidth = Math.min(Math.max(event.clientX, 620), window.innerWidth - 420)
+      setBuilderWidth(nextWidth)
+    }
+
+    const stopResizing = () => setIsResizing(false)
+
+    window.addEventListener('mousemove', handlePointerMove)
+    window.addEventListener('mouseup', stopResizing)
+
+    return () => {
+      window.removeEventListener('mousemove', handlePointerMove)
+      window.removeEventListener('mouseup', stopResizing)
+    }
+  }, [activeTab, isMobile, isResizing])
+
+  const handleResetCV = () => {
+    const resetData = buildDefaultCVData()
+    setCVData(resetData)
+    window.localStorage.removeItem(CV_STORAGE_KEY)
+    setSavedAt('Reset complete')
+    setSaveState('saved')
+  }
 
   return (
     <div className="min-h-screen bg-[#050508] flex flex-col">
@@ -128,11 +230,11 @@ export default function CVPage() {
         <div style={{ paddingTop: 52, height: '100vh', overflow: 'hidden' }}>
           {activeTab === 'builder' ? (
             mobilePanel === 'controls' ? (
-              <div style={{ height: '100%', overflowY: 'auto', background: '#0d0d14' }}>
-                <CVBuilder cvData={cvData} setCVData={setCVData} selectedTemplate={selectedTemplate} setSelectedTemplate={setSelectedTemplate} />
+              <div style={{ height: '100%', overflowY: 'auto', background: builderControlsBg }}>
+                <CVBuilder cvData={cvData} setCVData={setCVData} selectedTemplate={selectedTemplate} setSelectedTemplate={setSelectedTemplate} saveState={saveState} savedAt={savedAt} onReset={handleResetCV} />
               </div>
             ) : (
-              <div style={{ height: '100%', overflowY: 'auto', background: '#080810', padding: 16 }}>
+              <div style={{ height: '100%', overflowY: 'auto', background: builderPreviewBg, padding: 16 }}>
                 <CVPreview cvData={cvData} selectedTemplate={selectedTemplate} />
               </div>
             )
@@ -153,10 +255,35 @@ export default function CVPage() {
         <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', paddingTop: 52 }}>
           {activeTab === 'builder' ? (
             <>
-              <div style={{ width: 340, minWidth: 340, height: '100%', overflowY: 'auto', overflowX: 'hidden', borderRight: '1px solid rgba(255,255,255,0.08)', background: '#0d0d14', flexShrink: 0 }}>
-                <CVBuilder cvData={cvData} setCVData={setCVData} selectedTemplate={selectedTemplate} setSelectedTemplate={setSelectedTemplate} />
+              <div style={{ width: builderWidth, minWidth: 620, maxWidth: 'calc(100vw - 420px)', height: '100%', overflowY: 'auto', overflowX: 'hidden', background: builderControlsBg, flexShrink: 0 }}>
+                <CVBuilder cvData={cvData} setCVData={setCVData} selectedTemplate={selectedTemplate} setSelectedTemplate={setSelectedTemplate} saveState={saveState} savedAt={savedAt} onReset={handleResetCV} />
               </div>
-              <div style={{ flex: 1, height: '100%', overflowY: 'auto', background: '#080810', padding: 24 }}>
+              <div
+                onMouseDown={() => setIsResizing(true)}
+                style={{
+                  width: 10,
+                  cursor: 'col-resize',
+                  background: isResizing ? 'rgba(79,142,247,0.22)' : 'transparent',
+                  borderLeft: '1px solid rgba(255,255,255,0.08)',
+                  borderRight: '1px solid rgba(255,255,255,0.08)',
+                  position: 'relative',
+                  flexShrink: 0,
+                }}
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: 4,
+                    height: 72,
+                    borderRadius: 999,
+                    background: isResizing ? '#4f8ef7' : 'rgba(255,255,255,0.22)',
+                  }}
+                />
+              </div>
+              <div style={{ flex: 1, height: '100%', overflowY: 'auto', background: builderPreviewBg, padding: 24 }}>
                 <CVPreview cvData={cvData} selectedTemplate={selectedTemplate} />
               </div>
             </>

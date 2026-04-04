@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CVData, CVTemplate } from '@/app/cv/page'
 import { MdEmail, MdPhone, MdLocationOn, MdLanguage, MdPerson, MdWork, MdSchool, MdCode, MdBuild } from 'react-icons/md'
 
@@ -11,6 +11,31 @@ type Props = {
 
 export default function CVPreview({ cvData, selectedTemplate }: Props) {
   const [isGenerating, setIsGenerating] = useState(false)
+  const previewFrameRef = useRef<HTMLDivElement>(null)
+  const [previewScale, setPreviewScale] = useState(1)
+  const A4_W = 794
+  const A4_H = 1122
+
+  useEffect(() => {
+    const node = previewFrameRef.current
+    if (!node) return
+
+    const updateScale = () => {
+      const nextScale = Math.min(1, node.clientWidth / A4_W)
+      setPreviewScale(nextScale)
+    }
+
+    updateScale()
+
+    const observer = new ResizeObserver(updateScale)
+    observer.observe(node)
+    window.addEventListener('resize', updateScale)
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', updateScale)
+    }
+  }, [])
 
   const handleDownload = async () => {
     setIsGenerating(true)
@@ -20,7 +45,6 @@ export default function CVPreview({ cvData, selectedTemplate }: Props) {
       if (!element) return
       // A4 at 96dpi = 794 × 1122px. Clamp canvas capture to exactly one A4 page
       // so html2pdf never overflows into a second blank page.
-      const A4_H = 1122
       await html2pdf()
         .set({
           margin: 0,
@@ -41,7 +65,7 @@ export default function CVPreview({ cvData, selectedTemplate }: Props) {
     }
   }
 
-  const { personal, skills, projects, experience, education, showSections, photo } = cvData
+  const { personal, skills, projects, experience, education, customSections, sectionOrder, showSections, photo } = cvData
   const activeSkills = skills.filter((s: any) => s.included !== false)
 
   return (
@@ -69,42 +93,49 @@ export default function CVPreview({ cvData, selectedTemplate }: Props) {
 
       {/* CV Preview */}
       <div
-        style={{
-          width: 794,
-          maxWidth: '100%',
-          minHeight: 1123,
-          margin: '0 auto',
-          background: '#fff',
-          boxShadow: '0 20px 80px rgba(0,0,0,0.5)',
-          borderRadius: 4,
-          overflow: 'hidden',
-        }}
+        ref={previewFrameRef}
+        style={{ width: '100%', margin: '0 auto' }}
       >
-        <div id="cv-preview-content" style={{ width: '100%' }}>
-          {selectedTemplate === 'dark-pro' && (
-            <DarkProTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} showSections={showSections} photo={photo} />
-          )}
-          {selectedTemplate === 'clean-minimal' && (
-            <CleanMinimalTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} showSections={showSections} photo={photo} />
-          )}
-          {selectedTemplate === 'tech-blue' && (
-            <TechBlueTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} showSections={showSections} photo={photo} />
-          )}
-          {selectedTemplate === 'executive' && (
-            <ExecutiveTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} showSections={showSections} photo={photo} />
-          )}
-          {selectedTemplate === 'sidebar-light' && (
-            <SidebarLightTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} showSections={showSections} photo={photo} />
-          )}
-          {selectedTemplate === 'timeline' && (
-            <TimelineTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} showSections={showSections} photo={photo} />
-          )}
-          {selectedTemplate === 'bold-header' && (
-            <BoldHeaderTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} showSections={showSections} photo={photo} />
-          )}
-          {selectedTemplate === 'creative-panel' && (
-            <CreativePanelTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} showSections={showSections} photo={photo} />
-          )}
+        <div style={{ width: '100%', height: A4_H * previewScale, position: 'relative' }}>
+          <div
+            style={{
+              width: A4_W,
+              minHeight: A4_H,
+              background: '#fff',
+              boxShadow: '0 20px 80px rgba(0,0,0,0.5)',
+              borderRadius: 4,
+              overflow: 'hidden',
+              transform: `scale(${previewScale})`,
+              transformOrigin: 'top left',
+            }}
+          >
+            <div id="cv-preview-content" style={{ width: A4_W }}>
+              {selectedTemplate === 'dark-pro' && (
+                <DarkProTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+              )}
+              {selectedTemplate === 'clean-minimal' && (
+                <CleanMinimalTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+              )}
+              {selectedTemplate === 'tech-blue' && (
+                <TechBlueTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+              )}
+              {selectedTemplate === 'executive' && (
+                <ExecutiveTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+              )}
+              {selectedTemplate === 'sidebar-light' && (
+                <SidebarLightTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+              )}
+              {selectedTemplate === 'timeline' && (
+                <TimelineTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+              )}
+              {selectedTemplate === 'bold-header' && (
+                <BoldHeaderTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+              )}
+              {selectedTemplate === 'creative-panel' && (
+                <CreativePanelTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -117,12 +148,70 @@ type TemplateProps = {
   projects: CVData['projects']
   experience: CVData['experience']
   education: CVData['education']
+  customSections: CVData['customSections']
+  sectionOrder: CVData['sectionOrder']
   showSections: CVData['showSections']
   photo: string
 }
 
+function getCustomSectionItems(content: string) {
+  return content
+    .split('\n')
+    .map((item) => item.trim())
+    .filter(Boolean)
+}
+
+function getBulletItems(content: string) {
+  return content
+    .split('\n')
+    .map((item) => item.replace(/^[-*•]\s*/, '').trim())
+    .filter(Boolean)
+}
+
+function BulletText({ content }: { content: string }) {
+  const items = getBulletItems(content)
+
+  if (items.length <= 1) {
+    return <p style={{ color: '#555', lineHeight: 1.7 }}>{content}</p>
+  }
+
+  return (
+    <div style={{ display: 'grid', gap: 6 }}>
+      {items.map((item, index) => (
+        <div key={`${item}-${index}`} style={{ display: 'flex', gap: 8, color: '#555', lineHeight: 1.6 }}>
+          <span style={{ flexShrink: 0 }}>•</span>
+          <span>{item}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function CustomSectionBody({ content }: { content: string }) {
+  return <BulletText content={content} />
+}
+
+function getOrderedSections({
+  sectionOrder,
+  showSections,
+  customSections,
+}: Pick<TemplateProps, 'sectionOrder' | 'showSections' | 'customSections'>) {
+  const base = sectionOrder.filter((id) => {
+    if (id in showSections) return showSections[id as keyof typeof showSections]
+    return customSections.some((section) => section.id === id && (section.title.trim() || section.content.trim()))
+  })
+
+  const missingCustom = customSections
+    .filter((section) => !base.includes(section.id) && (section.title.trim() || section.content.trim()))
+    .map((section) => section.id)
+
+  return [...base, ...missingCustom]
+}
+
 // ─── Template 1: Dark Pro ─────────────────────────────────────────────────────
-function DarkProTemplate({ personal, skills, projects, experience, education, showSections, photo }: TemplateProps) {
+function DarkProTemplate({ personal, skills, projects, experience, education, customSections, sectionOrder, showSections, photo }: TemplateProps) {
+  const orderedSections = getOrderedSections({ sectionOrder, showSections, customSections })
+
   return (
     <div style={{ display: 'flex', fontFamily: 'sans-serif', fontSize: 12, color: '#111' }}>
       {/* Sidebar */}
@@ -173,67 +262,78 @@ function DarkProTemplate({ personal, skills, projects, experience, education, sh
 
       {/* Main */}
       <div style={{ flex: 1, padding: 32 }}>
-        {showSections.summary && (
-          <Section title="Summary">
-            <p style={{ fontSize: 12, lineHeight: 1.7, color: '#444' }}>{personal.summary}</p>
-          </Section>
-        )}
-        {showSections.experience && (
-          <Section title="Experience">
-            {experience.map((e, i) => (
-              <div key={i} style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <strong>{e.role}</strong>
-                  <span style={{ color: '#888', fontSize: 11 }}>{e.date}</span>
-                </div>
-                <p style={{ color: '#4f8ef7', fontSize: 11, margin: '2px 0' }}>{e.company}</p>
-                <p style={{ color: '#555', lineHeight: 1.6 }}>{e.desc}</p>
-              </div>
-            ))}
-          </Section>
-        )}
-        {showSections.projects && (
-          <Section title="Projects">
-            {projects.filter((p) => p.featured).map((p) => (
-              <div key={p.id} style={{ marginBottom: 14 }}>
-                <strong style={{ fontSize: 13 }}>{p.name}</strong>
-                <span
-                  style={{
-                    marginLeft: 8,
-                    fontSize: 10,
-                    color: p.color,
-                    background: p.color + '18',
-                    padding: '1px 6px',
-                    borderRadius: 4,
-                  }}
-                >
-                  {p.category}
-                </span>
-                <p style={{ color: '#555', margin: '4px 0', lineHeight: 1.5 }}>{p.shortDesc}</p>
-                <p style={{ fontSize: 10, color: '#999', fontFamily: 'monospace' }}>
-                  {p.tech.join(' · ')}
-                </p>
-              </div>
-            ))}
-          </Section>
-        )}
-        {showSections.education && (
-          <Section title="Education">
-            {education.map((e, i) => (
-              <div key={i}>
-                <strong>{e.degree}</strong>
-                <p style={{ color: '#555' }}>{e.school} &mdash; {e.date}</p>
-              </div>
-            ))}
-          </Section>
-        )}
+        {orderedSections.map((sectionId) => {
+          if (sectionId === 'summary') {
+            return (
+              <Section key={sectionId} title="Summary">
+                <p style={{ fontSize: 12, lineHeight: 1.7, color: '#444' }}>{personal.summary}</p>
+              </Section>
+            )
+          }
+
+          if (sectionId === 'experience') {
+            return (
+              <Section key={sectionId} title="Experience">
+                {experience.map((e, i) => (
+                  <div key={i} style={{ marginBottom: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <strong>{e.role}</strong>
+                      <span style={{ color: '#888', fontSize: 11 }}>{e.date}</span>
+                    </div>
+                    <p style={{ color: '#4f8ef7', fontSize: 11, margin: '2px 0' }}>{e.company}</p>
+                    <BulletText content={e.desc} />
+                  </div>
+                ))}
+              </Section>
+            )
+          }
+
+          if (sectionId === 'projects') {
+            return (
+              <Section key={sectionId} title="Projects">
+                {projects.filter((p) => p.featured).map((p) => (
+                  <div key={p.id} style={{ marginBottom: 14 }}>
+                    <strong style={{ fontSize: 13 }}>{p.name}</strong>
+                    <span style={{ marginLeft: 8, fontSize: 10, color: p.color, background: p.color + '18', padding: '1px 6px', borderRadius: 4 }}>
+                      {p.category}
+                    </span>
+                    <p style={{ color: '#555', margin: '4px 0', lineHeight: 1.5 }}>{p.shortDesc}</p>
+                    <p style={{ fontSize: 10, color: '#999', fontFamily: 'monospace' }}>{p.tech.join(' · ')}</p>
+                  </div>
+                ))}
+              </Section>
+            )
+          }
+
+          if (sectionId === 'education') {
+            return (
+              <Section key={sectionId} title="Education">
+                {education.map((e, i) => (
+                  <div key={i}>
+                    <strong>{e.degree}</strong>
+                    <p style={{ color: '#555' }}>{e.school} &mdash; {e.date}</p>
+                  </div>
+                ))}
+              </Section>
+            )
+          }
+
+          const customSection = customSections.find((section) => section.id === sectionId)
+          if (!customSection) return null
+
+          return (
+            <Section key={customSection.id} title={customSection.title || 'Additional Section'}>
+              <CustomSectionBody content={customSection.content} />
+            </Section>
+          )
+        })}
       </div>
     </div>
   )
 }
 
 // ─── Template 2: Clean Minimal ────────────────────────────────────────────────
-function CleanMinimalTemplate({ personal, skills, projects, experience, education, showSections, photo }: TemplateProps) {
+function CleanMinimalTemplate({ personal, skills, projects, experience, education, customSections, showSections, photo }: TemplateProps) {
   return (
     <div style={{ fontFamily: 'Georgia, serif', fontSize: 12, color: '#222', padding: 40 }}>
       <div style={{ textAlign: 'center', borderBottom: '2px solid #222', paddingBottom: 20, marginBottom: 28 }}>
@@ -260,7 +360,7 @@ function CleanMinimalTemplate({ personal, skills, projects, experience, educatio
                 <div key={i} style={{ marginBottom: 16 }}>
                   <strong style={{ fontSize: 13 }}>{e.role}</strong>
                   <p style={{ color: '#777', fontSize: 11, margin: '2px 0' }}>{e.company} &mdash; {e.date}</p>
-                  <p style={{ color: '#444', lineHeight: 1.6 }}>{e.desc}</p>
+                  <BulletText content={e.desc} />
                 </div>
               ))}
             </MinSection>
@@ -302,6 +402,13 @@ function CleanMinimalTemplate({ personal, skills, projects, experience, educatio
               ))}
             </MinSection>
           )}
+          {customSections.map((section) => (
+            section.title.trim() || section.content.trim() ? (
+              <MinSection key={section.id} title={section.title || 'Additional Section'}>
+                <CustomSectionBody content={section.content} />
+              </MinSection>
+            ) : null
+          ))}
         </div>
       </div>
     </div>
@@ -309,7 +416,7 @@ function CleanMinimalTemplate({ personal, skills, projects, experience, educatio
 }
 
 // ─── Template 3: Tech Blue ────────────────────────────────────────────────────
-function TechBlueTemplate({ personal, skills, projects, experience, education, showSections, photo }: TemplateProps) {
+function TechBlueTemplate({ personal, skills, projects, experience, education, customSections, showSections, photo }: TemplateProps) {
   // Syntax highlight colors (VSCode Dark+ palette)
   const c = {
     bg:       '#0d1117',
@@ -473,6 +580,20 @@ function TechBlueTemplate({ personal, skills, projects, experience, education, s
             </>
           )}
 
+          {customSections.filter((section) => section.title.trim() || section.content.trim()).map((section) => (
+            <div key={section.id}>
+              <Line>&nbsp;</Line>
+              <Line indent={1}>{sym('// ')}<span style={{ color: c.gray, fontStyle: 'italic' }}>{section.title || 'Additional Section'}</span></Line>
+              <Line indent={1}>{key(section.title || 'section')}{sym(': [')}</Line>
+              {getCustomSectionItems(section.content).map((item, index, arr) => (
+                <Line key={`${section.id}-${index}`} indent={2}>
+                  {str(item)}{sym(index < arr.length - 1 ? ',' : '')}
+                </Line>
+              ))}
+              <Line indent={1}>{sym('],')}</Line>
+            </div>
+          ))}
+
           <Line>{sym('}')}</Line>
         </div>
       </div>
@@ -489,7 +610,7 @@ function TechBlueTemplate({ personal, skills, projects, experience, education, s
 }
 
 // ─── Template 4: Executive ────────────────────────────────────────────────────
-function ExecutiveTemplate({ personal, skills, projects, experience, education, showSections, photo }: TemplateProps) {
+function ExecutiveTemplate({ personal, skills, projects, experience, education, customSections, showSections, photo }: TemplateProps) {
   return (
     <div style={{ fontFamily: 'sans-serif', fontSize: 12, color: '#222' }}>
       {/* Dark header */}
@@ -540,7 +661,7 @@ function ExecutiveTemplate({ personal, skills, projects, experience, education, 
                   <span style={{ color: '#888', fontSize: 11 }}>{e.date}</span>
                 </div>
                 <p style={{ color: '#4f8ef7', margin: '2px 0 6px', fontSize: 12 }}>{e.company}</p>
-                <p style={{ color: '#555', lineHeight: 1.7 }}>{e.desc}</p>
+                <BulletText content={e.desc} />
               </div>
             ))}
           </ExecSection>
@@ -578,6 +699,13 @@ function ExecutiveTemplate({ personal, skills, projects, experience, education, 
                 ))}
               </ExecSection>
             )}
+            {customSections.map((section) => (
+              section.title.trim() || section.content.trim() ? (
+                <ExecSection key={section.id} title={section.title || 'Additional Section'}>
+                  <CustomSectionBody content={section.content} />
+                </ExecSection>
+              ) : null
+            ))}
           </div>
         </div>
       </div>
@@ -586,7 +714,7 @@ function ExecutiveTemplate({ personal, skills, projects, experience, education, 
 }
 
 // ─── Template 5: Sidebar Light ────────────────────────────────────────────────
-function SidebarLightTemplate({ personal, skills, projects, experience, education, showSections, photo }: TemplateProps) {
+function SidebarLightTemplate({ personal, skills, projects, experience, education, customSections, showSections, photo }: TemplateProps) {
   const sidebarBg = '#dce8f0'
   const accentBg  = '#b0cfe0'
 
@@ -674,7 +802,7 @@ function SidebarLightTemplate({ personal, skills, projects, experience, educatio
                     <span style={{ fontSize: 10, color: '#888' }}>{e.date}</span>
                   </div>
                   <p style={{ fontSize: 11, color: '#5a8090', margin: '2px 0 6px' }}>{e.company}</p>
-                  <p style={{ color: '#555', lineHeight: 1.7 }}>{e.desc}</p>
+                  <BulletText content={e.desc} />
                 </div>
               ))}
             </LightSection>
@@ -691,6 +819,13 @@ function SidebarLightTemplate({ personal, skills, projects, experience, educatio
               ))}
             </LightSection>
           )}
+          {customSections.map((section) => (
+            section.title.trim() || section.content.trim() ? (
+              <LightSection key={section.id} title={section.title || 'Additional Section'}>
+                <CustomSectionBody content={section.content} />
+              </LightSection>
+            ) : null
+          ))}
         </div>
       </div>
     </div>
@@ -698,7 +833,7 @@ function SidebarLightTemplate({ personal, skills, projects, experience, educatio
 }
 
 // ─── Template 6: Timeline ─────────────────────────────────────────────────────
-function TimelineTemplate({ personal, skills, projects, experience, education, showSections, photo }: TemplateProps) {
+function TimelineTemplate({ personal, skills, projects, experience, education, customSections, showSections, photo }: TemplateProps) {
   return (
     <div style={{ fontFamily: '"Georgia", serif', fontSize: 12, color: '#1a1a1a', background: '#fff', padding: '36px 0' }}>
 
@@ -771,7 +906,7 @@ function TimelineTemplate({ personal, skills, projects, experience, education, s
                     <span style={{ fontSize: 10, color: '#888', fontFamily: 'sans-serif' }}>{e.date}</span>
                   </div>
                   <p style={{ fontSize: 12, fontFamily: 'sans-serif', color: '#444', margin: '2px 0 6px', fontStyle: 'italic' }}>{e.role}</p>
-                  <p style={{ color: '#555', lineHeight: 1.7, fontSize: 11 }}>{e.desc}</p>
+                  <BulletText content={e.desc} />
                 </div>
               ))}
             </TimelineSection>
@@ -789,6 +924,13 @@ function TimelineTemplate({ personal, skills, projects, experience, education, s
               ))}
             </TimelineSection>
           )}
+          {customSections.map((section) => (
+            section.title.trim() || section.content.trim() ? (
+              <TimelineSection key={section.id} title={section.title || 'Additional Section'} icon={<MdBuild size={14} color="#fff" />}>
+                <CustomSectionBody content={section.content} />
+              </TimelineSection>
+            ) : null
+          ))}
         </div>
       </div>
     </div>
@@ -796,7 +938,7 @@ function TimelineTemplate({ personal, skills, projects, experience, education, s
 }
 
 // ─── Template 7: Bold Header ──────────────────────────────────────────────────
-function BoldHeaderTemplate({ personal, skills, projects, experience, education, showSections, photo }: TemplateProps) {
+function BoldHeaderTemplate({ personal, skills, projects, experience, education, customSections, showSections, photo }: TemplateProps) {
   return (
     <div style={{ fontFamily: 'sans-serif', fontSize: 12, color: '#222', background: '#fff' }}>
 
@@ -887,7 +1029,7 @@ function BoldHeaderTemplate({ personal, skills, projects, experience, education,
                     <span style={{ fontSize: 10, color: '#999', whiteSpace: 'nowrap' }}>{e.date}</span>
                   </div>
                   <p style={{ color: '#2980b9', fontSize: 11, margin: '2px 0 6px', fontWeight: 600 }}>{e.company}</p>
-                  <p style={{ color: '#555', lineHeight: 1.7 }}>{e.desc}</p>
+                  <BulletText content={e.desc} />
                 </div>
               ))}
             </BoldSection>
@@ -905,6 +1047,13 @@ function BoldHeaderTemplate({ personal, skills, projects, experience, education,
               ))}
             </BoldSection>
           )}
+          {customSections.map((section) => (
+            section.title.trim() || section.content.trim() ? (
+              <BoldSection key={section.id} title={section.title || 'Additional Section'} color="#2980b9">
+                <CustomSectionBody content={section.content} />
+              </BoldSection>
+            ) : null
+          ))}
         </div>
       </div>
     </div>
@@ -912,7 +1061,7 @@ function BoldHeaderTemplate({ personal, skills, projects, experience, education,
 }
 
 // ─── Template 8: Creative Panel ───────────────────────────────────────────────
-function CreativePanelTemplate({ personal, skills, projects, experience, education, showSections, photo }: TemplateProps) {
+function CreativePanelTemplate({ personal, skills, projects, experience, education, customSections, showSections, photo }: TemplateProps) {
   return (
     <div style={{ fontFamily: 'sans-serif', fontSize: 12, color: '#222', background: '#fff', display: 'flex' }}>
 
@@ -998,7 +1147,7 @@ function CreativePanelTemplate({ personal, skills, projects, experience, educati
                   </div>
                   <span style={{ fontSize: 10, color: '#fff', background: '#1a1f2e', padding: '3px 10px', borderRadius: 20, whiteSpace: 'nowrap', marginLeft: 12 }}>{e.date}</span>
                 </div>
-                <p style={{ color: '#555', lineHeight: 1.7, marginTop: 6 }}>{e.desc}</p>
+                <BulletText content={e.desc} />
               </div>
             ))}
           </PanelSection>
@@ -1017,6 +1166,13 @@ function CreativePanelTemplate({ personal, skills, projects, experience, educati
             </div>
           </PanelSection>
         )}
+        {customSections.map((section) => (
+          section.title.trim() || section.content.trim() ? (
+            <PanelSection key={section.id} title={section.title || 'Additional Section'}>
+              <CustomSectionBody content={section.content} />
+            </PanelSection>
+          ) : null
+        ))}
       </div>
     </div>
   )
