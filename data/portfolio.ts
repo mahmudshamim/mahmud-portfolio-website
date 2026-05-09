@@ -48,30 +48,18 @@ export const portfolioData = {
 
   projects: [
     {
-      id: "examflow",
-      name: "ExamFlow",
-      shortDesc: "Full-stack Online Exam Management System",
+      id: "rajulaw",
+      name: "Rajulaw",
+      shortDesc: "Law firm website for Raju & Associates",
       fullDesc:
-        "A full-stack exam platform — Next.js, Node.js, MongoDB. Admin panel, exam creation, user management, result handling. Deployed on Vercel.",
-      tech: ["Next.js", "Node.js", "MongoDB", "Vercel"],
-      github: "https://github.com/mahmudshamim",
-      live: "",
-      featured: true,
-      category: "Full-Stack",
-      color: "#4f8ef7",
-    },
-    {
-      id: "doctorgiri",
-      name: "DoctorGiri",
-      shortDesc: "Doctor appointment & healthcare platform",
-      fullDesc:
-        "A full-stack healthcare web application built with Next.js. Patients can find doctors, book appointments, and manage their health — designed with a clean, user-friendly interface.",
+        "A professional law firm website for Raju & Associates. Clean, modern design with case inquiry, lawyer profiles, and practice area pages.",
       tech: ["Next.js", "React", "Tailwind CSS"],
       github: "",
-      live: "https://doctorgiri.com/",
+      live: "https://rajulaw.com/",
       featured: true,
       category: "Full-Stack",
-      color: "#34d399",
+      color: "#c9a84c",
+      image: "/images/rajulaw.webp",
     },
     {
       id: "r-ramadhan",
@@ -85,6 +73,34 @@ export const portfolioData = {
       featured: true,
       category: "Full-Stack",
       color: "#34d399",
+      image: "/images/r-ramadhan.webp",
+    },
+    {
+      id: "doctorgiri",
+      name: "DoctorGiri",
+      shortDesc: "Doctor appointment & healthcare platform",
+      fullDesc:
+        "A full-stack healthcare web application built with Next.js. Patients can find doctors, book appointments, and manage their health — designed with a clean, user-friendly interface.",
+      tech: ["Next.js", "React", "Tailwind CSS"],
+      github: "",
+      live: "https://doctorgiri.com/",
+      featured: true,
+      category: "Full-Stack",
+      color: "#34d399",
+      image: "/images/doctorgiri.webp",
+    },
+    {
+      id: "examflow",
+      name: "ExamFlow",
+      shortDesc: "Full-stack Online Exam Management System",
+      fullDesc:
+        "A full-stack exam platform — Next.js, Node.js, MongoDB. Admin panel, exam creation, user management, result handling. Deployed on Vercel.",
+      tech: ["Next.js", "Node.js", "MongoDB", "Vercel"],
+      github: "https://github.com/mahmudshamim",
+      live: "",
+      featured: true,
+      category: "Full-Stack",
+      color: "#4f8ef7",
     },
   ],
 
