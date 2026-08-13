@@ -1,13 +1,26 @@
 'use client'
 
+import { useState } from 'react'
 import { motion, useTransform, type MotionValue } from 'framer-motion'
 import { portfolioData } from '@/data/portfolio'
 import { useStage } from '@/hooks/useStage'
 import { useIsMobile } from '@/hooks/useIsMobile'
 
-const DEVICONS = 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons'
+/*
+ * Pinned, not `@latest`.
+ *
+ * `@latest` re-resolves on every request, so an upstream rename silently
+ * turns an icon into a broken image with nothing in the build to catch it —
+ * which is exactly how framer/adobexd/cloudinary ended up 404ing here. A tag
+ * also lets jsDelivr serve these immutably instead of revalidating.
+ */
+const DEVICONS = 'https://cdn.jsdelivr.net/gh/devicons/devicon@v2.17.0/icons'
 
-const SKILL_ICONS: Record<string, string> = {
+/**
+ * `null` means devicon has no icon for this skill, so it renders as a
+ * monogram tile. Preferred over pointing at a wrong-but-plausible path.
+ */
+const SKILL_ICONS: Record<string, string | null> = {
   'Figma': `${DEVICONS}/figma/figma-original.svg`,
   'Next.js': `${DEVICONS}/nextjs/nextjs-original.svg`,
   'WordPress': `${DEVICONS}/wordpress/wordpress-original.svg`,
@@ -20,12 +33,25 @@ const SKILL_ICONS: Record<string, string> = {
   'TypeScript': `${DEVICONS}/typescript/typescript-original.svg`,
   'Express': `${DEVICONS}/express/express-original.svg`,
   'AWS Amplify': `${DEVICONS}/amazonwebservices/amazonwebservices-original-wordmark.svg`,
-  'Cloudinary': `${DEVICONS}/cloudinary/cloudinary-original.svg`,
   'Graphic Design': `${DEVICONS}/photoshop/photoshop-original.svg`,
   'UI Design': `${DEVICONS}/figma/figma-original.svg`,
-  'UX Design': `${DEVICONS}/adobexd/adobexd-original.svg`,
-  'Wireframing': `${DEVICONS}/framer/framer-original.svg`,
-  'Prototyping': `${DEVICONS}/framer/framer-original.svg`,
+  // devicon ships Adobe XD as `xd`, and Framer as `framermotion`.
+  'UX Design': `${DEVICONS}/xd/xd-original.svg`,
+  'Wireframing': `${DEVICONS}/framermotion/framermotion-original.svg`,
+  'Prototyping': `${DEVICONS}/framermotion/framermotion-original.svg`,
+  // No devicon entry — falls back to a monogram.
+  'Cloudinary': null,
+}
+
+/** First letter of each word, capped at two — "UI Design" → "UD". */
+function monogram(name: string) {
+  return name
+    .split(/[\s.]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
 }
 
 /** Order decides the order the camera meets them, so they arrive in waves. */
@@ -131,6 +157,7 @@ function Node({
   const opacity = useTransform(z, [z0, -2400, -1500, -60, 200], [0, 0, 1, 1, 0])
 
   const icon = SKILL_ICONS[skill.name]
+  const [failed, setFailed] = useState(false)
 
   return (
     <motion.div
@@ -165,16 +192,35 @@ function Node({
           placeItems: 'center',
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={icon}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          width={isMobile ? 24 : 32}
-          height={isMobile ? 24 : 32}
-          style={{ display: 'block', filter: 'drop-shadow(0 2px 6px rgba(22,21,15,0.13))' }}
-        />
+        {icon && !failed ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={icon}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            width={isMobile ? 24 : 32}
+            height={isMobile ? 24 : 32}
+            /* These come from a third-party CDN. Without this the tile shows
+               the browser's broken-image glyph, which is how the dead devicon
+               paths went unnoticed. */
+            onError={() => setFailed(true)}
+            style={{ display: 'block', filter: 'drop-shadow(0 2px 6px rgba(22,21,15,0.13))' }}
+          />
+        ) : (
+          <span
+            style={{
+              fontFamily: 'var(--font-bebas)',
+              fontWeight: 800,
+              fontSize: isMobile ? 15 : 19,
+              letterSpacing: '-0.02em',
+              color: skill.color,
+              lineHeight: 1,
+            }}
+          >
+            {monogram(skill.name)}
+          </span>
+        )}
       </div>
       <span
         style={{
@@ -335,8 +381,12 @@ function SkillsStatic() {
                 color: 'rgba(22,21,15,0.8)',
               }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={SKILL_ICONS[s.name]} alt="" width={18} height={18} />
+              {SKILL_ICONS[s.name] ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={SKILL_ICONS[s.name]!} alt="" width={18} height={18} />
+              ) : (
+                <span style={{ fontWeight: 800, fontSize: 11, color: s.color }}>{monogram(s.name)}</span>
+              )}
               {s.name}
             </span>
           ))}
