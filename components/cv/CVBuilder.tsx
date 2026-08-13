@@ -21,6 +21,8 @@ type Props = {
   saveState: 'saving' | 'saved'
   savedAt: string
   onReset: () => void
+  /** The pane is narrow: stack the rail above the fields. */
+  compact?: boolean
 }
 
 type BuilderStepId =
@@ -31,9 +33,12 @@ type BuilderStepId =
   | 'skills'
   | 'education'
   | 'summary'
-  | 'finish'
 
-const templates: { id: CVTemplate; label: string; desc: string }[] = [
+export const templates: { id: CVTemplate; label: string; desc: string }[] = [
+  { id: 'profile-split', label: 'Profile Split', desc: 'White, photo header, two columns' },
+  { id: 'swiss-grid', label: 'Swiss Grid', desc: 'Typographic, label gutter, rules' },
+  { id: 'ats-compact', label: 'ATS Compact', desc: 'One column, dense, parser-safe' },
+  { id: 'accent-rule', label: 'Accent Rule', desc: 'White with one colour spine' },
   { id: 'dark-pro', label: 'Dark Pro', desc: 'Dark sidebar, skill bars' },
   { id: 'clean-minimal', label: 'Clean Minimal', desc: 'White, two-column elegant' },
   { id: 'tech-blue', label: 'Tech Blue', desc: 'Code editor aesthetic' },
@@ -55,7 +60,7 @@ const AUTO_COLORS = [
   '#ec4899',
 ]
 
-const SECTION_PRESETS = [
+export const SECTION_PRESETS = [
   { title: 'Certifications', content: 'AWS Certified Developer\nGoogle Analytics Certification' },
   { title: 'Achievements', content: 'Built and shipped high-impact product features\nImproved performance and delivery speed' },
   { title: 'Languages', content: 'Bangla - Native\nEnglish - Professional working proficiency' },
@@ -119,57 +124,67 @@ const steps: {
     shortTitle: 'Summary',
     description: 'Wrap your profile into a short recruiter-friendly pitch.',
   },
-  {
-    id: 'finish',
-    number: 8,
-    title: 'Template & sections',
-    shortTitle: 'Finish',
-    description: 'Choose the template and decide which resume sections to show.',
-  },
 ]
 
-const surface = '#10131d'
-const surfaceMuted = '#171b27'
-const border = '#252b3b'
-const text = '#f4f7ff'
-const textMuted = '#96a0b8'
-const brand = '#2f66f3'
-const shadow = '0 24px 60px rgba(0, 0, 0, 0.3)'
+/*
+ * Editor design system — a light workspace, deliberately separate from the
+ * portfolio's warm paper palette.
+ *
+ * The builder is a tool, not a page: it wants neutral cool greys so the
+ * document being edited is the only warm thing on screen, and a single blue
+ * for anything actionable. Radii are tighter than the old dark build (10/14
+ * rather than 18/28) so dense forms do not read as a pile of lozenges.
+ */
+export const canvas = '#f4f6fa'
+export const surface = '#ffffff'
+export const surfaceMuted = '#f7f9fc'
+export const border = '#e4e8f0'
+export const borderStrong = '#d3dae6'
+export const text = '#0f172a'
+export const textMuted = '#64748b'
+export const brand = '#2563eb'
+export const brandSoft = '#eff4ff'
+export const positive = '#16a34a'
+export const danger = '#dc2626'
+export const shadow = '0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06)'
 
-const inputStyle: CSSProperties = {
+export const inputStyle: CSSProperties = {
   width: '100%',
-  background: '#ffffff',
-  border: `1px solid ${border}`,
-  borderRadius: 18,
-  padding: '16px 18px',
+  background: surface,
+  border: `1px solid ${borderStrong}`,
+  borderRadius: 10,
+  padding: '11px 14px',
+  /* The dark build set this to a near-white; once the field background went
+     light, typed text was white on white and effectively invisible. */
   color: text,
   fontFamily: 'var(--font-dm-sans)',
-  fontSize: 16,
+  fontSize: 14,
   outline: 'none',
   boxSizing: 'border-box',
+  transition: 'border-color 0.15s, box-shadow 0.15s',
 }
 
-const sectionLabelStyle: CSSProperties = {
-  fontSize: 13,
-  fontWeight: 700,
+export const sectionLabelStyle: CSSProperties = {
+  fontSize: 12,
+  fontWeight: 600,
   color: text,
-  marginBottom: 8,
+  marginBottom: 7,
   fontFamily: 'var(--font-dm-sans)',
 }
 
-const helperStyle: CSSProperties = {
+export const helperStyle: CSSProperties = {
   fontSize: 12,
   color: textMuted,
   lineHeight: 1.6,
   fontFamily: 'var(--font-dm-sans)',
 }
 
-const buttonBase: CSSProperties = {
+export const buttonBase: CSSProperties = {
   border: 'none',
-  borderRadius: 18,
+  borderRadius: 10,
   fontFamily: 'var(--font-dm-sans)',
-  fontSize: 16,
-  fontWeight: 700,
+  fontSize: 14,
+  fontWeight: 600,
   cursor: 'pointer',
 }
 
@@ -201,17 +216,17 @@ function areSkillsEqual(a: Skill[], b: Skill[]) {
   })
 }
 
-function focusStyle(e: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
-  e.target.style.borderColor = '#9ab4ff'
-  e.target.style.boxShadow = '0 0 0 4px rgba(47,102,243,0.1)'
+export function focusStyle(e: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  e.target.style.borderColor = brand
+  e.target.style.boxShadow = `0 0 0 3px ${brand}1f`
 }
 
-function blurStyle(e: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
-  e.target.style.borderColor = border
+export function blurStyle(e: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  e.target.style.borderColor = borderStrong
   e.target.style.boxShadow = 'none'
 }
 
-function MiniPreview({ template, cvData }: { template: string; cvData: CVData }) {
+export function MiniPreview({ template, cvData }: { template: string; cvData: CVData }) {
   return (
     <div
       style={{
@@ -250,9 +265,57 @@ function MiniCVLayout({ template, cvData }: { template: string; cvData: CVData }
   const experience = cvData?.experience?.slice(0, 2) || []
   const initial = name.charAt(0)
 
+  /* Plain-paper set. These share one skeleton — the differences that matter at
+     120px wide are the header shape and where the rules sit. */
+  const paper = (opts: {
+    spine?: string
+    accent: string
+    header: 'split' | 'stack' | 'plain'
+  }) => (
+    <div style={{ display: 'flex', height: '100%', fontFamily: 'sans-serif', background: '#fff' }}>
+      {opts.spine && <div style={{ width: 26, background: opts.spine, flexShrink: 0 }} />}
+      <div style={{ flex: 1, padding: 44, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, marginBottom: 30 }}>
+          {opts.header === 'split' && (
+            <div style={{ width: 74, height: 74, borderRadius: '50%', background: '#e5e7eb', flexShrink: 0 }} />
+          )}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: opts.header === 'plain' ? 30 : 34, fontWeight: 800, color: '#111', lineHeight: 1.05 }}>{name}</div>
+            <div style={{ fontSize: 15, color: '#6b7280', marginTop: 6 }}>{role}</div>
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: opts.header === 'plain' ? '1fr' : '1fr 1.6fr', gap: 26 }}>
+          {opts.header !== 'plain' && (
+            <div>
+              <div style={{ width: 40, height: 4, background: opts.accent, marginBottom: 10 }} />
+              {[70, 55, 62, 48].map((w, i) => (
+                <div key={i} style={{ height: 8, width: `${w}%`, background: '#e5e7eb', borderRadius: 2, marginBottom: 8 }} />
+              ))}
+            </div>
+          )}
+          <div>
+            {[0, 1, 2].map((b) => (
+              <div key={b} style={{ marginBottom: 20 }}>
+                <div style={{ width: 40, height: 4, background: opts.accent, marginBottom: 10 }} />
+                {[96, 88, 72].map((w, i) => (
+                  <div key={i} style={{ height: 8, width: `${w}%`, background: '#eceff3', borderRadius: 2, marginBottom: 7 }} />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  if (template === 'profile-split') return paper({ accent: '#2563eb', header: 'split' })
+  if (template === 'swiss-grid') return paper({ accent: '#111111', header: 'stack' })
+  if (template === 'ats-compact') return paper({ accent: '#9ca3af', header: 'plain' })
+  if (template === 'accent-rule') return paper({ accent: '#0f766e', header: 'split', spine: '#0f766e' })
+
   if (template === 'dark-pro') return (
     <div style={{ display: 'flex', height: '100%', fontFamily: 'sans-serif' }}>
-      <div style={{ width: 240, background: '#eceae4', padding: '32px 20px', flexShrink: 0 }}>
+      <div style={{ width: 240, background: '#14161f', padding: '32px 20px', flexShrink: 0 }}>
         <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#e2701f', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: '#fff' }}>{initial}</div>
         <div style={{ color: '#fff', fontSize: 22, fontWeight: 700, textAlign: 'center', marginBottom: 4 }}>{name}</div>
         <div style={{ color: '#e2701f', fontSize: 11, textAlign: 'center', marginBottom: 24 }}>{role}</div>
@@ -440,7 +503,10 @@ function MiniCVLayout({ template, cvData }: { template: string; cvData: CVData }
     </div>
   )
 
-  if (template === 'creative-panel') return (
+  /* Fallback so an unrecognised id never renders an empty tile. */
+  if (template !== 'creative-panel') return paper({ accent: '#2563eb', header: 'split' })
+
+  return (
     <div style={{ display: 'flex', height: '100%', fontFamily: 'sans-serif' }}>
       <div style={{ width: 250, background: '#1a1f2e', color: '#e0e6f0', padding: '40px 24px', flexShrink: 0 }}>
         <div style={{ width: 90, height: 90, borderRadius: '50%', background: '#2a3248', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: '#4a90d9', border: '3px solid #4a90d9' }}>{initial}</div>
@@ -479,132 +545,7 @@ function MiniCVLayout({ template, cvData }: { template: string; cvData: CVData }
   )
 }
 
-function StepRail({
-  activeStep,
-  completedCount,
-  setActiveStep,
-  isMobile,
-}: {
-  activeStep: BuilderStepId
-  completedCount: number
-  setActiveStep: (step: BuilderStepId) => void
-  isMobile: boolean
-}) {
-  if (isMobile) {
-    return (
-      <div style={{ width: '100%', overflowX: 'auto', paddingBottom: 4 }}>
-        <div style={{ display: 'flex', gap: 10, minWidth: 'max-content' }}>
-          {steps.map((step, index) => {
-            const isActive = step.id === activeStep
-            const isComplete = index < completedCount
-
-            return (
-              <button
-                key={step.id}
-                onClick={() => setActiveStep(step.id)}
-                style={{
-                  minWidth: 116,
-                  borderRadius: 16,
-                  border: `1px solid ${isActive ? '#4c78ff' : isComplete ? '#314c90' : '#2a3040'}`,
-                  background: isActive ? 'rgba(47,102,243,0.18)' : isComplete ? 'rgba(47,102,243,0.1)' : '#0f1320',
-                  color: isActive ? '#fff' : isComplete ? '#bcd0ff' : '#7f8ba8',
-                  padding: '12px 14px',
-                  textAlign: 'left',
-                  flexShrink: 0,
-                  cursor: 'pointer',
-                }}
-              >
-                <div style={{ fontSize: 12, marginBottom: 4, opacity: 0.9 }}>Step {step.number}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-dm-sans)' }}>{step.shortTitle}</div>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div style={{ width: 220, flexShrink: 0 }}>
-      {steps.map((step, index) => {
-        const isActive = step.id === activeStep
-        const isComplete = index < completedCount
-
-        return (
-          <div key={step.id} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 14 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <button
-                onClick={() => setActiveStep(step.id)}
-                style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 14,
-                  border: `1px solid ${isActive ? '#4c78ff' : isComplete ? '#314c90' : '#2a3040'}`,
-                  background: isActive ? 'rgba(47,102,243,0.18)' : isComplete ? 'rgba(47,102,243,0.1)' : '#0f1320',
-                  color: isActive ? '#fff' : isComplete ? '#bcd0ff' : '#7f8ba8',
-                  fontSize: 18,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: isActive ? '0 10px 25px rgba(47,102,243,0.15)' : 'none',
-                }}
-              >
-                {step.number}
-              </button>
-              {index < steps.length - 1 && (
-                <div style={{ width: 2, flex: 1, minHeight: 24, background: '#252b3b', marginTop: 8 }} />
-              )}
-            </div>
-            <button
-              onClick={() => setActiveStep(step.id)}
-              style={{
-                flex: 1,
-                background: isActive ? 'rgba(22,21,15,0.06)' : 'transparent',
-                border: 'none',
-                borderRadius: 18,
-                padding: '14px 16px',
-                textAlign: 'left',
-                cursor: 'pointer',
-              }}
-            >
-              <div style={{ fontSize: 15, fontWeight: 600, color: isActive ? text : '#8a90a1', fontFamily: 'var(--font-dm-sans)' }}>
-                {step.title}
-              </div>
-            </button>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-function SectionCard({
-  title,
-  description,
-  children,
-  isMobile,
-}: {
-  title: string
-  description: string
-  children: ReactNode
-  isMobile: boolean
-}) {
-  return (
-    <div
-      style={{
-        background: surface,
-        border: `1px solid ${border}`,
-        borderRadius: isMobile ? 22 : 28,
-        padding: isMobile ? 18 : 28,
-        boxShadow: shadow,
-      }}
-    >
-      <h2 style={{ fontSize: isMobile ? 20 : 26, lineHeight: 1.15, color: text, margin: 0, fontFamily: 'var(--font-dm-sans)' }}>{title}</h2>
-      <p style={{ ...helperStyle, marginTop: 10, marginBottom: 24, maxWidth: 560 }}>{description}</p>
-      {children}
-    </div>
-  )
-}
-
+/** Numbered dot that becomes a tick once the step is behind you. */
 function ExperienceCard({
   item,
   index,
@@ -713,8 +654,9 @@ function ProjectCard({
   )
 }
 
-export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSelectedTemplate, saveState, savedAt, onReset }: Props) {
-  const isMobile = useIsMobile()
+export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSelectedTemplate, saveState, savedAt, onReset, compact = false }: Props) {
+  const viewportIsMobile = useIsMobile()
+  const isMobile = viewportIsMobile || compact
   const fileInputRef = useRef<HTMLInputElement>(null)
   const newSkillInputRef = useRef<HTMLInputElement>(null)
   const dragIndexRef = useRef<number | null>(null)
@@ -724,7 +666,12 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
   const [activeSkill, setActiveSkill] = useState<string | null>(null)
   const [newSkillName, setNewSkillName] = useState('')
   const [newSkillLevel, setNewSkillLevel] = useState(70)
-  const [activeStep, setActiveStep] = useState<BuilderStepId>('personal')
+  const [leftMode, setLeftMode] = useState<'create' | 'templates'>('create')
+  /* Accordion, not a wizard: several sections can be open at once, and the
+     document stays visible the whole time. */
+  const [openSections, setOpenSections] = useState<BuilderStepId[]>(['personal'])
+  const toggleOpen = (id: BuilderStepId) =>
+    setOpenSections((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
 
   useEffect(() => {
     const nextSkills = cvData.skills.map(withIncluded)
@@ -756,9 +703,23 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
     skills,
   }), [cvData, skills])
 
-  const activeStepIndex = steps.findIndex((step) => step.id === activeStep)
-  const progress = Math.round(((activeStepIndex + 1) / steps.length) * 100)
-  const currentStep = steps[activeStepIndex]
+  /* Measured from the content, not from which step you happen to be on.
+     The old formula was (stepIndex + 1) / steps.length, which reported 14%
+     on a fully filled CV simply because the first section was open — and it
+     stopped meaning anything at all once the wizard became an accordion. */
+  const progress = (() => {
+    const done = [
+      Boolean(cvData.personal.name),
+      Boolean(cvData.personal.role),
+      Boolean(cvData.personal.email),
+      Boolean(cvData.personal.summary),
+      cvData.experience.length > 0,
+      cvData.projects.length > 0,
+      cvData.education.length > 0,
+      skills.filter((skill) => skill.included).length >= 3,
+    ]
+    return Math.round((done.filter(Boolean).length / done.length) * 100)
+  })()
 
   const updatePersonal = (field: keyof CVData['personal'], value: string) =>
     setCVData((prev) => ({ ...prev, personal: { ...prev.personal, [field]: value } }))
@@ -903,13 +864,7 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
     newSkillInputRef.current?.focus()
   }
 
-  const goNext = () => {
-    if (activeStepIndex < steps.length - 1) setActiveStep(steps[activeStepIndex + 1].id)
-  }
 
-  const goPrev = () => {
-    if (activeStepIndex > 0) setActiveStep(steps[activeStepIndex - 1].id)
-  }
 
   const completionHint =
     !cvData.personal.name ? 'Add your name' :
@@ -924,57 +879,121 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
     <div
       style={{
         minHeight: '100%',
-        padding: isMobile ? '18px 14px 110px' : '28px 24px 36px',
-        background: 'radial-gradient(circle at top left, rgba(226,112,31,0.18) 0%, rgba(226,112,31,0.04) 28%, #0b0b13 58%, #eceae4 100%)',
+        padding: isMobile ? '14px 12px 110px' : '16px 20px 32px',
+        background: canvas,
         fontFamily: 'var(--font-dm-sans)',
       }}
     >
-      <div style={{ marginBottom: 26 }}>
-        <div style={{ fontSize: 14, color: textMuted, marginBottom: 8 }}>Your resume</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, justifyContent: 'space-between', flexWrap: 'wrap' }}>
-          <h1 style={{ margin: 0, fontSize: isMobile ? 32 : 46, lineHeight: 1, color: text }}>Build your CV</h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginLeft: 'auto' }}>
-            <div style={{ padding: '10px 14px', borderRadius: 999, background: 'rgba(22,21,15,0.04)', border: `1px solid ${border}` }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: saveState === 'saving' ? '#facc15' : '#7ee787' }}>
-                {saveState === 'saving' ? 'Saving...' : savedAt}
-              </div>
-            </div>
-            <button
-              onClick={onReset}
-              style={{ ...buttonBase, padding: '10px 16px', background: '#151926', color: '#ffb4b4', border: `1px solid ${border}` }}
-            >
-              Reset
-            </button>
-          </div>
-          <div
-            style={{
-              minWidth: isMobile ? '100%' : 230,
-              width: isMobile ? '100%' : undefined,
-              background: 'rgba(16,19,29,0.9)',
-              border: `1px solid ${border}`,
-              borderRadius: 999,
-              padding: '10px 14px',
-              boxShadow: '0 12px 30px rgba(0, 0, 0, 0.22)',
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: textMuted }}>Progress</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: text }}>{progress}%</span>
-            </div>
-            <div style={{ height: 8, borderRadius: 999, background: '#e7ebf4' }}>
-              <div style={{ width: `${progress}%`, height: '100%', borderRadius: 999, background: 'linear-gradient(90deg, #e2701f 0%, #6f9eff 100%)' }} />
-            </div>
-            <div style={{ ...helperStyle, marginTop: 6 }}>{completionHint}</div>
-          </div>
+      {/* Toolbar: state on the left, actions on the right, one line on desktop */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          flexWrap: 'wrap',
+          background: surface,
+          border: `1px solid ${border}`,
+          borderRadius: 14,
+          padding: isMobile ? 12 : '12px 16px',
+          marginBottom: isMobile ? 14 : 16,
+          boxShadow: shadow,
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: text, lineHeight: 1.2 }}>Build your CV</div>
+          <div style={{ fontSize: 12, color: textMuted, marginTop: 2 }}>{completionHint}</div>
         </div>
+
+        {/* Save state */}
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 12,
+            fontWeight: 500,
+            color: saveState === 'saving' ? '#b45309' : positive,
+            background: saveState === 'saving' ? '#fffbeb' : '#f0fdf4',
+            border: `1px solid ${saveState === 'saving' ? '#fde68a' : '#bbf7d0'}`,
+            borderRadius: 999,
+            padding: '5px 11px',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <span
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: saveState === 'saving' ? '#d97706' : positive,
+              flexShrink: 0,
+            }}
+          />
+          {saveState === 'saving' ? 'Saving…' : savedAt}
+        </div>
+
+        {/* Progress — the number and the bar, not a card */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            marginLeft: isMobile ? 0 : 'auto',
+            flex: isMobile ? '1 1 100%' : '0 1 240px',
+            minWidth: 150,
+          }}
+        >
+          <div style={{ flex: 1, height: 6, borderRadius: 999, background: surfaceMuted, overflow: 'hidden' }}>
+            <div
+              style={{
+                width: `${progress}%`,
+                height: '100%',
+                borderRadius: 999,
+                background: brand,
+                transition: 'width 0.3s',
+              }}
+            />
+          </div>
+          <span style={{ fontSize: 13, fontWeight: 600, color: text, minWidth: 34, textAlign: 'right' }}>{progress}%</span>
+        </div>
+
+        <button
+          onClick={onReset}
+          style={{
+            ...buttonBase,
+            padding: '9px 14px',
+            background: surface,
+            color: danger,
+            border: `1px solid ${border}`,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#fef2f2'
+            e.currentTarget.style.borderColor = '#fecaca'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = surface
+            e.currentTarget.style.borderColor = border
+          }}
+        >
+          Reset
+        </button>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 16 : 28, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-        <StepRail activeStep={activeStep} completedCount={activeStepIndex} setActiveStep={setActiveStep} isMobile={isMobile} />
+      <ModeToggle mode={leftMode} setMode={setLeftMode} />
 
-        <div style={{ flex: '1 1 520px', minWidth: 0, width: isMobile ? '100%' : undefined }}>
-          <SectionCard title={currentStep.title} description={currentStep.description} isMobile={isMobile}>
-            {activeStep === 'personal' && (
+      {leftMode === 'templates' ? (
+        <TemplateList cvData={memoizedCvData} selected={selectedTemplate} onSelect={setSelectedTemplate} />
+      ) : (
+        <div style={{ display: 'grid', gap: 10 }}>
+          {steps.map((step) => (
+            <Accordion
+              key={step.id}
+              title={step.title}
+              description={step.description}
+              open={openSections.includes(step.id)}
+              onToggle={() => toggleOpen(step.id)}
+            >
+            {step.id === 'personal' && (
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 14 }}>
                   <div>
@@ -1022,11 +1041,11 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
                   />
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: 16, padding: 18, borderRadius: 22, background: surfaceMuted }}>
+                <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: 16, padding: 16, borderRadius: 12, background: surfaceMuted, border: `1px solid ${border}` }}>
                   {cvData.photo ? (
-                    <img src={cvData.photo} alt="CV photo" style={{ width: 76, height: 76, borderRadius: 24, objectFit: 'cover', border: '3px solid #c2d2ff' }} />
+                    <img src={cvData.photo} alt="CV photo" style={{ width: 72, height: 72, borderRadius: 12, objectFit: 'cover', border: `1px solid ${borderStrong}` }} />
                   ) : (
-                    <div style={{ width: 76, height: 76, borderRadius: 24, background: '#e4e9f7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7d89a6', fontSize: 32 }}>
+                    <div style={{ width: 72, height: 72, borderRadius: 12, background: surface, border: `1px solid ${borderStrong}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: textMuted, fontSize: 30 }}>
                       +
                     </div>
                   )}
@@ -1034,7 +1053,9 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
                     <div style={sectionLabelStyle}>Photo</div>
                     <div style={{ ...helperStyle, marginBottom: 10 }}>A clean headshot helps your CV feel more complete, but it is optional.</div>
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                      <button onClick={() => fileInputRef.current?.click()} style={{ ...buttonBase, background: 'rgba(47,102,243,0.18)', color: '#cfdcff', padding: '12px 18px' }}>
+                      {/* Was pale blue text on a pale blue fill — the label
+                          simply was not there once the panel went light. */}
+                      <button onClick={() => fileInputRef.current?.click()} style={{ ...buttonBase, background: brand, color: '#fff', padding: '9px 16px' }}>
                         {cvData.photo ? 'Change photo' : 'Add photo'}
                       </button>
                       {cvData.photo && (
@@ -1049,7 +1070,7 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
               </>
             )}
 
-            {activeStep === 'contact' && (
+            {step.id === 'contact' && (
               <div style={{ display: 'grid', gap: 14 }}>
                 <div>
                   <div style={sectionLabelStyle}>Email</div>
@@ -1078,7 +1099,7 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
               </div>
             )}
 
-            {activeStep === 'experience' && (
+            {step.id === 'experience' && (
               <>
                 <div style={{ display: 'grid', gap: 16 }}>
                   {cvData.experience.map((item, index) => (
@@ -1098,7 +1119,7 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
               </>
             )}
 
-            {activeStep === 'projects' && (
+            {step.id === 'projects' && (
               <>
                 <div style={{ display: 'grid', gap: 16 }}>
                   {cvData.projects.map((item, index) => (
@@ -1117,7 +1138,7 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
               </>
             )}
 
-            {activeStep === 'skills' && (
+            {step.id === 'skills' && (
               <>
                 <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
                   <input
@@ -1214,7 +1235,7 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
                             minWidth: 180,
                             background: '#1f2430',
                             color: '#fff',
-                            borderRadius: 18,
+                            borderRadius: 10,
                             padding: 14,
                             boxShadow: '0 18px 40px rgba(15,23,42,0.25)',
                             zIndex: 20,
@@ -1246,7 +1267,7 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
               </>
             )}
 
-            {activeStep === 'education' && (
+            {step.id === 'education' && (
               <>
                 <div style={{ display: 'grid', gap: 16 }}>
                   {cvData.education.map((item, index) => (
@@ -1266,7 +1287,7 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
               </>
             )}
 
-            {activeStep === 'summary' && (
+            {step.id === 'summary' && (
               <>
                 <div style={{ marginBottom: 14 }}>
                   <div style={sectionLabelStyle}>Professional summary</div>
@@ -1280,208 +1301,185 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
                     onBlur={blurStyle}
                   />
                 </div>
-                <div style={{ padding: 16, borderRadius: 20, background: '#141a27', color: textMuted, fontSize: 13, lineHeight: 1.7 }}>
+                <div style={{ padding: 16, borderRadius: 20, background: surfaceMuted, border: `1px solid ${border}`, color: textMuted, fontSize: 13, lineHeight: 1.7 }}>
                   Keep it short and specific. Mention your years of experience, core tools, and the value you bring.
                 </div>
               </>
             )}
 
-            {activeStep === 'finish' && (
-              <>
-                <div style={{ marginBottom: 24 }}>
-                  <div style={{ ...sectionLabelStyle, marginBottom: 12 }}>Choose template</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
-                    {templates.map((template) => (
-                      <button
-                        key={template.id}
-                        onClick={() => setSelectedTemplate(template.id)}
-                        style={{
-                          border: `1.5px solid ${selectedTemplate === template.id ? brand : border}`,
-                          background: selectedTemplate === template.id ? '#edf3ff' : '#fff',
-                          borderRadius: 22,
-                          padding: 12,
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                        }}
-                      >
-                        <MiniPreview template={template.id} cvData={memoizedCvData} />
-                        <div style={{ marginTop: 10, fontSize: 14, fontWeight: 700, color: text }}>{template.label}</div>
-                        <div style={{ marginTop: 4, fontSize: 12, color: textMuted, lineHeight: 1.5 }}>{template.desc}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <div style={{ ...sectionLabelStyle, marginBottom: 12 }}>Visible sections</div>
-                  <div style={{ display: 'grid', gap: 12 }}>
-                    {(Object.keys(cvData.showSections) as Array<keyof CVData['showSections']>).map((key) => (
-                      <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderRadius: 18, background: surfaceMuted, border: `1px solid ${border}` }}>
-                        <div>
-                          <div style={{ fontSize: 15, fontWeight: 600, color: text, textTransform: 'capitalize' }}>{key}</div>
-                          <div style={{ fontSize: 12, color: textMuted }}>Show this block in the CV preview and PDF.</div>
-                        </div>
-                        <button
-                          onClick={() => toggleSection(key)}
-                          style={{
-                            width: 54,
-                            height: 30,
-                            borderRadius: 999,
-                            border: 'none',
-                            background: cvData.showSections[key] ? brand : '#d7dce8',
-                            padding: 3,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: 24,
-                              height: 24,
-                              borderRadius: '50%',
-                              background: '#fff',
-                              transform: `translateX(${cvData.showSections[key] ? 24 : 0}px)`,
-                              transition: 'transform 0.2s ease',
-                            }}
-                          />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ marginTop: 24 }}>
-                  <div style={{ ...sectionLabelStyle, marginBottom: 12 }}>Section order</div>
-                  <div style={{ display: 'grid', gap: 10 }}>
-                    {cvData.sectionOrder.map((sectionId, index) => {
-                      const customSection = cvData.customSections.find((item) => item.id === sectionId)
-                      const label = customSection ? (customSection.title || `Custom section ${index + 1}`) : sectionId.charAt(0).toUpperCase() + sectionId.slice(1)
-
-                      return (
-                        <div key={sectionId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 14px', borderRadius: 16, background: surfaceMuted, border: `1px solid ${border}` }}>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: text }}>{label}</div>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <button onClick={() => moveSectionOrder(sectionId, -1)} style={{ ...buttonBase, padding: '8px 12px', background: '#ffffff', color: text, border: `1px solid ${border}` }}>Up</button>
-                            <button onClick={() => moveSectionOrder(sectionId, 1)} style={{ ...buttonBase, padding: '8px 12px', background: '#ffffff', color: text, border: `1px solid ${border}` }}>Down</button>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div style={{ marginTop: 24 }}>
-                  <div style={{ ...sectionLabelStyle, marginBottom: 12 }}>Add section</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
-                    {SECTION_PRESETS.map((preset) => (
-                      <button
-                        key={preset.title}
-                        onClick={() => addCustomSection(preset)}
-                        style={{ ...buttonBase, padding: '10px 14px', background: '#151926', color: '#cfdcff', border: `1px solid ${border}`, fontSize: 13 }}
-                      >
-                        {preset.title}
-                      </button>
-                    ))}
-                  </div>
-                  <div style={{ display: 'grid', gap: 12 }}>
-                    {cvData.customSections.map((section, index) => (
-                      <div key={section.id} style={{ padding: 16, borderRadius: 18, background: surfaceMuted, border: `1px solid ${border}` }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: text }}>Custom section {index + 1}</div>
-                          <button
-                            onClick={() => removeCustomSection(section.id)}
-                            style={{ background: 'transparent', border: 'none', color: '#ff7d7d', fontWeight: 700, cursor: 'pointer' }}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                        <div style={{ display: 'grid', gap: 12 }}>
-                          <input
-                            type="text"
-                            value={section.title}
-                            onChange={(e) => setCVData((prev) => ({
-                              ...prev,
-                              customSections: prev.customSections.map((item) => item.id === section.id ? { ...item, title: e.target.value } : item),
-                            }))}
-                            placeholder="Section title"
-                            style={inputStyle}
-                            onFocus={focusStyle}
-                            onBlur={blurStyle}
-                          />
-                          <textarea
-                            value={section.content}
-                            onChange={(e) => setCVData((prev) => ({
-                              ...prev,
-                              customSections: prev.customSections.map((item) => item.id === section.id ? { ...item, content: e.target.value } : item),
-                            }))}
-                            placeholder={'Add each point on a new line\nCertification\nAchievement\nVolunteer work'}
-                            rows={5}
-                            style={{ ...inputStyle, resize: 'vertical' }}
-                            onFocus={focusStyle}
-                            onBlur={blurStyle}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => addCustomSection()}
-                    style={{ ...buttonBase, marginTop: 14, background: 'rgba(47,102,243,0.18)', color: '#cfdcff', padding: '12px 18px' }}
-                  >
-                    Add section
-                  </button>
-                </div>
-              </>
-            )}
-
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                gap: 12,
-                marginTop: 28,
-                flexWrap: 'wrap',
-                position: isMobile ? 'fixed' : 'static',
-                left: isMobile ? 0 : undefined,
-                right: isMobile ? 0 : undefined,
-                bottom: isMobile ? 0 : undefined,
-                padding: isMobile ? '14px' : 0,
-                background: isMobile ? 'linear-gradient(180deg, rgba(8,8,16,0) 0%, rgba(8,8,16,0.94) 24%, rgba(8,8,16,1) 100%)' : 'transparent',
-                zIndex: isMobile ? 20 : 'auto',
-              }}
-            >
-              <button
-                onClick={goPrev}
-                disabled={activeStepIndex === 0}
-                style={{
-                  ...buttonBase,
-                  background: '#ffffff',
-                  color: activeStepIndex === 0 ? '#b4bac9' : text,
-                  border: `1px solid ${border}`,
-                  padding: '14px 20px',
-                  flex: isMobile ? 1 : undefined,
-                  cursor: activeStepIndex === 0 ? 'not-allowed' : 'pointer',
-                }}
-              >
-                Back
-              </button>
-              <button
-                onClick={goNext}
-                disabled={activeStepIndex === steps.length - 1}
-                style={{
-                  ...buttonBase,
-                  background: activeStepIndex === steps.length - 1 ? '#d5ddec' : brand,
-                  color: '#fff',
-                  padding: '14px 26px',
-                  flex: isMobile ? 1.25 : undefined,
-                  cursor: activeStepIndex === steps.length - 1 ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {activeStepIndex === steps.length - 2 ? 'Review finish' : activeStepIndex === steps.length - 1 ? 'Ready' : 'Next'}
-              </button>
-            </div>
-          </SectionCard>
+            </Accordion>
+          ))}
         </div>
-      </div>
+      )}
+    </div>
+  )
+}
+
+/* ------------------------------------------------------- left-panel parts */
+
+/** `Create | Templates`, sitting above the section list as in the reference. */
+function ModeToggle({
+  mode,
+  setMode,
+}: {
+  mode: 'create' | 'templates'
+  setMode: (m: 'create' | 'templates') => void
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 3,
+        background: surfaceMuted,
+        border: `1px solid ${border}`,
+        borderRadius: 10,
+        padding: 3,
+        marginBottom: 12,
+      }}
+    >
+      {(['create', 'templates'] as const).map((m) => {
+        const isActive = mode === m
+        return (
+          <button
+            key={m}
+            onClick={() => setMode(m)}
+            style={{
+              ...buttonBase,
+              padding: '8px 12px',
+              fontSize: 13,
+              textTransform: 'capitalize',
+              background: isActive ? surface : 'transparent',
+              color: isActive ? text : textMuted,
+              boxShadow: isActive ? '0 1px 3px rgba(15,23,42,0.10)' : 'none',
+            }}
+          >
+            {m}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+/**
+ * One collapsible section. Closed shows just the title and a `+`; open swaps
+ * to `−` and reveals the fields. Any number can be open at once — the old
+ * wizard forced you through seven steps to change one line.
+ */
+function Accordion({
+  title,
+  description,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string
+  description: string
+  open: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  return (
+    <section
+      style={{
+        background: surface,
+        border: `1px solid ${open ? borderStrong : border}`,
+        borderRadius: 12,
+        overflow: 'hidden',
+        boxShadow: open ? shadow : 'none',
+        transition: 'border-color 0.15s',
+      }}
+    >
+      <button
+        onClick={onToggle}
+        aria-expanded={open}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          background: 'transparent',
+          border: 'none',
+          padding: '14px 16px',
+          textAlign: 'left',
+          cursor: 'pointer',
+        }}
+      >
+        <span style={{ minWidth: 0 }}>
+          <span style={{ display: 'block', fontSize: 14, fontWeight: 600, color: text, fontFamily: 'var(--font-dm-sans)' }}>
+            {title}
+          </span>
+          {open && <span style={{ ...helperStyle, display: 'block', marginTop: 3 }}>{description}</span>}
+        </span>
+
+        <span
+          aria-hidden
+          style={{
+            width: 22,
+            height: 22,
+            flexShrink: 0,
+            display: 'grid',
+            placeItems: 'center',
+            borderRadius: 6,
+            background: open ? brandSoft : surfaceMuted,
+            color: open ? brand : textMuted,
+          }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+            <line x1="5" y1="12" x2="19" y2="12" />
+            {!open && <line x1="12" y1="5" x2="12" y2="19" />}
+          </svg>
+        </span>
+      </button>
+
+      {open && <div style={{ padding: '0 16px 16px', borderTop: `1px solid ${border}`, paddingTop: 16 }}>{children}</div>}
+    </section>
+  )
+}
+
+/** Template picker, sized for the left column rather than a full-width page. */
+function TemplateList({
+  cvData,
+  selected,
+  onSelect,
+}: {
+  cvData: CVData
+  selected: CVTemplate
+  onSelect: (t: CVTemplate) => void
+}) {
+  return (
+    <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
+      {templates.map((template) => {
+        const isActive = selected === template.id
+        return (
+          <button
+            key={template.id}
+            onClick={() => onSelect(template.id)}
+            aria-pressed={isActive}
+            style={{
+              border: `1.5px solid ${isActive ? brand : border}`,
+              background: surface,
+              borderRadius: 12,
+              padding: 10,
+              cursor: 'pointer',
+              textAlign: 'left',
+              boxShadow: isActive ? `0 0 0 3px ${brand}1f` : 'none',
+              transition: 'border-color 0.15s, box-shadow 0.15s',
+            }}
+          >
+            <div style={{ display: 'grid', placeItems: 'center', background: surfaceMuted, borderRadius: 8, padding: 8 }}>
+              <MiniPreview template={template.id} cvData={cvData} />
+            </div>
+            <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, color: isActive ? brand : text }}>
+              {template.label}
+              {isActive && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, color: brand }}>· in use</span>}
+            </div>
+            <div style={{ marginTop: 2, fontSize: 11, color: textMuted, lineHeight: 1.45 }}>{template.desc}</div>
+          </button>
+        )
+      })}
     </div>
   )
 }

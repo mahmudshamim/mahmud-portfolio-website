@@ -7,9 +7,13 @@ import { MdEmail, MdPhone, MdLocationOn, MdLanguage, MdPerson, MdWork, MdSchool,
 type Props = {
   cvData: CVData
   selectedTemplate: CVTemplate
+  /* The toolbar owns the Download button, but the PDF logic and the DOM node
+     it captures both live here. Hand the trigger up rather than duplicating
+     html2pdf wiring in two places. */
+  registerDownload?: (fn: () => void, busy: boolean) => void
 }
 
-export default function CVPreview({ cvData, selectedTemplate }: Props) {
+export default function CVPreview({ cvData, selectedTemplate, registerDownload }: Props) {
   const [isGenerating, setIsGenerating] = useState(false)
   const previewFrameRef = useRef<HTMLDivElement>(null)
   const [previewScale, setPreviewScale] = useState(1)
@@ -68,28 +72,44 @@ export default function CVPreview({ cvData, selectedTemplate }: Props) {
   const { personal, skills, projects, experience, education, customSections, sectionOrder, showSections, photo } = cvData
   const activeSkills = skills.filter((s: any) => s.included !== false)
 
+  /* One bundle instead of nine repeated attributes per branch. */
+  useEffect(() => {
+    registerDownload?.(handleDownload, isGenerating)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isGenerating, cvData, selectedTemplate])
+
+  const ds = cvData.docStyle
+  const typefaces = {
+    sans: 'Helvetica, Arial, sans-serif',
+    serif: 'Georgia, "Times New Roman", serif',
+    mono: '"SF Mono", Menlo, Consolas, monospace',
+  } as const
+  const docVars = {
+    '--cv-accent': ds.accent,
+    '--cv-font': typefaces[ds.typeface],
+    '--cv-size': `${11.5 * ds.scale}px`,
+    '--cv-leading': String(ds.lineHeight),
+    '--cv-photo-radius': ds.photoShape === 'circle' ? '50%' : ds.photoShape === 'rounded' ? '10px' : '0px',
+  } as React.CSSProperties
+
+  const templateProps: TemplateProps = {
+    personal,
+    skills: activeSkills,
+    projects,
+    experience,
+    education,
+    customSections,
+    sectionOrder,
+    showSections,
+    /* `hidden` has to drop the element, not just square its corners. */
+    photo: ds.photoShape === 'hidden' ? '' : photo,
+  }
+
   return (
     <div>
-      {/* Download button */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
-        <button
-          onClick={handleDownload}
-          disabled={isGenerating}
-          style={{
-            fontFamily: 'var(--font-dm-sans)',
-            fontSize: 14,
-            fontWeight: 700,
-            color: isGenerating ? 'rgba(226,226,240,0.4)' : '#050508',
-            background: isGenerating ? 'rgba(255,255,255,0.1)' : '#4f8ef7',
-            border: 'none',
-            borderRadius: 8,
-            padding: '10px 24px',
-            transition: 'all 0.2s',
-          }}
-        >
-          {isGenerating ? 'Generating PDF...' : 'Download PDF'}
-        </button>
-      </div>
+      {/* No download button here: the toolbar owns that action now, and two
+          buttons doing the same thing on one screen is one too many.
+          `handleDownload` is published upward via `registerDownload`. */}
 
       {/* CV Preview */}
       <div
@@ -109,7 +129,19 @@ export default function CVPreview({ cvData, selectedTemplate }: Props) {
               transformOrigin: 'top left',
             }}
           >
-            <div id="cv-preview-content" style={{ width: A4_W }}>
+            <div id="cv-preview-content" style={{ width: A4_W, ...docVars }}>
+              {selectedTemplate === 'profile-split' && (
+                <ProfileSplitTemplate {...templateProps} />
+              )}
+              {selectedTemplate === 'swiss-grid' && (
+                <SwissGridTemplate {...templateProps} />
+              )}
+              {selectedTemplate === 'ats-compact' && (
+                <AtsCompactTemplate {...templateProps} />
+              )}
+              {selectedTemplate === 'accent-rule' && (
+                <AccentRuleTemplate {...templateProps} />
+              )}
               {selectedTemplate === 'dark-pro' && (
                 <DarkProTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
               )}
@@ -1303,6 +1335,388 @@ function PanelSection({ title, children }: { title: string; children: React.Reac
         <h2 style={{ fontSize: 13, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#1a1f2e', margin: 0 }}>{title}</h2>
       </div>
       {children}
+    </div>
+  )
+}
+
+/* ─── Plain-paper set ──────────────────────────────────────────────────────
+   Four templates that stay on white. The document is the thing a recruiter
+   prints and a parser reads, so these lean on type and rules rather than
+   coloured panels. `profile-split` is the default. */
+
+const RULE = 'var(--cv-accent)'
+
+/** Small caps heading with a short coloured rule under it. */
+function RuleHeading({ title, color = RULE }: { title: string; color?: string }) {
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.04em', color: '#111' }}>{title}</div>
+      <div style={{ width: 26, height: 2, background: color, marginTop: 5 }} />
+    </div>
+  )
+}
+
+function RuleSection({ title, color, children }: { title: string; color?: string; children: React.ReactNode }) {
+  return (
+    <section style={{ marginBottom: 24 }}>
+      <RuleHeading title={title} color={color} />
+      {children}
+    </section>
+  )
+}
+
+// ─── Profile Split ───────────────────────────────────────────────────────────
+function ProfileSplitTemplate({ personal, skills, projects, experience, education, customSections, showSections, photo }: TemplateProps) {
+  const [first, ...restName] = personal.name.split(' ')
+
+  return (
+    <div style={{ fontFamily: 'var(--cv-font)', fontSize: 'var(--cv-size)', lineHeight: 'var(--cv-leading)', color: '#222', padding: 44, background: '#fff' }}>
+      <header style={{ display: 'flex', alignItems: 'center', gap: 26, marginBottom: 34 }}>
+        {photo && (
+          <img
+            src={photo}
+            alt="Profile"
+            style={{ width: 92, height: 92, borderRadius: 'var(--cv-photo-radius)', objectFit: 'cover', flexShrink: 0 }}
+          />
+        )}
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{ fontSize: 38, fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.02em', margin: 0, color: '#111' }}>
+            {first}
+            {restName.length > 0 && (
+              <>
+                <br />
+                {restName.join(' ')}
+              </>
+            )}
+          </h1>
+          <p style={{ fontSize: 13, color: '#666', margin: '8px 0 0' }}>{personal.role}</p>
+        </div>
+      </header>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: 36, alignItems: 'start' }}>
+        {/* Left rail: dates and facts */}
+        <div>
+          {showSections.education && (
+            <RuleSection title="Education">
+              {education.map((e, i) => (
+                <div key={i} style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 10.5, color: '#888' }}>{e.date}</div>
+                  <div style={{ fontWeight: 700, marginTop: 2 }}>{e.degree}</div>
+                  <div style={{ color: '#666', marginTop: 1 }}>{e.school}</div>
+                </div>
+              ))}
+            </RuleSection>
+          )}
+
+          <RuleSection title="Contact">
+            <div style={{ display: 'grid', gap: 9 }}>
+              {[
+                ['Email', personal.email],
+                ['Phone', (personal as { phone?: string }).phone],
+                ['Location', personal.location],
+                ['Portfolio', personal.portfolio],
+              ]
+                .filter(([, v]) => Boolean(v))
+                .map(([label, value]) => (
+                  <div key={label as string}>
+                    <div style={{ fontSize: 10, color: '#999' }}>{label}</div>
+                    <div style={{ marginTop: 1, wordBreak: 'break-word' }}>{value}</div>
+                  </div>
+                ))}
+            </div>
+          </RuleSection>
+
+          {showSections.skills && (
+            <RuleSection title="Skills">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                {skills.map((s) => (
+                  <span key={s.name} style={{ fontSize: 10, border: '1px solid #ddd', borderRadius: 3, padding: '2px 7px' }}>
+                    {s.name}
+                  </span>
+                ))}
+              </div>
+            </RuleSection>
+          )}
+        </div>
+
+        {/* Right column: the narrative */}
+        <div>
+          {showSections.summary && (
+            <RuleSection title="Profile">
+              <p style={{ lineHeight: 1.75, color: '#444', margin: 0 }}>{personal.summary}</p>
+            </RuleSection>
+          )}
+
+          {showSections.experience && (
+            <RuleSection title="Experience">
+              {experience.map((e, i) => (
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '78px 1fr', gap: 14, marginBottom: 16 }}>
+                  <div style={{ fontSize: 10, color: '#999', lineHeight: 1.5, paddingTop: 2 }}>{e.date}</div>
+                  <div>
+                    <div style={{ fontWeight: 700 }}>{e.role}</div>
+                    <div style={{ color: '#777', marginTop: 1, marginBottom: 4 }}>{e.company}</div>
+                    <BulletText content={e.desc} />
+                  </div>
+                </div>
+              ))}
+            </RuleSection>
+          )}
+
+          {showSections.projects && (
+            <RuleSection title="Projects">
+              {projects.filter((p) => p.featured).map((p) => (
+                <div key={p.id} style={{ marginBottom: 12 }}>
+                  <div style={{ fontWeight: 700 }}>{p.name}</div>
+                  <div style={{ color: '#555', lineHeight: 1.6 }}>{p.shortDesc}</div>
+                  <div style={{ fontSize: 9.5, color: '#999', marginTop: 3 }}>{p.tech.join(' · ')}</div>
+                </div>
+              ))}
+            </RuleSection>
+          )}
+
+          {customSections.map((section) =>
+            section.title.trim() || section.content.trim() ? (
+              <RuleSection key={section.id} title={section.title || 'Additional'}>
+                <CustomSectionBody content={section.content} />
+              </RuleSection>
+            ) : null
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Swiss Grid ──────────────────────────────────────────────────────────────
+function SwissGridTemplate({ personal, skills, projects, experience, education, customSections, showSections }: TemplateProps) {
+  const Row = ({ label, children }: { label: string; children: React.ReactNode }) => (
+    <div style={{ display: 'grid', gridTemplateColumns: '104px 1fr', gap: 20, padding: '16px 0', borderTop: '1px solid #111' }}>
+      <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#111' }}>{label}</div>
+      <div>{children}</div>
+    </div>
+  )
+
+  return (
+    <div style={{ fontFamily: 'var(--cv-font)', fontSize: 'var(--cv-size)', lineHeight: 'var(--cv-leading)', color: '#111', padding: 48, background: '#fff' }}>
+      <h1 style={{ fontSize: 30, fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>{personal.name}</h1>
+      <p style={{ fontSize: 12, color: '#555', margin: '4px 0 22px' }}>
+        {personal.role} · {personal.location}
+      </p>
+
+      {showSections.summary && <Row label="Profile"><p style={{ margin: 0, lineHeight: 1.7, color: '#333' }}>{personal.summary}</p></Row>}
+
+      {showSections.experience && (
+        <Row label="Experience">
+          {experience.map((e, i) => (
+            <div key={i} style={{ marginBottom: i === experience.length - 1 ? 0 : 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                <span style={{ fontWeight: 700 }}>{e.role}</span>
+                <span style={{ fontSize: 10, color: '#888', whiteSpace: 'nowrap' }}>{e.date}</span>
+              </div>
+              <div style={{ color: '#666', margin: '1px 0 4px' }}>{e.company}</div>
+              <BulletText content={e.desc} />
+            </div>
+          ))}
+        </Row>
+      )}
+
+      {showSections.projects && (
+        <Row label="Projects">
+          {projects.filter((p) => p.featured).map((p) => (
+            <div key={p.id} style={{ marginBottom: 10 }}>
+              <span style={{ fontWeight: 700 }}>{p.name}</span>
+              <span style={{ color: '#555' }}> — {p.shortDesc}</span>
+              <div style={{ fontSize: 9.5, color: '#999', marginTop: 2 }}>{p.tech.join(' / ')}</div>
+            </div>
+          ))}
+        </Row>
+      )}
+
+      {showSections.skills && <Row label="Skills"><span style={{ lineHeight: 1.9 }}>{skills.map((s) => s.name).join(' · ')}</span></Row>}
+
+      {showSections.education && (
+        <Row label="Education">
+          {education.map((e, i) => (
+            <div key={i} style={{ marginBottom: 8 }}>
+              <div style={{ fontWeight: 700 }}>{e.degree}</div>
+              <div style={{ color: '#666' }}>{e.school} · {e.date}</div>
+            </div>
+          ))}
+        </Row>
+      )}
+
+      {customSections.map((section) =>
+        section.title.trim() || section.content.trim() ? (
+          <Row key={section.id} label={section.title || 'Additional'}>
+            <CustomSectionBody content={section.content} />
+          </Row>
+        ) : null
+      )}
+
+      <div style={{ borderTop: '1px solid #111', marginTop: 4, paddingTop: 10, fontSize: 9.5, color: '#888' }}>
+        {personal.email} · {personal.portfolio}
+      </div>
+    </div>
+  )
+}
+
+// ─── ATS Compact ─────────────────────────────────────────────────────────────
+function AtsCompactTemplate({ personal, skills, projects, experience, education, customSections, showSections }: TemplateProps) {
+  /* No columns, no graphics, no photo: a single linear flow is what résumé
+     parsers read most reliably. */
+  const H = ({ children }: { children: React.ReactNode }) => (
+    <h2 style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '18px 0 7px', borderBottom: '1px solid #999', paddingBottom: 3 }}>
+      {children}
+    </h2>
+  )
+
+  return (
+    <div style={{ fontFamily: 'var(--cv-font)', fontSize: 'var(--cv-size)', color: '#000', padding: 42, background: '#fff', lineHeight: 'var(--cv-leading)' }}>
+      <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{personal.name}</h1>
+      <p style={{ margin: '3px 0 2px', fontSize: 12 }}>{personal.role}</p>
+      <p style={{ margin: 0, fontSize: 10.5, color: '#333' }}>
+        {[personal.email, (personal as { phone?: string }).phone, personal.location, personal.portfolio].filter(Boolean).join(' | ')}
+      </p>
+
+      {showSections.summary && (<><H>Summary</H><p style={{ margin: 0 }}>{personal.summary}</p></>)}
+
+      {showSections.experience && (
+        <>
+          <H>Experience</H>
+          {experience.map((e, i) => (
+            <div key={i} style={{ marginBottom: 10 }}>
+              <div style={{ fontWeight: 700 }}>{e.role}, {e.company}</div>
+              <div style={{ fontSize: 10.5, color: '#444' }}>{e.date}</div>
+              <BulletText content={e.desc} />
+            </div>
+          ))}
+        </>
+      )}
+
+      {showSections.projects && (
+        <>
+          <H>Projects</H>
+          {projects.filter((p) => p.featured).map((p) => (
+            <div key={p.id} style={{ marginBottom: 8 }}>
+              <span style={{ fontWeight: 700 }}>{p.name}</span> — {p.shortDesc}
+              <div style={{ fontSize: 10.5, color: '#444' }}>Tech: {p.tech.join(', ')}</div>
+            </div>
+          ))}
+        </>
+      )}
+
+      {showSections.skills && (<><H>Skills</H><p style={{ margin: 0 }}>{skills.map((s) => s.name).join(', ')}</p></>)}
+
+      {showSections.education && (
+        <>
+          <H>Education</H>
+          {education.map((e, i) => (
+            <div key={i} style={{ marginBottom: 6 }}>
+              <span style={{ fontWeight: 700 }}>{e.degree}</span>, {e.school} ({e.date})
+            </div>
+          ))}
+        </>
+      )}
+
+      {customSections.map((section) =>
+        section.title.trim() || section.content.trim() ? (
+          <div key={section.id}>
+            <H>{section.title || 'Additional'}</H>
+            <CustomSectionBody content={section.content} />
+          </div>
+        ) : null
+      )}
+    </div>
+  )
+}
+
+// ─── Accent Rule ─────────────────────────────────────────────────────────────
+function AccentRuleTemplate({ personal, skills, projects, experience, education, customSections, showSections, photo }: TemplateProps) {
+  const accent = 'var(--cv-accent)'
+
+  return (
+    <div style={{ fontFamily: 'var(--cv-font)', fontSize: 'var(--cv-size)', lineHeight: 'var(--cv-leading)', color: '#1f2937', background: '#fff', display: 'flex' }}>
+      {/* The only ink that is not black: one spine down the page */}
+      <div style={{ width: 6, background: accent, flexShrink: 0 }} />
+
+      <div style={{ padding: '44px 44px 44px 34px', flex: 1, minWidth: 0 }}>
+        <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, marginBottom: 26 }}>
+          <div>
+            <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, letterSpacing: '-0.015em' }}>{personal.name}</h1>
+            <p style={{ margin: '5px 0 0', color: accent, fontWeight: 600, fontSize: 12.5 }}>{personal.role}</p>
+            <p style={{ margin: '7px 0 0', fontSize: 10.5, color: '#6b7280' }}>
+              {[personal.email, personal.location, personal.portfolio].filter(Boolean).join('  ·  ')}
+            </p>
+          </div>
+          {photo && <img src={photo} alt="Profile" style={{ width: 74, height: 74, borderRadius: 'var(--cv-photo-radius)', objectFit: 'cover', flexShrink: 0 }} />}
+        </header>
+
+        {showSections.summary && (
+          <RuleSection title="Profile" color={accent}>
+            <p style={{ margin: 0, lineHeight: 1.75, color: '#374151' }}>{personal.summary}</p>
+          </RuleSection>
+        )}
+
+        {showSections.experience && (
+          <RuleSection title="Experience" color={accent}>
+            {experience.map((e, i) => (
+              <div key={i} style={{ marginBottom: 15, paddingLeft: 12, borderLeft: `2px solid ${accent}22` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                  <span style={{ fontWeight: 700 }}>{e.role}</span>
+                  <span style={{ fontSize: 10, color: '#9ca3af', whiteSpace: 'nowrap' }}>{e.date}</span>
+                </div>
+                <div style={{ color: accent, fontSize: 11, margin: '1px 0 4px' }}>{e.company}</div>
+                <BulletText content={e.desc} />
+              </div>
+            ))}
+          </RuleSection>
+        )}
+
+        {showSections.projects && (
+          <RuleSection title="Projects" color={accent}>
+            {projects.filter((p) => p.featured).map((p) => (
+              <div key={p.id} style={{ marginBottom: 11 }}>
+                <div style={{ fontWeight: 700 }}>{p.name}</div>
+                <div style={{ color: '#4b5563', lineHeight: 1.6 }}>{p.shortDesc}</div>
+                <div style={{ fontSize: 9.5, color: '#9ca3af', marginTop: 2 }}>{p.tech.join(' · ')}</div>
+              </div>
+            ))}
+          </RuleSection>
+        )}
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 26 }}>
+          {showSections.skills && (
+            <RuleSection title="Skills" color={accent}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                {skills.map((s) => (
+                  <span key={s.name} style={{ fontSize: 10, background: `${accent}12`, color: accent, borderRadius: 3, padding: '2px 7px' }}>
+                    {s.name}
+                  </span>
+                ))}
+              </div>
+            </RuleSection>
+          )}
+          {showSections.education && (
+            <RuleSection title="Education" color={accent}>
+              {education.map((e, i) => (
+                <div key={i} style={{ marginBottom: 9 }}>
+                  <div style={{ fontWeight: 700 }}>{e.degree}</div>
+                  <div style={{ color: '#6b7280' }}>{e.school}</div>
+                  <div style={{ color: '#9ca3af', fontSize: 10 }}>{e.date}</div>
+                </div>
+              ))}
+            </RuleSection>
+          )}
+        </div>
+
+        {customSections.map((section) =>
+          section.title.trim() || section.content.trim() ? (
+            <RuleSection key={section.id} title={section.title || 'Additional'} color={accent}>
+              <CustomSectionBody content={section.content} />
+            </RuleSection>
+          ) : null
+        )}
+      </div>
     </div>
   )
 }
