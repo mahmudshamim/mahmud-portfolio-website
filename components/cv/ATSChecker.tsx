@@ -77,7 +77,7 @@ function buildCVText(cvData: any) {
 }
 
 function scoreColor(s: number) {
-  return s >= 80 ? '#2f8f5b' : s >= 60 ? '#b3730a' : '#c9356b'
+  return s >= 80 ? '#16a34a' : s >= 60 ? '#b45309' : '#dc2626'
 }
 function scoreLabel(s: number) {
   return s >= 80 ? 'Strong Match' : s >= 60 ? 'Good Match' : s >= 40 ? 'Partial Match' : 'Low Match'
@@ -96,7 +96,7 @@ function ScoreRing({ score }: { score: number }) {
   return (
     <div style={{ position: 'relative', width: 100, height: 100, flexShrink: 0 }}>
       <svg width="100" height="100" style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx="50" cy="50" r={R} fill="none" stroke="rgba(22,21,15,0.06)" strokeWidth="8" />
+        <circle cx="50" cy="50" r={R} fill="none" stroke="rgba(15,23,42,0.06)" strokeWidth="8" />
         <circle cx="50" cy="50" r={R} fill="none" stroke={color} strokeWidth="8"
           strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={offset}
           style={{ transition: 'stroke-dashoffset 1.2s ease' }}
@@ -203,7 +203,7 @@ export default function ATSChecker({ cvData }: { cvData: any }) {
   const stepIndex = step === 'input' ? 0 : step === 'analyzing' ? 1 : 2
 
   return (
-    <div style={{ padding: 28, fontFamily: 'var(--font-dm-sans)', color: '#16150f', minHeight: '100%' }}>
+    <div style={{ padding: 24, fontFamily: 'var(--font-dm-sans)', color: '#0f172a', minHeight: '100%', background: '#f4f6fa' }}>
 
       {/* Step indicator */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 28 }}>
@@ -213,23 +213,23 @@ export default function ATSChecker({ cvData }: { cvData: any }) {
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '7px 14px', borderRadius: 20, fontSize: 12,
               fontWeight: 600, transition: 'all .2s', whiteSpace: 'nowrap',
-              background: i < stepIndex ? 'rgba(47,143,91,0.15)' : i === stepIndex ? 'rgba(226,112,31,0.2)' : 'transparent',
-              border: i === stepIndex ? '1px solid rgba(226,112,31,0.4)' : '1px solid transparent',
-              color: i < stepIndex ? '#2f8f5b' : i === stepIndex ? '#e2701f' : 'rgba(22,21,15,0.25)',
+              background: i < stepIndex ? 'rgba(22,163,74,0.15)' : i === stepIndex ? 'rgba(37,99,235,0.2)' : 'transparent',
+              border: i === stepIndex ? '1px solid rgba(37,99,235,0.4)' : '1px solid transparent',
+              color: i < stepIndex ? '#16a34a' : i === stepIndex ? '#2563eb' : 'rgba(15,23,42,0.25)',
             }}>
               <div style={{
                 width: 20, height: 20, borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 10, fontWeight: 700, flexShrink: 0,
-                background: i < stepIndex ? '#2f8f5b' : i === stepIndex ? '#e2701f' : 'rgba(22,21,15,0.08)',
-                color: i <= stepIndex ? '#fff' : 'rgba(22,21,15,0.3)',
+                background: i < stepIndex ? '#16a34a' : i === stepIndex ? '#2563eb' : 'rgba(15,23,42,0.08)',
+                color: i <= stepIndex ? '#fff' : 'rgba(15,23,42,0.3)',
               }}>
                 {i < stepIndex ? '✓' : i + 1}
               </div>
               {s.label}
             </div>
             {i < steps.length - 1 && (
-              <div style={{ flex: 1, height: 1, background: i < stepIndex ? 'rgba(47,143,91,0.3)' : 'rgba(22,21,15,0.06)', margin: '0 4px', minWidth: 8 }} />
+              <div style={{ flex: 1, height: 1, background: i < stepIndex ? 'rgba(22,163,74,0.3)' : 'rgba(15,23,42,0.06)', margin: '0 4px', minWidth: 8 }} />
             )}
           </div>
         ))}
@@ -238,8 +238,8 @@ export default function ATSChecker({ cvData }: { cvData: any }) {
       {/* INPUT STATE */}
       {step === 'input' && (
         <div>
-          <div style={{ background: '#ffffff', border: '1px solid rgba(22,21,15,0.07)', borderRadius: 14, padding: 20, marginBottom: 14 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.08em', color: 'rgba(22,21,15,0.35)', marginBottom: 10 }}>
+          <div style={{ background: '#ffffff', border: '1px solid rgba(15,23,42,0.07)', borderRadius: 14, padding: 20, marginBottom: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.08em', color: 'rgba(15,23,42,0.35)', marginBottom: 10 }}>
               JOB DESCRIPTION
             </div>
             <textarea
@@ -250,18 +250,18 @@ export default function ATSChecker({ cvData }: { cvData: any }) {
 Copy the full description from the job posting and paste it here.`}
               style={{
                 width: '100%', height: 160,
-                background: 'rgba(22,21,15,0.04)',
-                border: '1px solid rgba(22,21,15,0.1)',
+                background: 'rgba(15,23,42,0.04)',
+                border: '1px solid rgba(15,23,42,0.1)',
                 borderRadius: 10, padding: 14,
-                color: '#16150f', fontSize: 13,
+                color: '#0f172a', fontSize: 13,
                 resize: 'vertical', outline: 'none',
                 fontFamily: 'var(--font-dm-sans)', lineHeight: 1.6,
                 boxSizing: 'border-box', transition: 'border-color .15s',
               }}
-              onFocus={e => (e.target.style.borderColor = '#e2701f')}
-              onBlur={e => (e.target.style.borderColor = 'rgba(22,21,15,0.1)')}
+              onFocus={e => (e.target.style.borderColor = '#2563eb')}
+              onBlur={e => (e.target.style.borderColor = 'rgba(15,23,42,0.1)')}
             />
-            <div style={{ fontSize: 11, marginTop: 8, color: canAnalyze ? 'rgba(47,143,91,0.7)' : 'rgba(22,21,15,0.25)' }}>
+            <div style={{ fontSize: 11, marginTop: 8, color: canAnalyze ? 'rgba(22,163,74,0.7)' : 'rgba(15,23,42,0.25)' }}>
               {wordCount} words
               {!canAnalyze && wordCount > 0 && ` — ${30 - wordCount} more words needed`}
               {canAnalyze && ' — Ready to analyze!'}
@@ -270,7 +270,7 @@ Copy the full description from the job posting and paste it here.`}
 
           {/* Example JDs */}
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.07em', color: 'rgba(22,21,15,0.25)', marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.07em', color: 'rgba(15,23,42,0.25)', marginBottom: 8 }}>
               Or try an example →
             </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -280,19 +280,19 @@ Copy the full description from the job posting and paste it here.`}
                   onClick={() => setJd(EXAMPLE_JDS[key as keyof typeof EXAMPLE_JDS])}
                   style={{
                     padding: '5px 14px', borderRadius: 20,
-                    border: '1px solid rgba(22,21,15,0.1)',
-                    background: 'transparent', color: 'rgba(22,21,15,0.45)',
+                    border: '1px solid rgba(15,23,42,0.1)',
+                    background: 'transparent', color: 'rgba(15,23,42,0.45)',
                     fontSize: 12, cursor: 'pointer', transition: 'all .15s',
                     fontFamily: 'var(--font-dm-sans)',
                   }}
                   onMouseEnter={e => {
-                    e.currentTarget.style.borderColor = 'rgba(226,112,31,0.5)'
-                    e.currentTarget.style.color = '#e2701f'
-                    e.currentTarget.style.background = 'rgba(226,112,31,0.08)'
+                    e.currentTarget.style.borderColor = 'rgba(37,99,235,0.5)'
+                    e.currentTarget.style.color = '#2563eb'
+                    e.currentTarget.style.background = 'rgba(37,99,235,0.08)'
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.borderColor = 'rgba(22,21,15,0.1)'
-                    e.currentTarget.style.color = 'rgba(22,21,15,0.45)'
+                    e.currentTarget.style.borderColor = 'rgba(15,23,42,0.1)'
+                    e.currentTarget.style.color = 'rgba(15,23,42,0.45)'
                     e.currentTarget.style.background = 'transparent'
                   }}
                 >
@@ -307,9 +307,9 @@ Copy the full description from the job posting and paste it here.`}
             disabled={!canAnalyze}
             style={{
               width: '100%', padding: 14,
-              background: canAnalyze ? '#e2701f' : 'rgba(22,21,15,0.06)',
+              background: canAnalyze ? '#2563eb' : 'rgba(15,23,42,0.06)',
               border: 'none', borderRadius: 10,
-              color: canAnalyze ? '#fff' : 'rgba(22,21,15,0.2)',
+              color: canAnalyze ? '#fff' : 'rgba(15,23,42,0.2)',
               fontSize: 14, fontWeight: 600,
               cursor: canAnalyze ? 'pointer' : 'not-allowed',
               transition: 'all .2s', letterSpacing: '.02em',
@@ -325,10 +325,10 @@ Copy the full description from the job posting and paste it here.`}
       {step === 'analyzing' && (
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
           <div style={{ fontSize: 32, marginBottom: 16 }}>⚡</div>
-          <div style={{ fontSize: 16, fontWeight: 600, color: '#e2701f', marginBottom: 8 }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#2563eb', marginBottom: 8 }}>
             Analyzing your CV...
           </div>
-          <div style={{ fontSize: 13, color: 'rgba(22,21,15,0.4)' }}>
+          <div style={{ fontSize: 13, color: 'rgba(15,23,42,0.4)' }}>
             Matching keywords and calculating your match score...
           </div>
         </div>
@@ -338,13 +338,13 @@ Copy the full description from the job posting and paste it here.`}
       {step === 'result' && result && (
         <div>
           {/* Score ring */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 24, background: '#ffffff', border: '1px solid rgba(22,21,15,0.07)', borderRadius: 14, padding: 20, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 24, background: '#ffffff', border: '1px solid rgba(15,23,42,0.07)', borderRadius: 14, padding: 20, marginBottom: 16 }}>
             <ScoreRing score={result.total} />
             <div>
               <div style={{ fontSize: 24, fontWeight: 700, color: scoreColor(result.total), marginBottom: 4 }}>
                 {scoreLabel(result.total)}
               </div>
-              <div style={{ fontSize: 13, color: 'rgba(22,21,15,0.45)', lineHeight: 1.6 }}>
+              <div style={{ fontSize: 13, color: 'rgba(15,23,42,0.45)', lineHeight: 1.6 }}>
                 {scoreSub(result.total)}
               </div>
             </div>
@@ -358,10 +358,10 @@ Copy the full description from the job posting and paste it here.`}
               { label: 'Experience',       pct: result.expPct },
               { label: 'Soft Skills',      pct: result.softPct },
             ].map(cat => (
-              <div key={cat.label} style={{ background: '#ffffff', border: '1px solid rgba(22,21,15,0.07)', borderRadius: 10, padding: 12 }}>
-                <div style={{ fontSize: 11, color: 'rgba(22,21,15,0.4)', marginBottom: 6 }}>{cat.label}</div>
+              <div key={cat.label} style={{ background: '#ffffff', border: '1px solid rgba(15,23,42,0.07)', borderRadius: 10, padding: 12 }}>
+                <div style={{ fontSize: 11, color: 'rgba(15,23,42,0.4)', marginBottom: 6 }}>{cat.label}</div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: scoreColor(cat.pct), marginBottom: 6 }}>{cat.pct}%</div>
-                <div style={{ height: 4, background: 'rgba(22,21,15,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: 4, background: 'rgba(15,23,42,0.06)', borderRadius: 2, overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${cat.pct}%`, background: scoreColor(cat.pct), borderRadius: 2, transition: 'width .8s ease' }} />
                 </div>
               </div>
@@ -370,11 +370,11 @@ Copy the full description from the job posting and paste it here.`}
 
           {/* Matched skills */}
           {result.matchedSkills.length > 0 && (
-            <div style={{ background: '#ffffff', border: '1px solid rgba(22,21,15,0.07)', borderRadius: 12, padding: 16, marginBottom: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.07em', color: '#2f8f5b', marginBottom: 10 }}>✓ MATCHED SKILLS</div>
+            <div style={{ background: '#ffffff', border: '1px solid rgba(15,23,42,0.07)', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.07em', color: '#16a34a', marginBottom: 10 }}>✓ MATCHED SKILLS</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                 {result.matchedSkills.map((s: string) => (
-                  <span key={s} style={{ padding: '3px 10px', borderRadius: 20, background: 'rgba(47,143,91,0.12)', border: '1px solid rgba(47,143,91,0.3)', color: '#2f8f5b', fontSize: 11 }}>✓ {s}</span>
+                  <span key={s} style={{ padding: '3px 10px', borderRadius: 20, background: 'rgba(22,163,74,0.12)', border: '1px solid rgba(22,163,74,0.3)', color: '#16a34a', fontSize: 11 }}>✓ {s}</span>
                 ))}
               </div>
             </div>
@@ -382,32 +382,32 @@ Copy the full description from the job posting and paste it here.`}
 
           {/* Missing skills */}
           {result.missingSkills.length > 0 && (
-            <div style={{ background: '#ffffff', border: '1px solid rgba(22,21,15,0.07)', borderRadius: 12, padding: 16, marginBottom: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.07em', color: '#c9356b', marginBottom: 10 }}>✗ SKILLS TO ADD</div>
+            <div style={{ background: '#ffffff', border: '1px solid rgba(15,23,42,0.07)', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.07em', color: '#dc2626', marginBottom: 10 }}>✗ SKILLS TO ADD</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                 {result.missingSkills.map((s: string) => (
-                  <span key={s} style={{ padding: '3px 10px', borderRadius: 20, background: 'rgba(255,45,120,0.1)', border: '1px solid rgba(255,45,120,0.25)', color: '#c9356b', fontSize: 11 }}>+ {s}</span>
+                  <span key={s} style={{ padding: '3px 10px', borderRadius: 20, background: 'rgba(255,45,120,0.1)', border: '1px solid rgba(255,45,120,0.25)', color: '#dc2626', fontSize: 11 }}>+ {s}</span>
                 ))}
               </div>
             </div>
           )}
 
           {/* Suggestions */}
-          <div style={{ background: '#ffffff', border: '1px solid rgba(22,21,15,0.07)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.07em', color: '#b3730a', marginBottom: 10 }}>→ SUGGESTIONS</div>
+          <div style={{ background: '#ffffff', border: '1px solid rgba(15,23,42,0.07)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '.07em', color: '#b45309', marginBottom: 10 }}>→ SUGGESTIONS</div>
             {result.suggestions.map((s: string, i: number) => (
               <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 8, background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 8, padding: '10px 12px' }}>
-                <span style={{ color: '#b3730a', flexShrink: 0 }}>→</span>
-                <span style={{ fontSize: 12, color: 'rgba(22,21,15,0.7)', lineHeight: 1.5 }}>{s}</span>
+                <span style={{ color: '#b45309', flexShrink: 0 }}>→</span>
+                <span style={{ fontSize: 12, color: 'rgba(15,23,42,0.7)', lineHeight: 1.5 }}>{s}</span>
               </div>
             ))}
           </div>
 
           <button
             onClick={handleReset}
-            style={{ width: '100%', padding: 12, background: 'transparent', border: '1px solid rgba(22,21,15,0.08)', borderRadius: 10, color: 'rgba(22,21,15,0.4)', fontSize: 13, cursor: 'pointer', transition: 'all .15s', fontFamily: 'var(--font-dm-sans)' }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(22,21,15,0.2)'; e.currentTarget.style.color = '#fff' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(22,21,15,0.08)'; e.currentTarget.style.color = 'rgba(22,21,15,0.4)' }}
+            style={{ width: '100%', padding: 12, background: 'transparent', border: '1px solid rgba(15,23,42,0.08)', borderRadius: 10, color: 'rgba(15,23,42,0.4)', fontSize: 13, cursor: 'pointer', transition: 'all .15s', fontFamily: 'var(--font-dm-sans)' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(15,23,42,0.2)'; e.currentTarget.style.color = '#fff' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(15,23,42,0.08)'; e.currentTarget.style.color = 'rgba(15,23,42,0.4)' }}
           >
             ← Check another Job Description
           </button>

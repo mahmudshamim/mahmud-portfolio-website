@@ -312,7 +312,7 @@ export default function CVPage() {
                 onClick={() => setMobilePanel(p)}
                 style={{
                   padding: '4px 10px', borderRadius: 6, border: 'none', fontSize: 11,
-                  background: mobilePanel === p ? 'rgba(226,112,31,0.25)' : 'transparent',
+                  background: mobilePanel === p ? 'rgba(37,99,235,0.25)' : 'transparent',
                   color: mobilePanel === p ? '#e2701f' : 'rgba(22,21,15,0.35)',
                   cursor: 'pointer', fontFamily: 'var(--font-dm-sans)', fontWeight: 500,
                   textTransform: 'capitalize',
@@ -344,7 +344,7 @@ export default function CVPage() {
             )
           ) : (
             mobilePanel === 'controls' ? (
-              <div style={{ height: '100%', overflowY: 'auto', background: '#ffffff' }}>
+              <div style={{ height: '100%', overflowY: 'auto', background: '#f4f6fa' }}>
                 <ATSChecker cvData={cvData} />
               </div>
             ) : (
@@ -422,7 +422,7 @@ export default function CVPage() {
             </>
           ) : (
             <>
-              <div style={{ width: 420, minWidth: 420, height: '100%', overflowY: 'auto', overflowX: 'hidden', borderRight: '1px solid rgba(22,21,15,0.08)', background: '#ffffff', flexShrink: 0 }}>
+              <div style={{ width: 440, minWidth: 440, height: '100%', overflowY: 'auto', overflowX: 'hidden', borderRight: '1px solid #e4e8f0', background: '#f4f6fa', flexShrink: 0 }}>
                 <ATSChecker cvData={cvData} />
               </div>
               <div style={{ flex: 1, height: '100%', overflowY: 'auto', background: '#eef1f6', padding: 24 }}>

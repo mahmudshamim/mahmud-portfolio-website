@@ -319,13 +319,13 @@ function MiniCVLayout({ template, cvData }: { template: string; cvData: CVData }
         <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#e2701f', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: '#fff' }}>{initial}</div>
         <div style={{ color: '#fff', fontSize: 22, fontWeight: 700, textAlign: 'center', marginBottom: 4 }}>{name}</div>
         <div style={{ color: '#e2701f', fontSize: 11, textAlign: 'center', marginBottom: 24 }}>{role}</div>
-        <div style={{ fontSize: 10, color: 'rgba(22,21,15,0.4)', letterSpacing: '0.08em', marginBottom: 10 }}>SKILLS</div>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.08em', marginBottom: 10 }}>SKILLS</div>
         {skills.map((s, i) => (
           <div key={i} style={{ marginBottom: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: 10, marginBottom: 3 }}>
               <span>{s.name}</span><span>{s.level}%</span>
             </div>
-            <div style={{ height: 3, background: 'rgba(22,21,15,0.1)', borderRadius: 2 }}>
+            <div style={{ height: 3, background: 'rgba(255,255,255,0.14)', borderRadius: 2 }}>
               <div style={{ height: '100%', width: `${s.level}%`, background: s.color || '#e2701f', borderRadius: 2 }} />
             </div>
           </div>
@@ -517,7 +517,7 @@ function MiniCVLayout({ template, cvData }: { template: string; cvData: CVData }
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#c0cce0', marginBottom: 3 }}>
               <span>{s.name}</span><span>{s.level}%</span>
             </div>
-            <div style={{ height: 3, background: 'rgba(22,21,15,0.1)', borderRadius: 2 }}>
+            <div style={{ height: 3, background: 'rgba(255,255,255,0.14)', borderRadius: 2 }}>
               <div style={{ height: '100%', width: `${s.level}%`, background: '#4a90d9', borderRadius: 2 }} />
             </div>
           </div>
