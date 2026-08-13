@@ -57,7 +57,16 @@ export default function Contact() {
   }
 
   return (
-    <section style={{ background: '#07070d', padding: 'clamp(60px, 10vw, 120px) clamp(16px, 4vw, 24px)' }}>
+    <section
+      style={{
+        /* The flight lands here: the grid stays visible at the top edge and the
+           ground solidifies under the form. */
+        background: 'transparent',
+        padding: 'clamp(120px, 16vw, 200px) clamp(16px, 4vw, 24px) clamp(60px, 10vw, 120px)',
+        position: 'relative',
+        zIndex: 1,
+      }}
+    >
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -70,7 +79,7 @@ export default function Contact() {
             style={{
               fontFamily: 'var(--font-dm-sans)',
               fontSize: 13,
-              color: '#4f8ef7',
+              color: '#e2701f',
               letterSpacing: '0.15em',
               marginBottom: 12,
             }}
@@ -83,7 +92,7 @@ export default function Contact() {
               fontFamily: 'var(--font-bebas)',
               fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
               lineHeight: 1,
-              color: headingScrambling ? '#4f8ef7' : '#e2e2f0',
+              color: headingScrambling ? '#e2701f' : '#16150f',
               letterSpacing: headingScrambling ? '0.04em' : '0.02em',
               transition: 'color 0.2s, letter-spacing 0.3s',
             }}
@@ -110,7 +119,7 @@ export default function Contact() {
               style={{
                 fontFamily: 'var(--font-dm-sans)',
                 fontSize: 15,
-                color: 'rgba(226,226,240,0.5)',
+                color: 'rgba(22,21,15,0.5)',
                 lineHeight: 1.8,
                 marginBottom: 40,
               }}
@@ -124,7 +133,7 @@ export default function Contact() {
                 style={{
                   fontFamily: 'var(--font-dm-sans)',
                   fontSize: 11,
-                  color: 'rgba(226,226,240,0.3)',
+                  color: 'rgba(22,21,15,0.3)',
                   letterSpacing: '0.15em',
                   marginBottom: 8,
                 }}
@@ -132,12 +141,12 @@ export default function Contact() {
                 EMAIL
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <MdEmail size={18} color="#4f8ef7" />
+                <MdEmail size={18} color="#e2701f" />
                 <span
                   style={{
                     fontFamily: 'var(--font-dm-sans)',
                     fontSize: 16,
-                    color: '#e2e2f0',
+                    color: '#16150f',
                   }}
                 >
                   {personal.email}
@@ -147,9 +156,9 @@ export default function Contact() {
                   style={{
                     fontSize: 11,
                     fontFamily: 'var(--font-dm-sans)',
-                    color: copied ? '#34d399' : '#4f8ef7',
+                    color: copied ? '#2f8f5b' : '#e2701f',
                     background: 'none',
-                    border: `1px solid ${copied ? '#34d399' : '#4f8ef7'}`,
+                    border: `1px solid ${copied ? '#2f8f5b' : '#e2701f'}`,
                     borderRadius: 4,
                     padding: '3px 10px',
                     transition: 'all 0.2s',
@@ -162,7 +171,7 @@ export default function Contact() {
                 style={{
                   fontFamily: 'var(--font-dm-sans)',
                   fontSize: 12,
-                  color: 'rgba(226,226,240,0.3)',
+                  color: 'rgba(22,21,15,0.3)',
                   marginTop: 6,
                 }}
               >
@@ -172,14 +181,14 @@ export default function Contact() {
 
             {/* Phone */}
             <div style={{ marginBottom: 32 }}>
-              <p style={{ fontFamily: 'var(--font-dm-sans)', fontSize: 11, color: 'rgba(226,226,240,0.3)', letterSpacing: '0.15em', marginBottom: 8 }}>
+              <p style={{ fontFamily: 'var(--font-dm-sans)', fontSize: 11, color: 'rgba(22,21,15,0.3)', letterSpacing: '0.15em', marginBottom: 8 }}>
                 PHONE
               </p>
               <a
                 href={`tel:${(personal as any).phone?.replace(/\s/g, '')}`}
-                style={{ fontFamily: 'var(--font-dm-sans)', fontSize: 16, color: '#e2e2f0', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}
+                style={{ fontFamily: 'var(--font-dm-sans)', fontSize: 16, color: '#16150f', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}
               >
-                <MdPhone size={18} color="#4f8ef7" />
+                <MdPhone size={18} color="#e2701f" />
                 {(personal as any).phone}
               </a>
             </div>
@@ -201,9 +210,9 @@ export default function Contact() {
                     style={{
                       fontFamily: 'var(--font-dm-sans)',
                       fontSize: 14,
-                      color: 'rgba(226,226,240,0.5)',
+                      color: 'rgba(22,21,15,0.5)',
                       textDecoration: 'none',
-                      border: '1px solid rgba(255,255,255,0.08)',
+                      border: '1px solid rgba(22,21,15,0.08)',
                       borderRadius: 6,
                       padding: '8px 16px',
                       display: 'flex',
@@ -212,12 +221,12 @@ export default function Contact() {
                       transition: 'color 0.2s, border-color 0.2s',
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.color = '#4f8ef7'
-                      e.currentTarget.style.borderColor = '#4f8ef7'
+                      e.currentTarget.style.color = '#e2701f'
+                      e.currentTarget.style.borderColor = '#e2701f'
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.color = 'rgba(226,226,240,0.5)'
-                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+                      e.currentTarget.style.color = 'rgba(22,21,15,0.5)'
+                      e.currentTarget.style.borderColor = 'rgba(22,21,15,0.08)'
                     }}
                   >
                     {link.icon}
@@ -241,7 +250,7 @@ export default function Contact() {
                     style={{
                       fontFamily: 'var(--font-dm-sans)',
                       fontSize: 11,
-                      color: 'rgba(226,226,240,0.4)',
+                      color: 'rgba(22,21,15,0.4)',
                       letterSpacing: '0.12em',
                       display: 'block',
                       marginBottom: 8,
@@ -259,18 +268,18 @@ export default function Contact() {
                     }}
                     style={{
                       width: '100%',
-                      background: '#0d0d18',
-                      border: `1px solid ${errors[field] ? '#ff4444' : 'rgba(255,255,255,0.08)'}`,
+                      background: '#ffffff',
+                      border: `1px solid ${errors[field] ? '#ff4444' : 'rgba(22,21,15,0.08)'}`,
                       borderRadius: 8,
                       padding: '12px 16px',
-                      color: '#e2e2f0',
+                      color: '#16150f',
                       fontFamily: 'var(--font-dm-sans)',
                       fontSize: 14,
                       outline: 'none',
                       transition: 'border-color 0.2s',
                     }}
-                    onFocus={(e) => (e.currentTarget.style.borderColor = errors[field] ? '#ff4444' : '#4f8ef7')}
-                    onBlur={(e) => (e.currentTarget.style.borderColor = errors[field] ? '#ff4444' : 'rgba(255,255,255,0.08)')}
+                    onFocus={(e) => (e.currentTarget.style.borderColor = errors[field] ? '#ff4444' : '#e2701f')}
+                    onBlur={(e) => (e.currentTarget.style.borderColor = errors[field] ? '#ff4444' : 'rgba(22,21,15,0.08)')}
                   />
                 </div>
               ))}
@@ -280,7 +289,7 @@ export default function Contact() {
                   style={{
                     fontFamily: 'var(--font-dm-sans)',
                     fontSize: 11,
-                    color: 'rgba(226,226,240,0.4)',
+                    color: 'rgba(22,21,15,0.4)',
                     letterSpacing: '0.12em',
                     display: 'block',
                     marginBottom: 8,
@@ -298,19 +307,19 @@ export default function Contact() {
                   rows={5}
                   style={{
                     width: '100%',
-                    background: '#0d0d18',
-                    border: `1px solid ${errors.message ? '#ff4444' : 'rgba(255,255,255,0.08)'}`,
+                    background: '#ffffff',
+                    border: `1px solid ${errors.message ? '#ff4444' : 'rgba(22,21,15,0.08)'}`,
                     borderRadius: 8,
                     padding: '12px 16px',
-                    color: '#e2e2f0',
+                    color: '#16150f',
                     fontFamily: 'var(--font-dm-sans)',
                     fontSize: 14,
                     outline: 'none',
                     resize: 'vertical',
                     transition: 'border-color 0.2s',
                   }}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = errors.message ? '#ff4444' : '#4f8ef7')}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = errors.message ? '#ff4444' : 'rgba(255,255,255,0.08)')}
+                  onFocus={(e) => (e.currentTarget.style.borderColor = errors.message ? '#ff4444' : '#e2701f')}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = errors.message ? '#ff4444' : 'rgba(22,21,15,0.08)')}
                 />
               </div>
 
@@ -321,8 +330,8 @@ export default function Contact() {
                   fontFamily: 'var(--font-dm-sans)',
                   fontSize: 15,
                   fontWeight: 700,
-                  color: '#050508',
-                  background: '#4f8ef7',
+                  color: '#f4f3ef',
+                  background: '#e2701f',
                   border: 'none',
                   borderRadius: 8,
                   padding: '14px 32px',
@@ -331,7 +340,7 @@ export default function Contact() {
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)'
-                  e.currentTarget.style.boxShadow = '0 8px 30px rgba(79,142,247,0.4)'
+                  e.currentTarget.style.boxShadow = '0 8px 30px rgba(226,112,31,0.4)'
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)'
@@ -366,9 +375,9 @@ export default function Contact() {
                   style={{
                     fontFamily: 'var(--font-dm-sans)',
                     fontSize: 14,
-                    color: '#34d399',
-                    background: 'rgba(52,211,153,0.1)',
-                    border: '1px solid rgba(52,211,153,0.3)',
+                    color: '#2f8f5b',
+                    background: 'rgba(47,143,91,0.1)',
+                    border: '1px solid rgba(47,143,91,0.3)',
                     borderRadius: 8,
                     padding: '12px 16px',
                   }}
@@ -385,7 +394,7 @@ export default function Contact() {
           style={{
             marginTop: 100,
             paddingTop: 32,
-            borderTop: '1px solid rgba(255,255,255,0.06)',
+            borderTop: '1px solid rgba(22,21,15,0.06)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -398,7 +407,7 @@ export default function Contact() {
             style={{
               fontFamily: 'var(--font-dm-sans)',
               fontSize: 13,
-              color: 'rgba(226,226,240,0.25)',
+              color: 'rgba(22,21,15,0.25)',
             }}
           >
             &copy; {new Date().getFullYear()} Mahmud. Built with Next.js &amp; Matter.js

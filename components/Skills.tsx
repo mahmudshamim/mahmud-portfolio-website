@@ -1,17 +1,9 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import Matter, { Engine, World, Bodies, Body, Runner, Mouse, MouseConstraint } from 'matter-js'
+import { motion, useTransform, type MotionValue } from 'framer-motion'
 import { portfolioData } from '@/data/portfolio'
-
-const additionalTech = [
-  { name: "Node.js", level: 60, category: "Backend", color: "#339933" },
-  { name: "MongoDB", level: 58, category: "Backend", color: "#47A248" },
-  { name: "JavaScript", level: 70, category: "Frontend", color: "#F7DF1E" },
-  { name: "TypeScript", level: 50, category: "Frontend", color: "#3178C6" },
-  { name: "Express", level: 55, category: "Backend", color: "#888888" },
-  { name: "MySQL", level: 52, category: "Backend", color: "#4479A1" },
-]
+import { useStage } from '@/hooks/useStage'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 const DEVICONS = 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons'
 
@@ -19,6 +11,7 @@ const SKILL_ICONS: Record<string, string> = {
   'Figma': `${DEVICONS}/figma/figma-original.svg`,
   'Next.js': `${DEVICONS}/nextjs/nextjs-original.svg`,
   'WordPress': `${DEVICONS}/wordpress/wordpress-original.svg`,
+  'React': `${DEVICONS}/react/react-original.svg`,
   'React.js': `${DEVICONS}/react/react-original.svg`,
   'Tailwind CSS': `${DEVICONS}/tailwindcss/tailwindcss-original.svg`,
   'Node.js': `${DEVICONS}/nodejs/nodejs-original.svg`,
@@ -26,7 +19,6 @@ const SKILL_ICONS: Record<string, string> = {
   'JavaScript': `${DEVICONS}/javascript/javascript-original.svg`,
   'TypeScript': `${DEVICONS}/typescript/typescript-original.svg`,
   'Express': `${DEVICONS}/express/express-original.svg`,
-  'MySQL': `${DEVICONS}/mysql/mysql-original.svg`,
   'AWS Amplify': `${DEVICONS}/amazonwebservices/amazonwebservices-original-wordmark.svg`,
   'Cloudinary': `${DEVICONS}/cloudinary/cloudinary-original.svg`,
   'Graphic Design': `${DEVICONS}/photoshop/photoshop-original.svg`,
@@ -36,337 +28,318 @@ const SKILL_ICONS: Record<string, string> = {
   'Prototyping': `${DEVICONS}/framer/framer-original.svg`,
 }
 
-const allSkills = [...portfolioData.skills, ...additionalTech].filter(s => s.name in SKILL_ICONS)
+/** Order decides the order the camera meets them, so they arrive in waves. */
+const CATEGORY_ORDER = ['Frontend', 'Backend', 'Design', 'CMS', 'Tools'] as const
+
+const skills = (() => {
+  const seen = new Set<string>()
+  return portfolioData.skills
+    .filter((s) => {
+      if (!(s.name in SKILL_ICONS) || seen.has(s.name)) return false
+      seen.add(s.name)
+      return true
+    })
+    .sort(
+      (a, b) =>
+        CATEGORY_ORDER.indexOf(a.category as (typeof CATEGORY_ORDER)[number]) -
+          CATEGORY_ORDER.indexOf(b.category as (typeof CATEGORY_ORDER)[number]) || b.level - a.level
+    )
+})()
+
+const CAMERA_TRAVEL = 4200
+const GOLDEN = 2.399963229728653
 
 export default function Skills() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const { ref, progress, reduced } = useStage()
+  const isMobile = useIsMobile()
 
-  useEffect(() => {
-    const container = containerRef.current
-    const canvas = canvasRef.current
-    if (!container || !canvas) return
-
-    let canvasWidth = container.clientWidth
-    // Scale ball sizes based on screen width (mobile: smaller, desktop: full size)
-    const ballScale = Math.min(1, canvasWidth / 900)
-    let canvasHeight = 600
-    const floorY = canvasHeight
-
-    canvas.width = canvasWidth
-    canvas.height = canvasHeight
-
-    const ctx = canvas.getContext('2d')!
-
-    // Preload icons
-    const iconImages: Record<string, HTMLImageElement> = {}
-    const iconPromises = Object.entries(SKILL_ICONS).map(([name, url]) =>
-      new Promise<void>((resolve) => {
-        const img = new Image()
-        img.crossOrigin = 'anonymous'
-        img.onload = () => { iconImages[name] = img; resolve() }
-        img.onerror = () => resolve()
-        img.src = url
-      })
-    )
-
-    // Engine
-    const engine = Engine.create({ gravity: { x: 0, y: 1.2 } })
-    const world = engine.world
-
-    // Dynamic walls for resizing
-    let floor = Bodies.rectangle(canvasWidth / 2, canvasHeight + 25, canvasWidth, 50, { isStatic: true, friction: 0.3, restitution: 0.4 })
-    let wallL = Bodies.rectangle(-25, canvasHeight / 2, 50, canvasHeight * 2, { isStatic: true, friction: 0.3, restitution: 0.4 })
-    let wallR = Bodies.rectangle(canvasWidth + 25, canvasHeight / 2, 50, canvasHeight * 2, { isStatic: true, friction: 0.3, restitution: 0.4 })
-    World.add(world, [floor, wallL, wallR])
-
-    // Skill balls
-    const skillBalls: { body: Matter.Body; skill: typeof allSkills[0]; R: number }[] = []
-
-    allSkills.forEach((skill, i) => {
-      const R = (35 + (skill.level / 100) * 25) * ballScale
-      const x = 100 + Math.random() * (canvasWidth - 200)
-      const y = -100 - i * 90 - Math.random() * 150
-
-      const body = Bodies.circle(x, y, R, {
-        restitution: 0.78,
-        friction: 0.05,
-        frictionAir: 0.012,
-        label: skill.name,
-      });
-
-      Body.setVelocity(body, {
-        x: (Math.random() - 0.5) * 5,
-        y: Math.random() * 3,
-      })
-
-      World.add(world, body)
-      skillBalls.push({ body, skill, R })
-    })
-
-    // Resize listener
-    const handleResize = () => {
-      if (!container || !canvas) return
-      canvasWidth = container.clientWidth
-      canvas.width = canvasWidth
-      
-      // Update walls
-      Body.setPosition(floor, { x: canvasWidth / 2, y: canvasHeight + 25 })
-      Body.setPosition(wallL, { x: -25, y: canvasHeight / 2 })
-      Body.setPosition(wallR, { x: canvasWidth + 25, y: canvasHeight / 2 })
-    }
-    window.addEventListener('resize', handleResize)
-
-    // Mouse constraint
-    const mouse = Mouse.create(canvas)
-    const mouseConstraint = MouseConstraint.create(engine, {
-      mouse,
-      constraint: { stiffness: 0.2, render: { visible: false } },
-    })
-    World.add(world, mouseConstraint)
-
-    // Click — explode nearby balls
-    canvas.addEventListener('click', (e) => {
-      const rect = canvas.getBoundingClientRect()
-      const clickX = (e.clientX - rect.left) * (canvas.width / rect.width)
-      const clickY = (e.clientY - rect.top) * (canvas.height / rect.height)
-      skillBalls.forEach(({ body }) => {
-        const dx = body.position.x - clickX
-        const dy = body.position.y - clickY
-        const dist = Math.hypot(dx, dy) || 1
-        if (dist < 160) {
-          const force = 0.055 / dist
-          Body.applyForce(body, body.position, {
-            x: (dx / dist) * force,
-            y: (dy / dist) * force - 0.008,
-          })
-        }
-      })
-    })
-
-    // Gravity tilt on mousemove
-    canvas.addEventListener('mousemove', (e) => {
-      const rect = canvas.getBoundingClientRect()
-      const mx = (e.clientX - rect.left) / rect.width
-      const my = (e.clientY - rect.top) / rect.height
-      engine.gravity.x = (mx - 0.5) * 1.2
-      engine.gravity.y = 0.6 + my * 0.8
-    })
-
-    canvas.addEventListener('mouseleave', () => {
-      engine.gravity.x = 0
-      engine.gravity.y = 1.2
-    })
-
-    // Render loop
-    const runner = Runner.create()
-    Runner.run(runner, engine)
-
-    let animFrameId: number
-
-    const draw = () => {
-      animFrameId = requestAnimationFrame(draw)
-
-      // Dark background
-      ctx.fillStyle = '#050508'
-      ctx.fillRect(0, 0, canvasWidth, canvasHeight)
-
-      skillBalls.forEach(({ body, skill, R }) => {
-        const img = iconImages[skill.name]
-        if (!img) return  // skip balls whose icon failed to load
-
-        const x = body.position.x
-        const y = body.position.y
-        const angle = body.angle
-
-        // Parse skill color
-        const hex = skill.color.replace('#', '')
-        const r = parseInt(hex.slice(0, 2), 16)
-        const g = parseInt(hex.slice(2, 4), 16)
-        const b = parseInt(hex.slice(4, 6), 16)
-
-        // Floor shadow
-        const shadowDist = floorY - y
-        if (shadowDist > 0 && shadowDist < 300) {
-          const shadowOpacity = Math.max(0, 0.3 * (1 - shadowDist / 300))
-          const shadowScale = Math.max(0.3, 1 - shadowDist / 400)
-          ctx.save()
-          ctx.translate(x, floorY - 4)
-          ctx.scale(shadowScale, 0.2)
-          const shadowGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, R)
-          shadowGrad.addColorStop(0, `rgba(0,0,0,${shadowOpacity})`)
-          shadowGrad.addColorStop(1, 'rgba(0,0,0,0)')
-          ctx.beginPath()
-          ctx.arc(0, 0, R, 0, Math.PI * 2)
-          ctx.fillStyle = shadowGrad
-          ctx.fill()
-          ctx.restore()
-        }
-
-        // Outer color glow (behind sphere)
-        ctx.save()
-        ctx.translate(x, y)
-        const glowGrad = ctx.createRadialGradient(0, 0, R * 0.8, 0, 0, R * 1.5)
-        glowGrad.addColorStop(0, `rgba(${r},${g},${b}, 0.15)`)
-        glowGrad.addColorStop(0.5, `rgba(${r},${g},${b}, 0.06)`)
-        glowGrad.addColorStop(1, `rgba(${r},${g},${b}, 0)`)
-        ctx.beginPath()
-        ctx.arc(0, 0, R * 1.5, 0, Math.PI * 2)
-        ctx.fillStyle = glowGrad
-        ctx.fill()
-        ctx.restore()
-
-        // 3D sphere (rotates with body)
-        ctx.save()
-        ctx.translate(x, y)
-        ctx.rotate(angle)
-
-        // Base — pure white core fading to very light grey at edge
-        const baseGrad = ctx.createRadialGradient(
-          -R * 0.3, -R * 0.3, R * 0.02,
-           R * 0.1,  R * 0.1,  R * 1.0
-        )
-        baseGrad.addColorStop(0,    'rgba(255,255,255,1)')
-        baseGrad.addColorStop(0.5,  'rgba(250,252,255,1)')
-        baseGrad.addColorStop(0.85, 'rgba(220,228,245,1)')
-        baseGrad.addColorStop(1,    'rgba(185,198,228,1)')
-        ctx.beginPath()
-        ctx.arc(0, 0, R, 0, Math.PI * 2)
-        ctx.fillStyle = baseGrad
-        ctx.fill()
-
-        // Very subtle color tint — just a hint at the bottom edge
-        const tintGrad = ctx.createRadialGradient(R * 0.1, R * 0.3, 0, R * 0.1, R * 0.3, R * 1.1)
-        tintGrad.addColorStop(0,   `rgba(${r},${g},${b}, 0.06)`)
-        tintGrad.addColorStop(0.6, `rgba(${r},${g},${b}, 0.04)`)
-        tintGrad.addColorStop(1,   `rgba(${r},${g},${b}, 0.14)`)
-        ctx.beginPath()
-        ctx.arc(0, 0, R, 0, Math.PI * 2)
-        ctx.fillStyle = tintGrad
-        ctx.fill()
-
-        // Main specular — large bright spot top-left
-        const specMain = ctx.createRadialGradient(
-          -R * 0.42, -R * 0.42, 0,
-          -R * 0.28, -R * 0.28, R * 0.65
-        )
-        specMain.addColorStop(0,    'rgba(255,255,255,1)')
-        specMain.addColorStop(0.15, 'rgba(255,255,255,0.9)')
-        specMain.addColorStop(0.4,  'rgba(255,255,255,0.4)')
-        specMain.addColorStop(0.75, 'rgba(255,255,255,0.05)')
-        specMain.addColorStop(1,    'rgba(255,255,255,0)')
-        ctx.beginPath()
-        ctx.arc(0, 0, R, 0, Math.PI * 2)
-        ctx.fillStyle = specMain
-        ctx.fill()
-
-        // Small sharp glint at top-left
-        const glint = ctx.createRadialGradient(
-          -R * 0.45, -R * 0.45, 0,
-          -R * 0.45, -R * 0.45, R * 0.18
-        )
-        glint.addColorStop(0,   'rgba(255,255,255,1)')
-        glint.addColorStop(0.5, 'rgba(255,255,255,0.6)')
-        glint.addColorStop(1,   'rgba(255,255,255,0)')
-        ctx.beginPath()
-        ctx.arc(0, 0, R, 0, Math.PI * 2)
-        ctx.fillStyle = glint
-        ctx.fill()
-
-        // Rim shadow — dark only at the very edge
-        const rimGrad = ctx.createRadialGradient(0, 0, R * 0.72, 0, 0, R)
-        rimGrad.addColorStop(0,   'rgba(0,0,0,0)')
-        rimGrad.addColorStop(0.8, 'rgba(0,0,0,0)')
-        rimGrad.addColorStop(1,   'rgba(10,10,30,0.45)')
-        ctx.beginPath()
-        ctx.arc(0, 0, R, 0, Math.PI * 2)
-        ctx.fillStyle = rimGrad
-        ctx.fill()
-
-        ctx.restore()
-
-        // Icon — upright, clipped to circle
-        if (img) {
-          ctx.save()
-          ctx.translate(x, y)
-          ctx.beginPath()
-          ctx.arc(0, 0, R * 0.72, 0, Math.PI * 2)
-          ctx.clip()
-          const iconSize = R * 0.95
-          ctx.globalAlpha = 0.82
-          ctx.drawImage(img, -iconSize / 2, -iconSize / 2, iconSize, iconSize)
-          ctx.globalAlpha = 1
-          ctx.restore()
-        }
-      })
-    }
-
-    // Start loop (icons load async — draw loop runs immediately, icons appear as they load)
-    Promise.allSettled(iconPromises).then(() => { })
-    draw()
-
-    return () => {
-      cancelAnimationFrame(animFrameId)
-      window.removeEventListener('resize', handleResize)
-      Runner.stop(runner)
-      skillBalls.forEach(({ body }) => World.remove(world, body))
-      World.clear(world, false)
-      Engine.clear(engine)
-    }
-  }, [])
+  if (reduced) return <SkillsStatic />
 
   return (
-    <section
-      style={{
-        background: '#050508',
-        padding: '120px 24px 80px',
-        position: 'relative',
-        minHeight: '800px',
-        overflow: 'hidden',
-      }}
-    >
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
-          <p style={{
-            fontFamily: 'var(--font-dm-sans)',
-            fontSize: 13,
-            color: '#4f8ef7',
-            letterSpacing: '0.15em',
-            marginBottom: 12,
-            textTransform: 'uppercase',
-          }}>
-            // Technical Arsenal
-          </p>
-          <h2 style={{
-            fontFamily: 'var(--font-bebas)',
-            fontSize: 'clamp(3rem, 8vw, 6rem)',
-            color: '#e2e2f0',
-            lineHeight: 1,
-            marginBottom: 16,
-          }}>
-            MY SKILLS
-          </h2>
-          <p style={{
-            fontFamily: 'var(--font-dm-sans)',
-            fontSize: 14,
-            color: 'rgba(226,226,240,0.4)',
-            letterSpacing: '0.05em',
-          }}>
-            Click or move mouse to interact · Drag the balls
-          </p>
+    <div id="skills" ref={ref} style={{ position: 'relative', height: '320vh' }}>
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          overflow: 'hidden',
+          perspective: isMobile ? 700 : 900,
+          perspectiveOrigin: '50% 50%',
+        }}
+      >
+        {/* Heading — parked, fades as the flight starts */}
+        <Heading progress={progress} />
+
+        {/* The cloud */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            transformStyle: 'preserve-3d',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div style={{ position: 'relative', width: 0, height: 0, transformStyle: 'preserve-3d' }}>
+            {skills.map((s, i) => (
+              <Node key={s.name} skill={s} index={i} total={skills.length} progress={progress} isMobile={isMobile} />
+            ))}
+          </div>
         </div>
 
-        <div ref={containerRef} style={{ width: '100%', background: '#050508', borderRadius: 12, overflow: 'hidden' }}>
-          <canvas
-            ref={canvasRef}
-            style={{
-              display: 'block',
-              width: '100%',
-              height: '600px',
-              cursor: 'grab',
-              borderRadius: 12,
-            }}
-          />
+        {/* Category readout — swaps as you pass through each layer */}
+        <CategoryReadout progress={progress} />
+      </div>
+    </div>
+  )
+}
+
+function Node({
+  skill,
+  index,
+  total,
+  progress,
+  isMobile,
+}: {
+  skill: (typeof portfolioData.skills)[number]
+  index: number
+  total: number
+  progress: MotionValue<number>
+  isMobile: boolean
+}) {
+  // Golden-angle spiral keeps the nodes evenly spread around the flight path
+  // without ever sitting dead centre (which would collide with the readout).
+  const angle = index * GOLDEN
+  const ring = 1 + (index % 3) * 0.42
+  const radius = (isMobile ? 150 : 270) * ring
+
+  // Rounded to whole pixels on purpose. These trig results run to full float
+  // precision (-233.6070266333721), React serialises that into the SSR style
+  // attribute verbatim, and the browser normalises it to -233.607px on parse —
+  // so hydration compares two different numbers and reports a mismatch. Whole
+  // pixels survive the round trip unchanged, and sub-pixel placement in a
+  // scattered cloud buys nothing.
+  const x = Math.round(Math.cos(angle) * radius)
+  const y = Math.round(Math.sin(angle) * radius * 0.62)
+
+  // Depth ordered by list position → the sorted categories arrive in waves.
+  // Rounded for the same reason: this seeds the initial translateZ.
+  const z0 = Math.round(-420 - (index / total) * 3400)
+
+  const z = useTransform(progress, [0, 1], [z0, z0 + CAMERA_TRAVEL])
+  const opacity = useTransform(z, [z0, -2400, -1500, -60, 200], [0, 0, 1, 1, 0])
+
+  const icon = SKILL_ICONS[skill.name]
+
+  return (
+    <motion.div
+      style={{
+        position: 'absolute',
+        left: x,
+        top: y,
+        z,
+        opacity,
+        translateX: '-50%',
+        translateY: '-50%',
+        willChange: 'transform, opacity',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 8,
+        pointerEvents: 'none',
+      }}
+    >
+      <div
+        style={{
+          width: isMobile ? 48 : 64,
+          height: isMobile ? 48 : 64,
+          borderRadius: 14,
+          /* Opaque fill rather than a translucent one with backdrop-filter:
+             there can be 20+ of these in flight at once and each blurred
+             backdrop is recomputed every frame. */
+          background: '#ffffff',
+          border: `1px solid ${skill.color}40`,
+          boxShadow: `0 0 28px ${skill.color}22, inset 0 0 20px ${skill.color}0d`,
+          display: 'grid',
+          placeItems: 'center',
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={icon}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          width={isMobile ? 24 : 32}
+          height={isMobile ? 24 : 32}
+          style={{ display: 'block', filter: 'drop-shadow(0 2px 6px rgba(22,21,15,0.13))' }}
+        />
+      </div>
+      <span
+        style={{
+          fontFamily: 'var(--font-dm-sans)',
+          fontSize: isMobile ? 10 : 12,
+          fontWeight: 600,
+          color: 'rgba(22,21,15,0.72)',
+          whiteSpace: 'nowrap',
+          textShadow: '0 2px 10px rgba(244,243,239,0.9)',
+        }}
+      >
+        {skill.name}
+      </span>
+      <span
+        style={{
+          fontFamily: 'monospace',
+          fontSize: 9,
+          color: skill.color,
+          letterSpacing: '0.08em',
+        }}
+      >
+        {skill.level}%
+      </span>
+    </motion.div>
+  )
+}
+
+function Heading({ progress }: { progress: MotionValue<number> }) {
+  const opacity = useTransform(progress, [0, 0.04, 0.14, 0.2], [0, 1, 1, 0])
+  const z = useTransform(progress, [0, 0.2], [0, 420])
+
+  return (
+    <motion.div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        display: 'grid',
+        placeItems: 'center',
+        zIndex: 20,
+        opacity,
+        z,
+        pointerEvents: 'none',
+        textAlign: 'center',
+        padding: '0 24px',
+      }}
+    >
+      <div>
+        <p style={{ fontFamily: 'var(--font-dm-sans)', fontSize: 12, color: '#7a5bd6', letterSpacing: '0.18em', marginBottom: 8 }}>
+          // Toolkit
+        </p>
+        <h2 style={{ fontFamily: 'var(--font-bebas)', fontSize: 'clamp(2.5rem, 7vw, 5.5rem)', color: '#16150f', lineHeight: 1 }}>
+          WHAT I BUILD WITH
+        </h2>
+      </div>
+    </motion.div>
+  )
+}
+
+/** The category you are currently flying through. */
+function CategoryReadout({ progress }: { progress: MotionValue<number> }) {
+  // Where each category's block of nodes sits along the flight, derived from
+  // the same sort order the nodes use.
+  const bounds = CATEGORY_ORDER.map((cat) => {
+    const first = skills.findIndex((s) => s.category === cat)
+    const count = skills.filter((s) => s.category === cat).length
+    return { cat, start: first / skills.length, end: (first + count) / skills.length, count }
+  }).filter((b) => b.count > 0)
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        bottom: 'clamp(28px, 8vh, 72px)',
+        left: 0,
+        right: 0,
+        display: 'grid',
+        placeItems: 'center',
+        zIndex: 20,
+        pointerEvents: 'none',
+      }}
+    >
+      <div style={{ position: 'relative', height: 44 }}>
+        {bounds.map((b) => (
+          <CategoryLabel key={b.cat} label={b.cat} start={b.start} end={b.end} progress={progress} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CategoryLabel({
+  label,
+  start,
+  end,
+  progress,
+}: {
+  label: string
+  start: number
+  end: number
+  progress: MotionValue<number>
+}) {
+  // Nodes become readable roughly a third of the way after they spawn, so the
+  // label leads its block slightly.
+  const lead = 0.12
+  const a = Math.max(0, start - lead)
+  const b = Math.max(0, end - lead)
+  const fade = (b - a) * 0.22
+
+  const opacity = useTransform(progress, [a, a + fade, b - fade, b], [0, 1, 1, 0])
+  const y = useTransform(progress, [a, b], [14, -14])
+
+  return (
+    <motion.div
+      style={{
+        position: 'absolute',
+        left: '50%',
+        top: 0,
+        translateX: '-50%',
+        opacity,
+        y,
+        whiteSpace: 'nowrap',
+        fontFamily: 'var(--font-bebas)',
+        fontSize: 'clamp(1.4rem, 3vw, 2.2rem)',
+        letterSpacing: '0.14em',
+        color: '#16150f',
+        textShadow: '0 4px 24px rgba(244,243,239,0.9)',
+      }}
+    >
+      {label.toUpperCase()}
+    </motion.div>
+  )
+}
+
+function SkillsStatic() {
+  return (
+    <section id="skills" style={{ padding: 'clamp(60px, 10vw, 120px) clamp(16px, 4vw, 24px)', position: 'relative', zIndex: 1 }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <p style={{ fontFamily: 'var(--font-dm-sans)', fontSize: 13, color: '#7a5bd6', letterSpacing: '0.15em', marginBottom: 12 }}>
+          // Toolkit
+        </p>
+        <h2 style={{ fontFamily: 'var(--font-bebas)', fontSize: 'clamp(2.5rem, 6vw, 4rem)', color: '#16150f', lineHeight: 1, marginBottom: 48 }}>
+          WHAT I BUILD WITH
+        </h2>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+          {skills.map((s) => (
+            <span
+              key={s.name}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '8px 14px',
+                borderRadius: 10,
+                background: '#ffffff',
+                border: `1px solid ${s.color}40`,
+                fontFamily: 'var(--font-dm-sans)',
+                fontSize: 13,
+                color: 'rgba(22,21,15,0.8)',
+              }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={SKILL_ICONS[s.name]} alt="" width={18} height={18} />
+              {s.name}
+            </span>
+          ))}
         </div>
       </div>
     </section>

@@ -50,7 +50,7 @@ const AUTO_COLORS = [
   '#14b8a6',
   '#f97316',
   '#8b5cf6',
-  '#ef4444',
+  '#c0392b',
   '#22c55e',
   '#ec4899',
 ]
@@ -138,7 +138,7 @@ const shadow = '0 24px 60px rgba(0, 0, 0, 0.3)'
 
 const inputStyle: CSSProperties = {
   width: '100%',
-  background: '#0d1018',
+  background: '#ffffff',
   border: `1px solid ${border}`,
   borderRadius: 18,
   padding: '16px 18px',
@@ -252,32 +252,32 @@ function MiniCVLayout({ template, cvData }: { template: string; cvData: CVData }
 
   if (template === 'dark-pro') return (
     <div style={{ display: 'flex', height: '100%', fontFamily: 'sans-serif' }}>
-      <div style={{ width: 240, background: '#1a1a2e', padding: '32px 20px', flexShrink: 0 }}>
-        <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#4f8ef7', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: '#fff' }}>{initial}</div>
+      <div style={{ width: 240, background: '#eceae4', padding: '32px 20px', flexShrink: 0 }}>
+        <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#e2701f', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, color: '#fff' }}>{initial}</div>
         <div style={{ color: '#fff', fontSize: 22, fontWeight: 700, textAlign: 'center', marginBottom: 4 }}>{name}</div>
-        <div style={{ color: '#4f8ef7', fontSize: 11, textAlign: 'center', marginBottom: 24 }}>{role}</div>
-        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', marginBottom: 10 }}>SKILLS</div>
+        <div style={{ color: '#e2701f', fontSize: 11, textAlign: 'center', marginBottom: 24 }}>{role}</div>
+        <div style={{ fontSize: 10, color: 'rgba(22,21,15,0.4)', letterSpacing: '0.08em', marginBottom: 10 }}>SKILLS</div>
         {skills.map((s, i) => (
           <div key={i} style={{ marginBottom: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccc', fontSize: 10, marginBottom: 3 }}>
               <span>{s.name}</span><span>{s.level}%</span>
             </div>
-            <div style={{ height: 3, background: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
-              <div style={{ height: '100%', width: `${s.level}%`, background: s.color || '#4f8ef7', borderRadius: 2 }} />
+            <div style={{ height: 3, background: 'rgba(22,21,15,0.1)', borderRadius: 2 }}>
+              <div style={{ height: '100%', width: `${s.level}%`, background: s.color || '#e2701f', borderRadius: 2 }} />
             </div>
           </div>
         ))}
       </div>
       <div style={{ flex: 1, padding: '32px 28px', background: '#fff' }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#4f8ef7', letterSpacing: '0.1em', marginBottom: 6 }}>EXPERIENCE</div>
-        <div style={{ height: 1, background: '#4f8ef7', marginBottom: 14 }} />
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#e2701f', letterSpacing: '0.1em', marginBottom: 6 }}>EXPERIENCE</div>
+        <div style={{ height: 1, background: '#e2701f', marginBottom: 14 }} />
         {experience.map((e, i) => (
           <div key={i} style={{ marginBottom: 14 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>{e.role}</div>
               <div style={{ fontSize: 10, color: '#999' }}>{e.date}</div>
             </div>
-            <div style={{ fontSize: 11, color: '#4f8ef7', marginBottom: 4 }}>{e.company}</div>
+            <div style={{ fontSize: 11, color: '#e2701f', marginBottom: 4 }}>{e.company}</div>
             <div style={{ fontSize: 10, color: '#555', lineHeight: 1.5 }}>{e.desc}</div>
           </div>
         ))}
@@ -313,7 +313,7 @@ function MiniCVLayout({ template, cvData }: { template: string; cvData: CVData }
   )
 
   if (template === 'tech-blue') return (
-    <div style={{ padding: 40, background: '#0d1117', fontFamily: 'monospace', height: '100%' }}>
+    <div style={{ padding: 40, background: '#ffffff', fontFamily: 'monospace', height: '100%' }}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#ff5f57' }} />
         <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#ffbd2e' }} />
@@ -339,9 +339,9 @@ function MiniCVLayout({ template, cvData }: { template: string; cvData: CVData }
 
   if (template === 'executive') return (
     <div style={{ background: '#fff', height: '100%', fontFamily: 'sans-serif' }}>
-      <div style={{ background: 'linear-gradient(135deg,#1a1a2e,#16213e)', padding: '40px 48px' }}>
+      <div style={{ background: 'linear-gradient(135deg,#eceae4,#16213e)', padding: '40px 48px' }}>
         <div style={{ fontSize: 44, fontWeight: 300, color: '#fff', letterSpacing: 4, textTransform: 'uppercase' }}>{name}</div>
-        <div style={{ color: '#4f8ef7', fontSize: 14, letterSpacing: 2, marginTop: 8, textTransform: 'uppercase' }}>{role}</div>
+        <div style={{ color: '#e2701f', fontSize: 14, letterSpacing: 2, marginTop: 8, textTransform: 'uppercase' }}>{role}</div>
       </div>
       <div style={{ padding: '40px 48px' }}>
         {experience.map((e, i) => (
@@ -349,7 +349,7 @@ function MiniCVLayout({ template, cvData }: { template: string; cvData: CVData }
             <div style={{ width: 100, fontSize: 11, color: '#999', flexShrink: 0 }}>{e.date}</div>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#111' }}>{e.role}</div>
-              <div style={{ fontSize: 12, color: '#4f8ef7', marginBottom: 6 }}>{e.company}</div>
+              <div style={{ fontSize: 12, color: '#e2701f', marginBottom: 6 }}>{e.company}</div>
               <div style={{ fontSize: 11, color: '#555', lineHeight: 1.5 }}>{e.desc}</div>
             </div>
           </div>
@@ -451,7 +451,7 @@ function MiniCVLayout({ template, cvData }: { template: string; cvData: CVData }
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#c0cce0', marginBottom: 3 }}>
               <span>{s.name}</span><span>{s.level}%</span>
             </div>
-            <div style={{ height: 3, background: 'rgba(255,255,255,0.1)', borderRadius: 2 }}>
+            <div style={{ height: 3, background: 'rgba(22,21,15,0.1)', borderRadius: 2 }}>
               <div style={{ height: '100%', width: `${s.level}%`, background: '#4a90d9', borderRadius: 2 }} />
             </div>
           </div>
@@ -558,7 +558,7 @@ function StepRail({
               onClick={() => setActiveStep(step.id)}
               style={{
                 flex: 1,
-                background: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
+                background: isActive ? 'rgba(22,21,15,0.06)' : 'transparent',
                 border: 'none',
                 borderRadius: 18,
                 padding: '14px 16px',
@@ -925,7 +925,7 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
       style={{
         minHeight: '100%',
         padding: isMobile ? '18px 14px 110px' : '28px 24px 36px',
-        background: 'radial-gradient(circle at top left, rgba(79,142,247,0.18) 0%, rgba(79,142,247,0.04) 28%, #0b0b13 58%, #080810 100%)',
+        background: 'radial-gradient(circle at top left, rgba(226,112,31,0.18) 0%, rgba(226,112,31,0.04) 28%, #0b0b13 58%, #eceae4 100%)',
         fontFamily: 'var(--font-dm-sans)',
       }}
     >
@@ -934,7 +934,7 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, justifyContent: 'space-between', flexWrap: 'wrap' }}>
           <h1 style={{ margin: 0, fontSize: isMobile ? 32 : 46, lineHeight: 1, color: text }}>Build your CV</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginLeft: 'auto' }}>
-            <div style={{ padding: '10px 14px', borderRadius: 999, background: 'rgba(255,255,255,0.04)', border: `1px solid ${border}` }}>
+            <div style={{ padding: '10px 14px', borderRadius: 999, background: 'rgba(22,21,15,0.04)', border: `1px solid ${border}` }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: saveState === 'saving' ? '#facc15' : '#7ee787' }}>
                 {saveState === 'saving' ? 'Saving...' : savedAt}
               </div>
@@ -962,7 +962,7 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
               <span style={{ fontSize: 14, fontWeight: 700, color: text }}>{progress}%</span>
             </div>
             <div style={{ height: 8, borderRadius: 999, background: '#e7ebf4' }}>
-              <div style={{ width: `${progress}%`, height: '100%', borderRadius: 999, background: 'linear-gradient(90deg, #4f8ef7 0%, #6f9eff 100%)' }} />
+              <div style={{ width: `${progress}%`, height: '100%', borderRadius: 999, background: 'linear-gradient(90deg, #e2701f 0%, #6f9eff 100%)' }} />
             </div>
             <div style={{ ...helperStyle, marginTop: 6 }}>{completionHint}</div>
           </div>
@@ -1038,7 +1038,7 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
                         {cvData.photo ? 'Change photo' : 'Add photo'}
                       </button>
                       {cvData.photo && (
-                        <button onClick={() => setCVData((prev) => ({ ...prev, photo: '' }))} style={{ ...buttonBase, background: '#0d1018', color: textMuted, border: `1px solid ${border}`, padding: '12px 18px' }}>
+                        <button onClick={() => setCVData((prev) => ({ ...prev, photo: '' }))} style={{ ...buttonBase, background: '#ffffff', color: textMuted, border: `1px solid ${border}`, padding: '12px 18px' }}>
                           Remove
                         </button>
                       )}
@@ -1360,8 +1360,8 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
                         <div key={sectionId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 14px', borderRadius: 16, background: surfaceMuted, border: `1px solid ${border}` }}>
                           <div style={{ fontSize: 14, fontWeight: 600, color: text }}>{label}</div>
                           <div style={{ display: 'flex', gap: 8 }}>
-                            <button onClick={() => moveSectionOrder(sectionId, -1)} style={{ ...buttonBase, padding: '8px 12px', background: '#0d1018', color: text, border: `1px solid ${border}` }}>Up</button>
-                            <button onClick={() => moveSectionOrder(sectionId, 1)} style={{ ...buttonBase, padding: '8px 12px', background: '#0d1018', color: text, border: `1px solid ${border}` }}>Down</button>
+                            <button onClick={() => moveSectionOrder(sectionId, -1)} style={{ ...buttonBase, padding: '8px 12px', background: '#ffffff', color: text, border: `1px solid ${border}` }}>Up</button>
+                            <button onClick={() => moveSectionOrder(sectionId, 1)} style={{ ...buttonBase, padding: '8px 12px', background: '#ffffff', color: text, border: `1px solid ${border}` }}>Down</button>
                           </div>
                         </div>
                       )
@@ -1454,7 +1454,7 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
                 disabled={activeStepIndex === 0}
                 style={{
                   ...buttonBase,
-                  background: '#0d1018',
+                  background: '#ffffff',
                   color: activeStepIndex === 0 ? '#b4bac9' : text,
                   border: `1px solid ${border}`,
                   padding: '14px 20px',

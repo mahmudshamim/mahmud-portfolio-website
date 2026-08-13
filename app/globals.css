@@ -2,11 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mirrors lib/theme.ts — change both together. */
 :root {
-  --bg: #050508;
-  --accent: #4f8ef7;
-  --text: #e2e2f0;
-  --muted: #444466;
+  --paper: #f4f3ef;
+  --paper-alt: #eceae4;
+  --card: #ffffff;
+  --grid: #e0ded6;
+  --grid-strong: #d2cfc4;
+
+  --ink: #16150f;
+  --body: #4b4941;
+  --muted: #8d8a7e;
+  --faint: #b6b3a7;
+
+  --accent: #e2701f;
+  --accent-soft: #fbe9d8;
+  --accent-ink: #a44e10;
+
+  --line: rgba(22, 21, 15, 0.12);
+
+  /* Back-compat aliases for anything still reading the old names. */
+  --bg: var(--paper);
+  --text: var(--ink);
+
   --font-bebas: 'Bebas Neue', sans-serif;
   --font-dm-sans: 'DM Sans', sans-serif;
 }
@@ -21,10 +39,30 @@ html {
 }
 
 body {
-  background-color: var(--bg);
-  color: var(--text);
+  background-color: var(--paper);
+  color: var(--ink);
   font-family: var(--font-dm-sans);
-  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  /* `clip`, not `hidden`. `overflow-x: hidden` makes the body a scroll
+     container, which silently breaks every `position: sticky` stage on the
+     page. `clip` cuts the same overflow without creating one. */
+  overflow-x: clip;
+}
+
+/* Kill the pinned stages outright for anyone who asked for less motion.
+   The components also branch on useReducedMotion and render static layouts;
+   this is the belt-and-braces half. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @keyframes cursorBlink {
@@ -42,7 +80,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg);
+  background: var(--paper-alt);
 }
 
 ::-webkit-scrollbar-thumb {

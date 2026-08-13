@@ -57,8 +57,8 @@ export default function Navbar() {
           transition: 'transform 0.3s ease',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
-          backgroundColor: 'rgba(5,5,8,0.9)',
-          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          backgroundColor: 'rgba(244,243,239,0.88)',
+          borderBottom: '1px solid rgba(22,21,15,0.06)',
         }}
       >
         <div
@@ -81,7 +81,7 @@ export default function Navbar() {
                   onClick={() => scrollTo(link.href)}
                   style={{
                     background: 'none', border: 'none',
-                    color: activeSection === link.href.replace('#', '') ? '#4f8ef7' : '#e2e2f0',
+                    color: activeSection === link.href.replace('#', '') ? '#e2701f' : '#16150f',
                     fontSize: 14, fontFamily: 'var(--font-dm-sans)', fontWeight: 500,
                     letterSpacing: '0.05em', cursor: 'pointer',
                     opacity: activeSection === link.href.replace('#', '') ? 1 : 0.7,
@@ -95,7 +95,7 @@ export default function Navbar() {
                 href="/cv"
                 style={{
                   fontFamily: 'var(--font-dm-sans)', fontSize: 14, fontWeight: 600,
-                  color: '#4f8ef7', border: '1px solid #4f8ef7', borderRadius: 6,
+                  color: '#e2701f', border: '1px solid #e2701f', borderRadius: 6,
                   padding: '6px 16px', textDecoration: 'none', transition: 'background 0.2s',
                 }}
               >
@@ -107,7 +107,7 @@ export default function Navbar() {
           {/* Mobile: CV link + hamburger */}
           {isMobile && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <Link href="/cv" style={{ fontFamily: 'var(--font-dm-sans)', fontSize: 13, fontWeight: 600, color: '#4f8ef7', border: '1px solid #4f8ef7', borderRadius: 6, padding: '5px 12px', textDecoration: 'none' }}>
+              <Link href="/cv" style={{ fontFamily: 'var(--font-dm-sans)', fontSize: 13, fontWeight: 600, color: '#e2701f', border: '1px solid #e2701f', borderRadius: 6, padding: '5px 12px', textDecoration: 'none' }}>
                 CV
               </Link>
               <button
@@ -115,9 +115,9 @@ export default function Navbar() {
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', flexDirection: 'column', gap: 5 }}
                 aria-label="Menu"
               >
-                <span style={{ display: 'block', width: 22, height: 2, background: menuOpen ? '#4f8ef7' : '#e2e2f0', transition: 'all 0.2s', transform: menuOpen ? 'rotate(45deg) translate(5px, 5px)' : 'none' }} />
-                <span style={{ display: 'block', width: 22, height: 2, background: menuOpen ? '#4f8ef7' : '#e2e2f0', transition: 'all 0.2s', opacity: menuOpen ? 0 : 1 }} />
-                <span style={{ display: 'block', width: 22, height: 2, background: menuOpen ? '#4f8ef7' : '#e2e2f0', transition: 'all 0.2s', transform: menuOpen ? 'rotate(-45deg) translate(5px, -5px)' : 'none' }} />
+                <span style={{ display: 'block', width: 22, height: 2, background: menuOpen ? '#e2701f' : '#16150f', transition: 'all 0.2s', transform: menuOpen ? 'rotate(45deg) translate(5px, 5px)' : 'none' }} />
+                <span style={{ display: 'block', width: 22, height: 2, background: menuOpen ? '#e2701f' : '#16150f', transition: 'all 0.2s', opacity: menuOpen ? 0 : 1 }} />
+                <span style={{ display: 'block', width: 22, height: 2, background: menuOpen ? '#e2701f' : '#16150f', transition: 'all 0.2s', transform: menuOpen ? 'rotate(-45deg) translate(5px, -5px)' : 'none' }} />
               </button>
             </div>
           )}
@@ -129,8 +129,8 @@ export default function Navbar() {
             maxHeight: menuOpen ? 200 : 0,
             overflow: 'hidden',
             transition: 'max-height 0.3s ease',
-            borderTop: menuOpen ? '1px solid rgba(255,255,255,0.06)' : 'none',
-            background: 'rgba(5,5,8,0.97)',
+            borderTop: menuOpen ? '1px solid rgba(22,21,15,0.06)' : 'none',
+            background: 'rgba(244,243,239,0.98)',
           }}>
             {navLinks.map((link) => (
               <button
@@ -139,9 +139,9 @@ export default function Navbar() {
                 style={{
                   display: 'block', width: '100%', textAlign: 'left',
                   padding: '14px 20px', background: 'none', border: 'none',
-                  color: activeSection === link.href.replace('#', '') ? '#4f8ef7' : 'rgba(255,255,255,0.75)',
+                  color: activeSection === link.href.replace('#', '') ? '#e2701f' : 'rgba(22,21,15,0.75)',
                   fontSize: 16, fontFamily: 'var(--font-dm-sans)', fontWeight: 500,
-                  cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.04)',
+                  cursor: 'pointer', borderBottom: '1px solid rgba(22,21,15,0.04)',
                 }}
               >
                 {link.label}

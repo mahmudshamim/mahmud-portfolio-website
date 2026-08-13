@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-const COLORS = ['#4f8ef7', '#ff2d78', '#34d399', '#a78bfa', '#f59e0b']
+const COLORS = ['#e2701f', '#c9356b', '#2f8f5b', '#7a5bd6', '#b3730a']
 
 type Particle = {
   x: number; y: number
@@ -151,7 +151,7 @@ export default function Cursor() {
           width: 10,
           height: 10,
           borderRadius: '50%',
-          backgroundColor: '#4f8ef7',
+          backgroundColor: '#e2701f',
           pointerEvents: 'none',
           zIndex: 9999,
           transition: 'width 0.1s, height 0.1s',
@@ -169,7 +169,7 @@ export default function Cursor() {
           width: 36,
           height: 36,
           borderRadius: '50%',
-          border: '1.5px solid #4f8ef7',
+          border: '1.5px solid #e2701f',
           opacity: 0.6,
           pointerEvents: 'none',
           zIndex: 9998,
@@ -188,7 +188,7 @@ export default function Cursor() {
             width: 0,
             height: 0,
             borderRadius: '50%',
-            border: '2px solid #4f8ef7',
+            border: '2px solid #e2701f',
             pointerEvents: 'none',
             zIndex: 9997,
             transform: 'translate(-50%, -50%)',

@@ -155,27 +155,27 @@ export default function CVPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050508] flex flex-col">
+    <div className="min-h-screen bg-[#f4f3ef] flex flex-col">
       <Cursor />
 
       {/* Top navbar */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 16px', height: 52,
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
-        background: '#0d0d14', flexShrink: 0,
+        borderBottom: '1px solid rgba(22,21,15,0.07)',
+        background: '#ffffff', flexShrink: 0,
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
       }}>
         {/* Left: back */}
         <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
           <MahmudLogo size="sm" />
           {!isMobile && (
-            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, fontFamily: 'var(--font-dm-sans)' }}>← Back</span>
+            <span style={{ color: 'rgba(22,21,15,0.4)', fontSize: 13, fontFamily: 'var(--font-dm-sans)' }}>← Back</span>
           )}
         </a>
 
         {/* Center: tabs */}
-        <div style={{ display: 'flex', gap: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: 3 }}>
+        <div style={{ display: 'flex', gap: 3, background: 'rgba(22,21,15,0.05)', borderRadius: 10, padding: 3 }}>
           {([
             { id: 'builder', label: isMobile ? 'Builder' : 'CV Builder' },
             { id: 'ats',     label: isMobile ? 'ATS'     : 'ATS Checker' },
@@ -185,8 +185,8 @@ export default function CVPage() {
               onClick={() => setActiveTab(tab.id)}
               style={{
                 padding: isMobile ? '5px 12px' : '6px 18px', borderRadius: 7, border: 'none',
-                background: activeTab === tab.id ? '#4f8ef7' : 'transparent',
-                color: activeTab === tab.id ? '#fff' : 'rgba(255,255,255,0.4)',
+                background: activeTab === tab.id ? '#e2701f' : 'transparent',
+                color: activeTab === tab.id ? '#fff' : 'rgba(22,21,15,0.4)',
                 fontSize: isMobile ? 12 : 13, fontWeight: activeTab === tab.id ? 600 : 400,
                 cursor: 'pointer', transition: 'all 0.15s',
                 fontFamily: 'var(--font-dm-sans)',
@@ -204,15 +204,15 @@ export default function CVPage() {
           </h1>
         ) : (
           /* Mobile: toggle Controls / Preview */
-          <div style={{ display: 'flex', gap: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: 3 }}>
+          <div style={{ display: 'flex', gap: 3, background: 'rgba(22,21,15,0.05)', borderRadius: 8, padding: 3 }}>
             {(['controls', 'preview'] as const).map(p => (
               <button
                 key={p}
                 onClick={() => setMobilePanel(p)}
                 style={{
                   padding: '4px 10px', borderRadius: 6, border: 'none', fontSize: 11,
-                  background: mobilePanel === p ? 'rgba(79,142,247,0.25)' : 'transparent',
-                  color: mobilePanel === p ? '#4f8ef7' : 'rgba(255,255,255,0.35)',
+                  background: mobilePanel === p ? 'rgba(226,112,31,0.25)' : 'transparent',
+                  color: mobilePanel === p ? '#e2701f' : 'rgba(22,21,15,0.35)',
                   cursor: 'pointer', fontFamily: 'var(--font-dm-sans)', fontWeight: 500,
                   textTransform: 'capitalize',
                 }}
@@ -240,11 +240,11 @@ export default function CVPage() {
             )
           ) : (
             mobilePanel === 'controls' ? (
-              <div style={{ height: '100%', overflowY: 'auto', background: '#0d0d14' }}>
+              <div style={{ height: '100%', overflowY: 'auto', background: '#ffffff' }}>
                 <ATSChecker cvData={cvData} />
               </div>
             ) : (
-              <div style={{ height: '100%', overflowY: 'auto', background: '#080810', padding: 16 }}>
+              <div style={{ height: '100%', overflowY: 'auto', background: '#eceae4', padding: 16 }}>
                 <CVPreview cvData={cvData} selectedTemplate={selectedTemplate} />
               </div>
             )
@@ -263,9 +263,9 @@ export default function CVPage() {
                 style={{
                   width: 10,
                   cursor: 'col-resize',
-                  background: isResizing ? 'rgba(79,142,247,0.22)' : 'transparent',
-                  borderLeft: '1px solid rgba(255,255,255,0.08)',
-                  borderRight: '1px solid rgba(255,255,255,0.08)',
+                  background: isResizing ? 'rgba(226,112,31,0.22)' : 'transparent',
+                  borderLeft: '1px solid rgba(22,21,15,0.08)',
+                  borderRight: '1px solid rgba(22,21,15,0.08)',
                   position: 'relative',
                   flexShrink: 0,
                 }}
@@ -279,7 +279,7 @@ export default function CVPage() {
                     width: 4,
                     height: 72,
                     borderRadius: 999,
-                    background: isResizing ? '#4f8ef7' : 'rgba(255,255,255,0.22)',
+                    background: isResizing ? '#e2701f' : 'rgba(22,21,15,0.22)',
                   }}
                 />
               </div>
@@ -289,10 +289,10 @@ export default function CVPage() {
             </>
           ) : (
             <>
-              <div style={{ width: 420, minWidth: 420, height: '100%', overflowY: 'auto', overflowX: 'hidden', borderRight: '1px solid rgba(255,255,255,0.08)', background: '#0d0d14', flexShrink: 0 }}>
+              <div style={{ width: 420, minWidth: 420, height: '100%', overflowY: 'auto', overflowX: 'hidden', borderRight: '1px solid rgba(22,21,15,0.08)', background: '#ffffff', flexShrink: 0 }}>
                 <ATSChecker cvData={cvData} />
               </div>
-              <div style={{ flex: 1, height: '100%', overflowY: 'auto', background: '#080810', padding: 24 }}>
+              <div style={{ flex: 1, height: '100%', overflowY: 'auto', background: '#eceae4', padding: 24 }}>
                 <CVPreview cvData={cvData} selectedTemplate={selectedTemplate} />
               </div>
             </>

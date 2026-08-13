@@ -39,8 +39,8 @@ function EduCard({ ed, i }: { ed: typeof portfolioData.education[0]; i: number }
         rotateY,
         transformStyle: 'preserve-3d',
         perspective: 1000,
-        background: 'linear-gradient(135deg, #0d0d18 0%, #111128 100%)',
-        border: '1px solid rgba(79,142,247,0.12)',
+        background: 'linear-gradient(135deg, #ffffff 0%, #ffffff 100%)',
+        border: '1px solid rgba(226,112,31,0.12)',
         borderRadius: 16,
         padding: '28px 28px 24px',
         position: 'relative',
@@ -55,7 +55,7 @@ function EduCard({ ed, i }: { ed: typeof portfolioData.education[0]; i: number }
         width: 120,
         height: 120,
         borderRadius: '50%',
-        background: 'rgba(79,142,247,0.08)',
+        background: 'rgba(226,112,31,0.08)',
         filter: 'blur(40px)',
         pointerEvents: 'none',
         left: glowX,
@@ -68,7 +68,7 @@ function EduCard({ ed, i }: { ed: typeof portfolioData.education[0]; i: number }
         position: 'absolute',
         top: 0, left: 0, right: 0,
         height: 3,
-        background: 'linear-gradient(90deg, #4f8ef7, #a78bfa)',
+        background: 'linear-gradient(90deg, #e2701f, #7a5bd6)',
         borderRadius: '16px 16px 0 0',
       }} />
 
@@ -78,9 +78,9 @@ function EduCard({ ed, i }: { ed: typeof portfolioData.education[0]; i: number }
         fontFamily: 'var(--font-dm-sans)',
         fontSize: 11,
         fontWeight: 600,
-        color: '#4f8ef7',
-        background: 'rgba(79,142,247,0.1)',
-        border: '1px solid rgba(79,142,247,0.25)',
+        color: '#e2701f',
+        background: 'rgba(226,112,31,0.1)',
+        border: '1px solid rgba(226,112,31,0.25)',
         borderRadius: 100,
         padding: '3px 12px',
         letterSpacing: '0.08em',
@@ -92,7 +92,7 @@ function EduCard({ ed, i }: { ed: typeof portfolioData.education[0]; i: number }
       <h4 style={{
         fontFamily: 'var(--font-bebas)',
         fontSize: 20,
-        color: '#e2e2f0',
+        color: '#16150f',
         lineHeight: 1.2,
         marginBottom: 8,
       }}>
@@ -101,7 +101,7 @@ function EduCard({ ed, i }: { ed: typeof portfolioData.education[0]; i: number }
       <p style={{
         fontFamily: 'var(--font-dm-sans)',
         fontSize: 13,
-        color: 'rgba(226,226,240,0.45)',
+        color: 'rgba(22,21,15,0.45)',
         lineHeight: 1.5,
       }}>
         {ed.school}
@@ -236,10 +236,10 @@ export default function Experience() {
         ctx.quadraticCurveTo(points[i].x, points[i].y, mx, my)
       }
       ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y)
-      ctx.strokeStyle = '#4f8ef7'
+      ctx.strokeStyle = '#e2701f'
       ctx.lineWidth   = 2
       ctx.shadowBlur  = 6
-      ctx.shadowColor = '#4f8ef788'
+      ctx.shadowColor = '#e2701f88'
       ctx.stroke()
       ctx.shadowBlur  = 0
 
@@ -251,9 +251,9 @@ export default function Experience() {
 
         ctx.beginPath()
         ctx.arc(pt.x, pt.y, 6, 0, Math.PI * 2)
-        ctx.fillStyle  = '#4f8ef7'
+        ctx.fillStyle  = '#e2701f'
         ctx.shadowBlur = 8
-        ctx.shadowColor = '#4f8ef7'
+        ctx.shadowColor = '#e2701f'
         ctx.fill()
         ctx.shadowBlur = 0
 
@@ -298,7 +298,7 @@ export default function Experience() {
   }, [])
 
   return (
-    <section style={{ background: '#050508', padding: 'clamp(60px, 10vw, 120px) clamp(16px, 4vw, 24px)' }}>
+    <section style={{ background: 'transparent', padding: 'clamp(60px, 10vw, 120px) clamp(16px, 4vw, 24px)' }}>
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
 
         {/* Heading */}
@@ -307,7 +307,7 @@ export default function Experience() {
             style={{
               fontFamily: 'var(--font-dm-sans)',
               fontSize: 13,
-              color: '#4f8ef7',
+              color: '#e2701f',
               letterSpacing: '0.15em',
               marginBottom: 12,
             }}
@@ -318,7 +318,7 @@ export default function Experience() {
             style={{
               fontFamily: 'var(--font-bebas)',
               fontSize: 'clamp(3rem, 6vw, 5rem)',
-              color: '#e2e2f0',
+              color: '#16150f',
               lineHeight: 1,
             }}
           >
@@ -368,10 +368,10 @@ export default function Experience() {
                   width: 12,
                   height: 12,
                   borderRadius: '50%',
-                  background: item.current ? '#34d399' : '#4f8ef7',
-                  border: '2px solid #050508',
+                  background: item.current ? '#2f8f5b' : '#e2701f',
+                  border: '2px solid #f4f3ef',
                   transform: isMobile ? 'translateX(-50%)' : 'translateX(-50%)',
-                  boxShadow: item.current ? '0 0 12px #34d399' : '0 0 12px #4f8ef7',
+                  boxShadow: item.current ? '0 0 12px #2f8f5b' : '0 0 12px #e2701f',
                   zIndex: 2,
                 }}
               />
@@ -379,8 +379,8 @@ export default function Experience() {
               <div
                 style={{
                   width: isMobile ? '100%' : '44%',
-                  background: '#0d0d18',
-                  border: '1px solid rgba(255,255,255,0.06)',
+                  background: '#ffffff',
+                  border: '1px solid rgba(22,21,15,0.06)',
                   borderRadius: 12,
                   padding: isMobile ? 16 : 24,
                 }}
@@ -399,7 +399,7 @@ export default function Experience() {
                     style={{
                       fontFamily: 'var(--font-bebas)',
                       fontSize: 22,
-                      color: '#e2e2f0',
+                      color: '#16150f',
                       lineHeight: 1.1,
                     }}
                   >
@@ -411,9 +411,9 @@ export default function Experience() {
                         fontSize: 10,
                         fontFamily: 'var(--font-dm-sans)',
                         fontWeight: 700,
-                        color: '#34d399',
-                        background: 'rgba(52,211,153,0.1)',
-                        border: '1px solid rgba(52,211,153,0.3)',
+                        color: '#2f8f5b',
+                        background: 'rgba(47,143,91,0.1)',
+                        border: '1px solid rgba(47,143,91,0.3)',
                         borderRadius: 100,
                         padding: '3px 10px',
                         animation: 'currentPulse 2s ease-in-out infinite',
@@ -427,7 +427,7 @@ export default function Experience() {
                   style={{
                     fontFamily: 'var(--font-dm-sans)',
                     fontSize: 13,
-                    color: '#4f8ef7',
+                    color: '#e2701f',
                     marginBottom: 4,
                   }}
                 >
@@ -437,7 +437,7 @@ export default function Experience() {
                   style={{
                     fontFamily: 'var(--font-dm-sans)',
                     fontSize: 12,
-                    color: 'rgba(226,226,240,0.3)',
+                    color: 'rgba(22,21,15,0.3)',
                     marginBottom: 12,
                     letterSpacing: '0.05em',
                   }}
@@ -448,7 +448,7 @@ export default function Experience() {
                   style={{
                     fontFamily: 'var(--font-dm-sans)',
                     fontSize: 14,
-                    color: 'rgba(226,226,240,0.6)',
+                    color: 'rgba(22,21,15,0.6)',
                     lineHeight: 1.6,
                   }}
                 >
