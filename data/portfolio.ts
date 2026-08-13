@@ -1,3 +1,26 @@
+/**
+ * Declared rather than inferred, and `image` is explicitly optional.
+ *
+ * Without this, TypeScript reads the shape off the literal below: the moment
+ * every entry happened to carry an `image`, it became a required field and
+ * CVBuilder's "add project" — which creates a blank entry with no screenshot —
+ * stopped type-checking. Adding or removing a screenshot should never change
+ * the public type.
+ */
+export type Project = {
+  id: string
+  name: string
+  shortDesc: string
+  fullDesc: string
+  tech: string[]
+  github: string
+  live: string
+  featured: boolean
+  category: string
+  color: string
+  image?: string
+}
+
 export const portfolioData = {
   personal: {
     name: "Md. Abdulla Al Mahmud",
@@ -92,17 +115,122 @@ export const portfolioData = {
     {
       id: "examflow",
       name: "ExamFlow",
-      shortDesc: "Full-stack Online Exam Management System",
+      shortDesc: "Online exam management system",
       fullDesc:
-        "A full-stack exam platform — Next.js, Node.js, MongoDB. Admin panel, exam creation, user management, result handling. Deployed on Vercel.",
-      tech: ["Next.js", "Node.js", "MongoDB", "Vercel"],
+        "Exam platform for administering and marking assessments — admin panel, exam creation, user management, and result handling. Ships as AssessmentFlow under the KhulnaTech brand.",
+      tech: ["Next.js", "React", "Node.js", "MongoDB"],
       github: "https://github.com/mahmudshamim",
-      live: "",
+      live: "https://examflow.khulnatech.us/login",
       featured: true,
       category: "Full-Stack",
-      color: "#e2701f",
+      color: "#2f6fd0",
+      image: "/images/examflow.webp",
     },
-  ],
+
+    /* `featured` orders the panel sequence rather than filtering it — flagged
+       projects come first, everything else follows. Nothing is hidden.
+
+       Descriptions and stacks below come from each live site (page title, meta
+       description, and framework markers in the served HTML), not guesswork. */
+    {
+      id: "signingus",
+      name: "SigningUs",
+      shortDesc: "Digital signature platform — send, sign, and track documents",
+      fullDesc:
+        "E-signature SaaS. Draw, type, or upload a signature; multi-party ordered signing workflows, reusable templates, file collection, and a status dashboard. Delivery over email, WhatsApp, or link, with tiered plans and API access.",
+      tech: ["Next.js", "React"],
+      github: "",
+      live: "https://signingus.com/",
+      featured: true,
+      category: "Full-Stack",
+      color: "#2f6fd0",
+      image: "/images/signingus.webp",
+    },
+    {
+      id: "ouropero",
+      name: "OurOpero",
+      shortDesc: "Team workspace — boards, automation, and dashboards",
+      fullDesc:
+        "Project workspace combining boards, automation, dashboards, and team collaboration in one place. Positioned for fast-moving teams with data privacy as a first-class concern.",
+      tech: ["Next.js", "React", "Vite"],
+      github: "",
+      live: "https://ouropero.com/",
+      featured: false,
+      category: "Full-Stack",
+      color: "#7a5bd6",
+      image: "/images/ouropero.webp",
+    },
+    {
+      id: "ktl-subs",
+      name: "KTL Subs",
+      shortDesc: "Internal recurring-cost tracker for KhulnaTech",
+      fullDesc:
+        "Subscription management for KTL LLC and KTL LTD. Consolidates subscriptions, memberships, and licenses across entities with advance renewal alerts, yearly and monthly cost reporting, and paid-versus-used visibility. Owner-controlled accounts.",
+      tech: ["Next.js", "React"],
+      github: "",
+      live: "https://subs.khulnatech.us/login",
+      featured: false,
+      category: "Full-Stack",
+      color: "#2f8f5b",
+      image: "/images/ktl-subs.webp",
+    },
+    {
+      id: "diego-defense",
+      name: "Diego Defense",
+      shortDesc: "ITAR-compliant defense contractor site",
+      fullDesc:
+        "Corporate site for a U.S. defense contractor serving international sovereign procurement tenders. Covers procurement capabilities, ITAR compliance, and a vendor verification portal, structured around a four-step engagement flow.",
+      tech: ["Next.js", "React"],
+      github: "",
+      live: "http://diegodefense.org/",
+      featured: false,
+      category: "Frontend",
+      color: "#4b4941",
+      image: "/images/diego-defense.webp",
+    },
+    {
+      id: "seba-library",
+      name: "Seba Bangla Library",
+      shortDesc: "Nonprofit Bengali cultural library in Georgia",
+      fullDesc:
+        "Site for a Bengali cultural library and community centre founded in 2001. Book and DVD collections, events, photo gallery, membership, and donations.",
+      tech: ["Next.js", "React"],
+      github: "",
+      live: "https://seba-library.vercel.app/",
+      featured: false,
+      category: "Frontend",
+      color: "#9a7a1e",
+      image: "/images/seba-library.webp",
+    },
+    {
+      id: "terraexplore",
+      name: "TerraExplore",
+      shortDesc: "Expedition planner with itineraries and shared expenses",
+      fullDesc:
+        "Nature retreat planning app: visual itineraries, live maps, and shared group expense tracking. Plan, Explore, and Split are the three core flows.",
+      tech: ["Next.js", "React"],
+      github: "",
+      live: "https://friends-tour.vercel.app/",
+      featured: false,
+      category: "Full-Stack",
+      color: "#0f7f9e",
+      image: "/images/terraexplore.webp",
+    },
+    {
+      id: "porta-arsenale",
+      name: "Porta Dell'Arsenale",
+      shortDesc: "Venetian restaurant and wood-fired pizzeria",
+      fullDesc:
+        "Site for a ristorante and pizzeria in the historic Arsenale quarter of Venice — wood-fired oven, Venetian cooking, Adriatic seafood, and Neapolitan pizza, with table booking.",
+      tech: ["Next.js", "React"],
+      github: "",
+      live: "https://portadellaarsenale.com/",
+      featured: true,
+      category: "Frontend",
+      color: "#c9356b",
+      image: "/images/porta-arsenale.webp",
+    },
+  ] as Project[],
 
   experience: [
     {

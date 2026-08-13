@@ -14,7 +14,7 @@ import Contact from '@/components/Contact'
  *
  *   Hero        grid    drafting paper behind the wordmark
  *   Skills      plain   the icon cloud is busy enough on its own
- *   Projects    grid    structure behind the browser windows
+ *   Projects    grid    structure behind the opening panels (all 11)
  *   Experience  alt     a half-step darker, to break two light bands
  *   Education   —       owns its ground: the one dark section, unwrapped
  *   Contact     plain   lands flat and quiet
