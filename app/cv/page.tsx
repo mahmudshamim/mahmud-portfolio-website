@@ -76,17 +76,40 @@ function isValidStoredCVData(value: unknown): value is CVData {
   )
 }
 
+/**
+ * A blank CV, because this is a tool anyone can open.
+ *
+ * It used to seed itself from `portfolioData`, so a stranger's first screen
+ * was my name, photo, phone number and job history, which they had to delete
+ * before they could start. The sample is still one click away.
+ */
 function buildDefaultCVData(): CVData {
   return {
-    personal: { ...portfolioData.personal },
-    skills: portfolioData.skills,
-    projects: portfolioData.projects,
-    experience: portfolioData.experience,
-    education: portfolioData.education,
+    personal: {
+      ...portfolioData.personal,
+      name: '',
+      shortName: '',
+      fullName: '',
+      role: '',
+      tagline: '',
+      email: '',
+      phone: '',
+      location: '',
+      github: '',
+      portfolio: '',
+      upwork: '',
+      linkedin: '',
+      summary: '',
+      photo: '',
+    },
+    skills: [],
+    projects: [],
+    experience: [],
+    education: [],
     customSections: [],
     sectionOrder: ['summary', 'experience', 'projects', 'education'],
-    selectedSkills: portfolioData.skills.map((s) => s.name),
-    photo: '/images/mahmud-profile.jpg',
+    selectedSkills: [],
+    photo: '',
     docStyle: {
       accent: '#2563eb',
       typeface: 'sans',
@@ -101,6 +124,20 @@ function buildDefaultCVData(): CVData {
       skills: true,
       education: true,
     },
+  }
+}
+
+/** The filled-in example, offered from the toolbar. */
+function buildSampleCVData(): CVData {
+  return {
+    ...buildDefaultCVData(),
+    personal: { ...portfolioData.personal },
+    skills: portfolioData.skills,
+    projects: portfolioData.projects,
+    experience: portfolioData.experience,
+    education: portfolioData.education,
+    selectedSkills: portfolioData.skills.map((skill) => skill.name),
+    photo: portfolioData.personal.photo,
   }
 }
 
@@ -195,6 +232,12 @@ export default function CVPage() {
     } catch {
       /* Clipboard blocked (insecure origin, denied permission) — stay quiet. */
     }
+  }
+
+  const handleLoadSample = () => {
+    setCVData(buildSampleCVData())
+    setSavedAt('Example loaded')
+    setSaveState('saved')
   }
 
   const handleResetCV = () => {
@@ -332,7 +375,7 @@ export default function CVPage() {
           {activeTab === 'builder' ? (
             mobilePanel === 'controls' ? (
               <div style={{ height: '100%', overflowY: 'auto', background: builderControlsBg }}>
-                <CVBuilder cvData={cvData} setCVData={setCVData} selectedTemplate={selectedTemplate} setSelectedTemplate={setSelectedTemplate} saveState={saveState} savedAt={savedAt} onReset={handleResetCV} />
+                <CVBuilder cvData={cvData} setCVData={setCVData} selectedTemplate={selectedTemplate} setSelectedTemplate={setSelectedTemplate} saveState={saveState} savedAt={savedAt} onReset={handleResetCV} onLoadSample={handleLoadSample} />
                 <div style={{ padding: '0 12px 110px' }}>
                   <CVOptions cvData={cvData} setCVData={setCVData} isMobile />
                 </div>
@@ -375,7 +418,7 @@ export default function CVPage() {
                   flexShrink: 0,
                 }}
               >
-                <CVBuilder cvData={cvData} setCVData={setCVData} selectedTemplate={selectedTemplate} setSelectedTemplate={setSelectedTemplate} saveState={saveState} savedAt={savedAt} onReset={handleResetCV} compact={builderWidth < 720} />
+                <CVBuilder cvData={cvData} setCVData={setCVData} selectedTemplate={selectedTemplate} setSelectedTemplate={setSelectedTemplate} saveState={saveState} savedAt={savedAt} onReset={handleResetCV} onLoadSample={handleLoadSample} compact={builderWidth < 720} />
               </div>
 
               <div

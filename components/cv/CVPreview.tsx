@@ -7,16 +7,19 @@ import { MdEmail, MdPhone, MdLocationOn, MdLanguage, MdPerson, MdWork, MdSchool,
 type Props = {
   cvData: CVData
   selectedTemplate: CVTemplate
-  /* The toolbar owns the Download button, but the PDF logic and the DOM node
-     it captures both live here. Hand the trigger up rather than duplicating
-     html2pdf wiring in two places. */
+  /* The toolbar owns the Download button, but the print logic and the DOM
+     node it clones both live here. Hand the trigger up rather than
+     duplicating that wiring in two places. */
   registerDownload?: (fn: () => void, busy: boolean) => void
 }
 
 export default function CVPreview({ cvData, selectedTemplate, registerDownload }: Props) {
-  const [isGenerating, setIsGenerating] = useState(false)
   const previewFrameRef = useRef<HTMLDivElement>(null)
   const [previewScale, setPreviewScale] = useState(1)
+  /* The sheet used to be pinned to exactly one A4 page with overflow hidden,
+     so a longer CV was invisible on screen as well as missing from the PDF. */
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [contentHeight, setContentHeight] = useState(1122)
   const A4_W = 794
   const A4_H = 1122
 
@@ -41,32 +44,65 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
     }
   }, [])
 
-  const handleDownload = async () => {
-    setIsGenerating(true)
-    try {
-      const html2pdf = (await import('html2pdf.js')).default as any
-      const element = document.getElementById('cv-preview-content')
-      if (!element) return
-      // A4 at 96dpi = 794 × 1122px. Clamp canvas capture to exactly one A4 page
-      // so html2pdf never overflows into a second blank page.
-      await html2pdf()
-        .set({
-          margin: 0,
-          filename: `Mahmud-CV-${selectedTemplate}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            height: A4_H,
-            windowHeight: A4_H,
-          },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        })
-        .from(element)
-        .save()
-    } finally {
-      setIsGenerating(false)
+  useEffect(() => {
+    const node = contentRef.current
+    if (!node) return
+    const measure = () => setContentHeight(Math.max(A4_H, node.scrollHeight))
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  /*
+   * Print, not html2canvas.
+   *
+   * The old path rasterised the document to a JPEG and wrapped it in a PDF:
+   * no selectable text, no clickable links, nothing for a screen reader, and
+   * — the real problem for a CV — nothing an applicant tracking system can
+   * parse. The tool scored your CV for ATS friendliness and then handed you a
+   * file no ATS could read.
+   *
+   * It also pinned the capture to exactly one A4 page, so anything past
+   * 1122px was silently dropped.
+   *
+   * The browser's own print engine gives real text, real links, and automatic
+   * pagination for free. Chrome and Edge name the file from document.title,
+   * so the CV is named after its owner rather than after me.
+   */
+  const handleDownload = () => {
+    const previousTitle = document.title
+    const owner = (cvData.personal.name || 'Resume')
+      .replace(/[^\w\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+    document.title = `${owner || 'Resume'}-CV`
+
+    const restore = () => {
+      document.title = previousTitle
+      window.removeEventListener('afterprint', restore)
     }
+    window.addEventListener('afterprint', restore)
+
+    /* Clone rather than print in place: the sheet lives inside a scaled,
+       scrolling column, and a transformed or clipped ancestor breaks
+       pagination. Styles are inline, so the clone renders identically. */
+    const source = document.getElementById('cv-preview-content')
+    const root = document.createElement('div')
+    root.id = 'cv-print-root'
+    if (source) root.appendChild(source.cloneNode(true))
+    document.body.appendChild(root)
+
+    const cleanup = () => {
+      root.remove()
+      window.removeEventListener('afterprint', cleanup)
+    }
+    window.addEventListener('afterprint', cleanup)
+
+    window.print()
+    setTimeout(cleanup, 60000)
+    /* Safari fires afterprint unreliably; make sure the tab title recovers. */
+    setTimeout(restore, 60000)
   }
 
   const { personal, skills, projects, experience, education, customSections, sectionOrder, showSections, photo } = cvData
@@ -74,9 +110,9 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
 
   /* One bundle instead of nine repeated attributes per branch. */
   useEffect(() => {
-    registerDownload?.(handleDownload, isGenerating)
+    registerDownload?.(handleDownload, false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isGenerating, cvData, selectedTemplate])
+  }, [cvData, selectedTemplate])
 
   const ds = cvData.docStyle
   const typefaces = {
@@ -116,20 +152,20 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
         ref={previewFrameRef}
         style={{ width: '100%', margin: '0 auto' }}
       >
-        <div style={{ width: '100%', height: A4_H * previewScale, position: 'relative' }}>
+        <div style={{ width: '100%', height: contentHeight * previewScale, position: 'relative' }}>
           <div
             style={{
               width: A4_W,
               minHeight: A4_H,
               background: '#fff',
-              boxShadow: '0 20px 80px rgba(0,0,0,0.5)',
+              boxShadow: '0 8px 32px rgba(15,23,42,0.12)',
               borderRadius: 4,
-              overflow: 'hidden',
+              position: 'relative',
               transform: `scale(${previewScale})`,
               transformOrigin: 'top left',
             }}
           >
-            <div id="cv-preview-content" style={{ width: A4_W, ...docVars }}>
+            <div id="cv-preview-content" ref={contentRef} style={{ width: A4_W, ...docVars }}>
               {selectedTemplate === 'profile-split' && (
                 <ProfileSplitTemplate {...templateProps} />
               )}
@@ -167,6 +203,41 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
                 <CreativePanelTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
               )}
             </div>
+
+            {/* Where the printer will actually break. Without this the second
+                page is a surprise you only meet in the PDF. */}
+            {Array.from({ length: Math.max(0, Math.ceil(contentHeight / A4_H) - 1) }, (_, i) => (
+              <div
+                key={i}
+                data-page-guide
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: (i + 1) * A4_H,
+                  borderTop: '1px dashed #94a3b8',
+                  pointerEvents: 'none',
+                }}
+              >
+                <span
+                  style={{
+                    position: 'absolute',
+                    right: 8,
+                    top: 6,
+                    fontFamily: 'var(--font-dm-sans)',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: '#64748b',
+                    background: '#f1f5f9',
+                    borderRadius: 4,
+                    padding: '2px 7px',
+                  }}
+                >
+                  Page {i + 2}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>

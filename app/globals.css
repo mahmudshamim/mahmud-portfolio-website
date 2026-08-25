@@ -95,3 +95,73 @@ body {
 .font-dm-sans {
   font-family: var(--font-dm-sans);
 }
+
+/* ── Printing the CV ──────────────────────────────────────────────────────
+   `handleDownload` clones the document into #cv-print-root and calls
+   window.print(). Cloning to the body avoids every ancestor problem the
+   preview has — the sheet is inside a scaled, scrolling, sticky column, and
+   a transformed or clipped ancestor breaks pagination.
+
+   This replaces an html2canvas pipeline that produced a JPEG inside a PDF:
+   no selectable text, no links, and nothing an ATS could parse. */
+#cv-print-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Only the cloned document prints. */
+  body > *:not(#cv-print-root) {
+    display: none !important;
+  }
+
+  #cv-print-root {
+    display: block !important;
+  }
+
+  #cv-print-root > * {
+    width: 794px !important;
+    transform: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Never split one job, project, or qualification across two pages. */
+  #cv-print-root section,
+  #cv-print-root article,
+  #cv-print-root [data-cv-entry] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* A heading stranded at the foot of a page reads as a mistake. */
+  #cv-print-root h1,
+  #cv-print-root h2,
+  #cv-print-root h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* Templates carry real background colour; keep it in the PDF. */
+  #cv-print-root * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* On-screen affordances that mean nothing on paper. */
+  [data-page-guide] {
+    display: none !important;
+  }
+}

@@ -21,6 +21,7 @@ type Props = {
   saveState: 'saving' | 'saved'
   savedAt: string
   onReset: () => void
+  onLoadSample: () => void
   /** The pane is narrow: stack the rail above the fields. */
   compact?: boolean
 }
@@ -654,7 +655,7 @@ function ProjectCard({
   )
 }
 
-export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSelectedTemplate, saveState, savedAt, onReset, compact = false }: Props) {
+export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSelectedTemplate, saveState, savedAt, onReset, onLoadSample, compact = false }: Props) {
   const viewportIsMobile = useIsMobile()
   const isMobile = viewportIsMobile || compact
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -956,6 +957,21 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
           </div>
           <span style={{ fontSize: 13, fontWeight: 600, color: text, minWidth: 34, textAlign: 'right' }}>{progress}%</span>
         </div>
+
+        <button
+          onClick={onLoadSample}
+          style={{
+            ...buttonBase,
+            padding: '9px 14px',
+            background: surface,
+            color: text,
+            border: `1px solid ${border}`,
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = surfaceMuted)}
+          onMouseLeave={(e) => (e.currentTarget.style.background = surface)}
+        >
+          Load example
+        </button>
 
         <button
           onClick={onReset}
