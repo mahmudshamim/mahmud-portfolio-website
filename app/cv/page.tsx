@@ -26,6 +26,23 @@ export type CVTemplate =
   | 'bold-header'
   | 'creative-panel'
 
+/** Shared so the panel's Reset and a new CV agree on what "default" means. */
+export const DEFAULT_DOC_STYLE = {
+  accent: '#2563eb',
+  ink: '#222222',
+  typeface: 'sans',
+  headingFont: 'match',
+  scale: 1,
+  lineHeight: 1.65,
+  letterSpacing: 0,
+  margin: 44,
+  sectionGap: 24,
+  headingCase: 'normal',
+  headingRule: 'short',
+  photoShape: 'circle',
+  photoSize: 92,
+} as const
+
 export type CVData = {
   personal: typeof portfolioData.personal
   skills: typeof portfolioData.skills
@@ -45,10 +62,21 @@ export type CVData = {
      the whole document instead. Consumed by the plain-paper templates. */
   docStyle: {
     accent: string
+    /** Body text colour. Pure black prints heavier than most people expect. */
+    ink: string
     typeface: 'sans' | 'serif' | 'mono'
+    /** `match` follows the body face; anything else pairs against it. */
+    headingFont: 'match' | 'sans' | 'serif' | 'mono'
     scale: number
     lineHeight: number
+    letterSpacing: number
+    /** Page padding in px, and the gap between sections. */
+    margin: number
+    sectionGap: number
+    headingCase: 'normal' | 'upper'
+    headingRule: 'short' | 'full' | 'none'
     photoShape: 'circle' | 'rounded' | 'square' | 'hidden'
+    photoSize: number
   }
   showSections: {
     summary: boolean
@@ -93,13 +121,7 @@ function buildDefaultCVData(): CVData {
     sectionOrder: ['summary', 'experience', 'projects', 'education'],
     selectedSkills: [],
     photo: '',
-    docStyle: {
-      accent: '#2563eb',
-      typeface: 'sans',
-      scale: 1,
-      lineHeight: 1.65,
-      photoShape: 'circle',
-    },
+    docStyle: { ...DEFAULT_DOC_STYLE },
     showSections: {
       summary: true,
       experience: true,
@@ -444,7 +466,7 @@ export default function CVPage() {
 
               <aside
                 style={{
-                  width: 288,
+                  width: 300,
                   flexShrink: 0,
                   height: '100%',
                   overflowY: 'auto',

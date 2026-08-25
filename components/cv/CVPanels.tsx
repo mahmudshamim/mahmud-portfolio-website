@@ -1,6 +1,8 @@
 'use client'
 
 import type { CVData } from '@/app/cv/page'
+import { DEFAULT_DOC_STYLE } from '@/app/cv/page'
+import { ColorField, Group, Row, Segmented, Slider } from './StyleControls'
 import {
   SECTION_PRESETS,
   blurStyle,
@@ -78,88 +80,126 @@ export function CVOptions({
 
   return (
     <div style={{ display: 'grid', gap: 14 }}>
-      <Panel
-        title="Document style"
-        hint="Applies to the plain-paper templates: Profile Split, Swiss Grid, ATS Compact, Accent Rule."
-      >
-        <Field label="Accent">
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-            {['#2563eb', '#0f766e', '#b45309', '#be123c', '#6d28d9', '#111827'].map((c) => (
-              <button
-                key={c}
-                onClick={() => setDoc('accent', c)}
-                aria-label={`Accent ${c}`}
-                aria-pressed={ds.accent === c}
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: 6,
-                  background: c,
-                  border: ds.accent === c ? `2px solid ${text}` : `1px solid ${border}`,
-                  cursor: 'pointer',
-                  padding: 0,
-                }}
-              />
-            ))}
-            <input
-              type="color"
-              value={ds.accent}
-              onChange={(e) => setDoc('accent', e.target.value)}
-              aria-label="Custom accent colour"
-              style={{ width: 24, height: 24, padding: 0, border: `1px solid ${border}`, borderRadius: 6, background: surface, cursor: 'pointer' }}
-            />
+      {/* Label left, control right — the shape every editor panel uses, and
+          the only one that fits a 288px column without stacking. */}
+      <section style={{ background: surface, border: `1px solid ${border}`, borderRadius: 14, boxShadow: shadow, overflow: 'hidden' }}>
+        <header style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 14px', background: surfaceMuted }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ ...sectionLabelStyle, marginBottom: 2 }}>Document style</div>
+            <div style={{ ...helperStyle, fontSize: 11 }}>
+              Profile Split, Swiss Grid, ATS Compact and Accent Rule.
+            </div>
           </div>
-        </Field>
+          <button
+            onClick={() => setCVData((prev) => ({ ...prev, docStyle: { ...DEFAULT_DOC_STYLE } }))}
+            style={{ ...buttonBase, background: surface, border: `1px solid ${border}`, color: text, padding: '5px 10px', fontSize: 11 }}
+          >
+            Reset all
+          </button>
+        </header>
 
-        <Field label="Typeface">
-          <Segmented
-            value={ds.typeface}
-            options={[
-              { value: 'sans', label: 'Sans' },
-              { value: 'serif', label: 'Serif' },
-              { value: 'mono', label: 'Mono' },
-            ]}
-            onChange={(v) => setDoc('typeface', v as CVData['docStyle']['typeface'])}
-          />
-        </Field>
+        <Group title="Type">
+          <Row label="Body font" stack>
+            <Segmented
+              value={ds.typeface}
+              options={[
+                { value: 'sans' as const, label: 'Sans' },
+                { value: 'serif' as const, label: 'Serif' },
+                { value: 'mono' as const, label: 'Mono' },
+              ]}
+              onChange={(v) => setDoc('typeface', v)}
+            />
+          </Row>
+          <Row label="Headings" hint="Pair or match" stack>
+            <Segmented
+              value={ds.headingFont}
+              options={[
+                { value: 'match' as const, label: 'Match' },
+                { value: 'sans' as const, label: 'Sans' },
+                { value: 'serif' as const, label: 'Serif' },
+                { value: 'mono' as const, label: 'Mono' },
+              ]}
+              onChange={(v) => setDoc('headingFont', v)}
+            />
+          </Row>
+          <Row label="Heading case" stack>
+            <Segmented
+              value={ds.headingCase}
+              options={[
+                { value: 'normal' as const, label: 'Normal' },
+                { value: 'upper' as const, label: 'UPPER' },
+              ]}
+              onChange={(v) => setDoc('headingCase', v)}
+            />
+          </Row>
+          <Row label="Text size" stack>
+            <Slider value={ds.scale} min={0.85} max={1.2} step={0.05} onChange={(v) => setDoc('scale', v)} format={(v) => `${Math.round(v * 100)}%`} />
+          </Row>
+          <Row label="Line height" stack>
+            <Slider value={ds.lineHeight} min={1.3} max={2} step={0.05} onChange={(v) => setDoc('lineHeight', v)} format={(v) => v.toFixed(2)} />
+          </Row>
+          <Row label="Tracking" hint="Letter spacing" stack>
+            <Slider value={ds.letterSpacing} min={-0.02} max={0.06} step={0.005} onChange={(v) => setDoc('letterSpacing', v)} format={(v) => `${(v * 1000).toFixed(0)}`} />
+          </Row>
+        </Group>
 
-        <Field label={`Text size · ${Math.round(ds.scale * 100)}%`}>
-          <input
-            type="range"
-            min={0.85}
-            max={1.2}
-            step={0.05}
-            value={ds.scale}
-            onChange={(e) => setDoc('scale', Number(e.target.value))}
-            style={{ width: '100%', accentColor: brand }}
-          />
-        </Field>
+        <Group title="Colour">
+          <Row label="Accent" hint="Rules and highlights" stack>
+            <ColorField
+              value={ds.accent}
+              presets={['#2563eb', '#0f766e', '#b45309', '#be123c', '#6d28d9', '#111827']}
+              onChange={(v) => setDoc('accent', v)}
+            />
+          </Row>
+          <Row label="Text" hint="Pure black prints heavy" stack>
+            <ColorField
+              value={ds.ink}
+              presets={['#222222', '#111827', '#334155', '#3f3f46', '#1c1917']}
+              onChange={(v) => setDoc('ink', v)}
+            />
+          </Row>
+          <Row label="Rule" stack>
+            <Segmented
+              value={ds.headingRule}
+              options={[
+                { value: 'short' as const, label: 'Short' },
+                { value: 'full' as const, label: 'Full' },
+                { value: 'none' as const, label: 'None' },
+              ]}
+              onChange={(v) => setDoc('headingRule', v)}
+            />
+          </Row>
+        </Group>
 
-        <Field label={`Line height · ${ds.lineHeight.toFixed(2)}`}>
-          <input
-            type="range"
-            min={1.3}
-            max={2}
-            step={0.05}
-            value={ds.lineHeight}
-            onChange={(e) => setDoc('lineHeight', Number(e.target.value))}
-            style={{ width: '100%', accentColor: brand }}
-          />
-        </Field>
+        <Group title="Layout">
+          <Row label="Page margin" hint="More room, fewer pages" stack>
+            <Slider value={ds.margin} min={26} max={64} step={2} unit="px" onChange={(v) => setDoc('margin', v)} />
+          </Row>
+          <Row label="Section gap" stack>
+            <Slider value={ds.sectionGap} min={12} max={40} step={2} unit="px" onChange={(v) => setDoc('sectionGap', v)} />
+          </Row>
+        </Group>
 
-        <Field label="Photo">
-          <Segmented
-            value={ds.photoShape}
-            options={[
-              { value: 'circle', label: 'Round' },
-              { value: 'rounded', label: 'Soft' },
-              { value: 'square', label: 'Square' },
-              { value: 'hidden', label: 'None' },
-            ]}
-            onChange={(v) => setDoc('photoShape', v as CVData['docStyle']['photoShape'])}
-          />
-        </Field>
-      </Panel>
+        <Group title="Photo">
+          <Row label="Shape" stack>
+            <Segmented
+              value={ds.photoShape}
+              options={[
+                { value: 'circle' as const, label: 'Round' },
+                { value: 'rounded' as const, label: 'Soft' },
+                { value: 'square' as const, label: 'Square' },
+                { value: 'hidden' as const, label: 'None' },
+              ]}
+              onChange={(v) => setDoc('photoShape', v)}
+            />
+          </Row>
+          {ds.photoShape !== 'hidden' && (
+            <Row label="Size" stack>
+              <Slider value={ds.photoSize} min={64} max={128} step={4} unit="px" onChange={(v) => setDoc('photoSize', v)} />
+            </Row>
+          )}
+        </Group>
+      </section>
 
       <Panel title="Visible sections" hint="Turn a block off to drop it from the document and the PDF.">
         <div style={{ display: 'grid', gap: 8 }}>
@@ -394,61 +434,5 @@ function NudgeButton({
         {dir === 'up' ? <polyline points="18 15 12 9 6 15" /> : <polyline points="6 9 12 15 18 9" />}
       </svg>
     </button>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: textMuted, marginBottom: 6 }}>{label}</div>
-      {children}
-    </div>
-  )
-}
-
-function Segmented({
-  value,
-  options,
-  onChange,
-}: {
-  value: string
-  options: { value: string; label: string }[]
-  onChange: (v: string) => void
-}) {
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${options.length}, 1fr)`,
-        gap: 2,
-        background: surfaceMuted,
-        border: `1px solid ${border}`,
-        borderRadius: 8,
-        padding: 2,
-      }}
-    >
-      {options.map((o) => {
-        const isActive = value === o.value
-        return (
-          <button
-            key={o.value}
-            onClick={() => onChange(o.value)}
-            aria-pressed={isActive}
-            style={{
-              ...buttonBase,
-              padding: '6px 4px',
-              fontSize: 11,
-              fontWeight: isActive ? 600 : 500,
-              borderRadius: 6,
-              background: isActive ? surface : 'transparent',
-              color: isActive ? text : textMuted,
-              boxShadow: isActive ? '0 1px 2px rgba(15,23,42,0.10)' : 'none',
-            }}
-          >
-            {o.label}
-          </button>
-        )
-      })}
-    </div>
   )
 }

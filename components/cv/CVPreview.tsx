@@ -141,10 +141,22 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
   } as const
   const docVars = {
     '--cv-accent': ds.accent,
+    '--cv-ink': ds.ink,
     '--cv-font': typefaces[ds.typeface],
+    '--cv-heading-font': ds.headingFont === 'match' ? typefaces[ds.typeface] : typefaces[ds.headingFont],
     '--cv-size': `${11.5 * ds.scale}px`,
     '--cv-leading': String(ds.lineHeight),
+    '--cv-tracking': `${ds.letterSpacing}em`,
+    '--cv-margin': `${ds.margin}px`,
+    '--cv-gap': `${ds.sectionGap}px`,
+    '--cv-heading-case': ds.headingCase === 'upper' ? 'uppercase' : 'none',
+    '--cv-heading-tracking': ds.headingCase === 'upper' ? '0.09em' : '0.04em',
+    /* The rule under each heading is drawn by width/height, so "none" is a
+       zero-size box rather than a second code path in every template. */
+    '--cv-rule-w': ds.headingRule === 'full' ? '100%' : ds.headingRule === 'none' ? '0px' : '26px',
+    '--cv-rule-h': ds.headingRule === 'none' ? '0px' : '2px',
     '--cv-photo-radius': ds.photoShape === 'circle' ? '50%' : ds.photoShape === 'rounded' ? '10px' : '0px',
+    '--cv-photo-size': `${ds.photoSize}px`,
   } as React.CSSProperties
 
   /* A heading with nothing under it reads as a mistake, and on a blank CV the
@@ -1451,15 +1463,26 @@ const RULE = 'var(--cv-accent)'
 function RuleHeading({ title, color = RULE }: { title: string; color?: string }) {
   return (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.04em', color: '#111' }}>{title}</div>
-      <div style={{ width: 26, height: 2, background: color, marginTop: 5 }} />
+      <div
+        style={{
+          fontFamily: 'var(--cv-heading-font)',
+          fontSize: 12,
+          fontWeight: 700,
+          letterSpacing: 'var(--cv-heading-tracking)',
+          textTransform: 'var(--cv-heading-case)' as React.CSSProperties['textTransform'],
+          color: 'var(--cv-ink)',
+        }}
+      >
+        {title}
+      </div>
+      <div style={{ width: 'var(--cv-rule-w)', height: 'var(--cv-rule-h)', background: color, marginTop: 5 }} />
     </div>
   )
 }
 
 function RuleSection({ title, color, children }: { title: string; color?: string; children: React.ReactNode }) {
   return (
-    <section style={{ marginBottom: 24 }}>
+    <section style={{ marginBottom: 'var(--cv-gap)' }}>
       <RuleHeading title={title} color={color} />
       {children}
     </section>
@@ -1471,17 +1494,17 @@ function ProfileSplitTemplate({ personal, skills, projects, experience, educatio
   const [first, ...restName] = personal.name.split(' ')
 
   return (
-    <div style={{ fontFamily: 'var(--cv-font)', fontSize: 'var(--cv-size)', lineHeight: 'var(--cv-leading)', color: '#222', padding: 44, background: '#fff' }}>
+    <div style={{ fontFamily: 'var(--cv-font)', fontSize: 'var(--cv-size)', lineHeight: 'var(--cv-leading)', letterSpacing: 'var(--cv-tracking)', color: 'var(--cv-ink)', padding: 'var(--cv-margin)', background: '#fff' }}>
       <header style={{ display: 'flex', alignItems: 'center', gap: 26, marginBottom: 34 }}>
         {photo && (
           <img
             src={photo}
             alt="Profile"
-            style={{ width: 92, height: 92, borderRadius: 'var(--cv-photo-radius)', objectFit: 'cover', flexShrink: 0 }}
+            style={{ width: 'var(--cv-photo-size)', height: 'var(--cv-photo-size)', borderRadius: 'var(--cv-photo-radius)', objectFit: 'cover', flexShrink: 0 }}
           />
         )}
         <div style={{ minWidth: 0 }}>
-          <h1 style={{ fontSize: 38, fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.02em', margin: 0, color: '#111' }}>
+          <h1 style={{ fontFamily: 'var(--cv-heading-font)', fontSize: 38, fontWeight: 800, lineHeight: 1.05, letterSpacing: '-0.02em', margin: 0, color: 'var(--cv-ink)' }}>
             {first}
             {restName.length > 0 && (
               <>
@@ -1600,7 +1623,7 @@ function SwissGridTemplate({ personal, skills, projects, experience, education, 
   )
 
   return (
-    <div style={{ fontFamily: 'var(--cv-font)', fontSize: 'var(--cv-size)', lineHeight: 'var(--cv-leading)', color: '#111', padding: 48, background: '#fff' }}>
+    <div style={{ fontFamily: 'var(--cv-font)', fontSize: 'var(--cv-size)', lineHeight: 'var(--cv-leading)', letterSpacing: 'var(--cv-tracking)', color: 'var(--cv-ink)', padding: 'var(--cv-margin)', background: '#fff' }}>
       <h1 style={{ fontSize: 30, fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>{personal.name}</h1>
       <p style={{ fontSize: 12, color: '#555', margin: '4px 0 22px' }}>
         {personal.role} · {personal.location}
@@ -1674,7 +1697,7 @@ function AtsCompactTemplate({ personal, skills, projects, experience, education,
   )
 
   return (
-    <div style={{ fontFamily: 'var(--cv-font)', fontSize: 'var(--cv-size)', color: '#000', padding: 42, background: '#fff', lineHeight: 'var(--cv-leading)' }}>
+    <div style={{ fontFamily: 'var(--cv-font)', fontSize: 'var(--cv-size)', letterSpacing: 'var(--cv-tracking)', color: 'var(--cv-ink)', padding: 'var(--cv-margin)', background: '#fff', lineHeight: 'var(--cv-leading)' }}>
       <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>{personal.name}</h1>
       <p style={{ margin: '3px 0 2px', fontSize: 12 }}>{personal.role}</p>
       <p style={{ margin: 0, fontSize: 10.5, color: '#333' }}>
@@ -1738,11 +1761,11 @@ function AccentRuleTemplate({ personal, skills, projects, experience, education,
   const accent = 'var(--cv-accent)'
 
   return (
-    <div style={{ fontFamily: 'var(--cv-font)', fontSize: 'var(--cv-size)', lineHeight: 'var(--cv-leading)', color: '#1f2937', background: '#fff', display: 'flex' }}>
+    <div style={{ fontFamily: 'var(--cv-font)', fontSize: 'var(--cv-size)', lineHeight: 'var(--cv-leading)', letterSpacing: 'var(--cv-tracking)', color: 'var(--cv-ink)', background: '#fff', display: 'flex' }}>
       {/* The only ink that is not black: one spine down the page */}
       <div style={{ width: 6, background: accent, flexShrink: 0 }} />
 
-      <div style={{ padding: '44px 44px 44px 34px', flex: 1, minWidth: 0 }}>
+      <div style={{ padding: 'var(--cv-margin)', flex: 1, minWidth: 0 }}>
         <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, marginBottom: 26 }}>
           <div>
             <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0, letterSpacing: '-0.015em' }}>{personal.name}</h1>
@@ -1751,7 +1774,7 @@ function AccentRuleTemplate({ personal, skills, projects, experience, education,
               {[personal.email, personal.location, personal.portfolio].filter(Boolean).join('  ·  ')}
             </p>
           </div>
-          {photo && <img src={photo} alt="Profile" style={{ width: 74, height: 74, borderRadius: 'var(--cv-photo-radius)', objectFit: 'cover', flexShrink: 0 }} />}
+          {photo && <img src={photo} alt="Profile" style={{ width: 'calc(var(--cv-photo-size) * 0.8)', height: 'calc(var(--cv-photo-size) * 0.8)', borderRadius: 'var(--cv-photo-radius)', objectFit: 'cover', flexShrink: 0 }} />}
         </header>
 
         {showSections.summary && (
