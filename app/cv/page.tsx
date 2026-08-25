@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { portfolioData } from '@/data/portfolio'
 import CVBuilder from '@/components/cv/CVBuilder'
 import CVPreview from '@/components/cv/CVPreview'
@@ -9,6 +9,8 @@ import { CVOptions } from '@/components/cv/CVPanels'
 import Cursor from '@/components/Cursor'
 import MahmudLogo from '@/components/MahmudLogo'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useCVDocs } from '@/hooks/useCVDocs'
+import DocumentBar from '@/components/cv/DocumentBar'
 
 export type CVTemplate =
   | 'profile-split'
@@ -55,25 +57,6 @@ export type CVData = {
     skills: boolean
     education: boolean
   }
-}
-
-const defaultCVData: CVData = buildDefaultCVData()
-
-const CV_STORAGE_KEY = 'mahmud-cv-builder-data-v1'
-
-function isValidStoredCVData(value: unknown): value is CVData {
-  if (!value || typeof value !== 'object') return false
-
-  const data = value as CVData
-
-  return Boolean(
-    data.personal &&
-    data.skills &&
-    data.projects &&
-    data.experience &&
-    data.education &&
-    data.showSections
-  )
 }
 
 /**
@@ -141,65 +124,65 @@ function buildSampleCVData(): CVData {
   }
 }
 
+const EMPTY_CV: CVData = buildDefaultCVData()
+
 export default function CVPage() {
-  const [cvData, setCVData]               = useState<CVData>(defaultCVData)
+  const {
+    hydrated,
+    docs,
+    activeId,
+    active,
+    setActiveData,
+    select,
+    create,
+    duplicate,
+    rename,
+    remove,
+    replaceActive,
+  } = useCVDocs(buildDefaultCVData, buildSampleCVData)
+
   const [selectedTemplate, setSelectedTemplate] = useState<CVTemplate>('profile-split')
   const [activeTab, setActiveTab]         = useState<'builder' | 'ats'>('builder')
   const [mobilePanel, setMobilePanel]     = useState<'controls' | 'preview'>('controls')
   const [builderWidth, setBuilderWidth]   = useState(460)
   const [isResizing, setIsResizing]       = useState(false)
-  const [hasHydrated, setHasHydrated]     = useState(false)
-  const [saveState, setSaveState]         = useState<'saving' | 'saved'>('saved')
-  const [savedAt, setSavedAt]             = useState<string>('Not saved yet')
   const [download, setDownload]           = useState<{ run: () => void; busy: boolean }>({ run: () => {}, busy: false })
   const [shared, setShared]               = useState(false)
+  const fileInput                         = useRef<HTMLInputElement>(null)
   const isMobile                          = useIsMobile()
-  /* Editor greys, matching components/cv/CVBuilder.tsx. The controls pane sets
-     its own ground too; this is what shows in any gap. The preview pane is a
-     half-step darker so the white document reads as a sheet on a desk. */
+
+  /* Editor greys, matching components/cv/CVBuilder.tsx. */
   const paneBorder                        = '#e4e8f0'
   const builderControlsBg                 = '#f4f6fa'
   const builderPreviewBg                  = '#eef1f6'
 
-  useEffect(() => {
+  const cvData = active?.data ?? EMPTY_CV
+  const setCVData = setActiveData
+  const saveState: 'saving' | 'saved' = 'saved'
+  const savedAt = hydrated ? 'Saved on this device' : 'Loading…'
+
+  /* Backup and restore stand in for a server: a file the person keeps, rather
+     than a copy of their CV on someone else's machine. */
+  const handleExport = () => {
+    const blob = new Blob([JSON.stringify(active?.data ?? EMPTY_CV, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    const base = (cvData.personal.name || 'cv').replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-') || 'cv'
+    a.href = url
+    a.download = `${base}-backup.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImportFile = async (file: File) => {
     try {
-      const stored = window.localStorage.getItem(CV_STORAGE_KEY)
-      if (!stored) {
-        setHasHydrated(true)
-        return
-      }
-
-      const parsed = JSON.parse(stored)
-      if (!isValidStoredCVData(parsed)) {
-        setHasHydrated(true)
-        return
-      }
-
-      setCVData({
-        ...defaultCVData,
-        ...parsed,
-        personal: { ...defaultCVData.personal, ...parsed.personal },
-        showSections: { ...defaultCVData.showSections, ...parsed.showSections },
-        docStyle: { ...defaultCVData.docStyle, ...parsed.docStyle },
-        customSections: Array.isArray(parsed.customSections) ? parsed.customSections : [],
-        sectionOrder: Array.isArray(parsed.sectionOrder) ? parsed.sectionOrder : defaultCVData.sectionOrder,
-        selectedSkills: Array.isArray(parsed.selectedSkills) ? parsed.selectedSkills : defaultCVData.selectedSkills,
-      })
+      const parsed = JSON.parse(await file.text())
+      if (!parsed?.personal || !parsed?.showSections) throw new Error('not a CV backup')
+      replaceActive({ ...buildDefaultCVData(), ...parsed }, parsed.personal?.name ? `${parsed.personal.name}'s CV` : undefined)
     } catch {
-      // Ignore corrupted saved data and fall back to defaults.
-    } finally {
-      setHasHydrated(true)
+      window.alert('That file is not a CV backup exported from here.')
     }
-  }, [])
-
-  useEffect(() => {
-    if (!hasHydrated) return
-
-    setSaveState('saving')
-    window.localStorage.setItem(CV_STORAGE_KEY, JSON.stringify(cvData))
-    setSaveState('saved')
-    setSavedAt('Saved just now')
-  }, [cvData, hasHydrated])
+  }
 
   useEffect(() => {
     if (isMobile || activeTab !== 'builder' || !isResizing) return
@@ -234,19 +217,9 @@ export default function CVPage() {
     }
   }
 
-  const handleLoadSample = () => {
-    setCVData(buildSampleCVData())
-    setSavedAt('Example loaded')
-    setSaveState('saved')
-  }
+  const handleLoadSample = () => replaceActive(buildSampleCVData(), 'Example CV')
 
-  const handleResetCV = () => {
-    const resetData = buildDefaultCVData()
-    setCVData(resetData)
-    window.localStorage.removeItem(CV_STORAGE_KEY)
-    setSavedAt('Reset complete')
-    setSaveState('saved')
-  }
+  const handleResetCV = () => replaceActive(buildDefaultCVData())
 
   return (
     <div className="min-h-screen bg-[#f4f3ef] flex flex-col">
@@ -299,11 +272,17 @@ export default function CVPage() {
           /* Was `text-white` on a white bar — invisible once the page went
              light. Now a breadcrumb, matching the reference toolbar. */
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: 'var(--font-dm-sans)' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, color: '#64748b' }}>
-              Documents
-              <span style={{ color: '#cbd5e1' }}>/</span>
-              <span style={{ color: '#0f172a', fontWeight: 600 }}>My Resume</span>
-            </span>
+            <DocumentBar
+              docs={docs}
+              activeId={activeId}
+              onSelect={select}
+              onCreate={create}
+              onDuplicate={duplicate}
+              onRename={rename}
+              onDelete={remove}
+              onExport={handleExport}
+              onImport={handleImportFile}
+            />
 
             <span style={{ width: 1, height: 22, background: '#e4e8f0' }} />
 
