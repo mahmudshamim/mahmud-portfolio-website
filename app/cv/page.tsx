@@ -228,7 +228,7 @@ export default function CVPage() {
       {/* Top navbar */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 16px', height: 52,
+        padding: isMobile ? '0 10px' : '0 16px', height: 52, gap: 8, overflow: 'hidden',
         borderBottom: '1px solid rgba(22,21,15,0.07)',
         background: '#ffffff', flexShrink: 0,
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50,
@@ -241,8 +241,8 @@ export default function CVPage() {
           )}
         </a>
 
-        {/* Center: tabs */}
-        <div style={{ display: 'flex', gap: 3, background: 'rgba(22,21,15,0.05)', borderRadius: 10, padding: 3 }}>
+        {/* Center: tabs. Mobile gets these in the bottom bar instead. */}
+        <div style={{ display: isMobile ? 'none' : 'flex', gap: 3, background: 'rgba(22,21,15,0.05)', borderRadius: 10, padding: 3 }}>
           {([
             { id: 'builder', label: 'Edit' },
             { id: 'ats',     label: isMobile ? 'ATS' : 'ATS Checker' },
@@ -326,44 +326,58 @@ export default function CVPage() {
             </button>
           </div>
         ) : (
-          /* Mobile: toggle Controls / Preview */
-          <div style={{ display: 'flex', gap: 3, background: 'rgba(22,21,15,0.05)', borderRadius: 8, padding: 3 }}>
-            {(['controls', 'preview'] as const).map(p => (
-              <button
-                key={p}
-                onClick={() => setMobilePanel(p)}
-                style={{
-                  padding: '4px 10px', borderRadius: 6, border: 'none', fontSize: 11,
-                  background: mobilePanel === p ? 'rgba(37,99,235,0.25)' : 'transparent',
-                  color: mobilePanel === p ? '#e2701f' : 'rgba(22,21,15,0.35)',
-                  cursor: 'pointer', fontFamily: 'var(--font-dm-sans)', fontWeight: 500,
-                  textTransform: 'capitalize',
-                }}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
+          /* The panel toggle moved to a bottom bar within thumb reach; the
+             top bar keeps what you need to know, not what you tap. */
+          <DocumentBar
+            docs={docs}
+            activeId={activeId}
+            onSelect={select}
+            onCreate={create}
+            onDuplicate={duplicate}
+            onRename={rename}
+            onDelete={remove}
+            onExport={handleExport}
+            onImport={handleImportFile}
+            compact
+          />
         )}
       </div>
 
       {/* Content */}
       {isMobile ? (
         /* Mobile: single panel at a time */
-        <div style={{ paddingTop: 52, height: '100vh', overflow: 'hidden' }}>
+        <div style={{ paddingTop: 52, paddingBottom: 64, height: '100vh', overflow: 'hidden', boxSizing: 'border-box' }}>
           {activeTab === 'builder' ? (
-            mobilePanel === 'controls' ? (
-              <div style={{ height: '100%', overflowY: 'auto', background: builderControlsBg }}>
+            /* Both panels stay mounted and are toggled with `display`. The
+               preview owns the print logic and the node it clones, so
+               unmounting it left Download doing nothing whenever someone was
+               on the Edit tab — which is most of the time. */
+            <>
+              <div
+                style={{
+                  display: mobilePanel === 'controls' ? 'block' : 'none',
+                  height: '100%',
+                  overflowY: 'auto',
+                  background: builderControlsBg,
+                }}
+              >
                 <CVBuilder cvData={cvData} setCVData={setCVData} selectedTemplate={selectedTemplate} setSelectedTemplate={setSelectedTemplate} saveState={saveState} savedAt={savedAt} onReset={handleResetCV} onLoadSample={handleLoadSample} />
-                <div style={{ padding: '0 12px 110px' }}>
+                <div style={{ padding: '0 12px 24px' }}>
                   <CVOptions cvData={cvData} setCVData={setCVData} isMobile />
                 </div>
               </div>
-            ) : (
-              <div style={{ height: '100%', overflowY: 'auto', background: builderPreviewBg, padding: 16 }}>
+              <div
+                style={{
+                  display: mobilePanel === 'preview' ? 'block' : 'none',
+                  height: '100%',
+                  overflowY: 'auto',
+                  background: builderPreviewBg,
+                  padding: 16,
+                }}
+              >
                 <CVPreview cvData={cvData} selectedTemplate={selectedTemplate} registerDownload={(run, busy) => setDownload({ run, busy })} />
               </div>
-            )
+            </>
           ) : (
             mobilePanel === 'controls' ? (
               <div style={{ height: '100%', overflowY: 'auto', background: '#f4f6fa' }}>
@@ -453,6 +467,99 @@ export default function CVPage() {
             </>
           )}
         </div>
+      )}
+
+      {/* Mobile action bar. Editing, checking and downloading are the three
+          things people actually do, and on a phone they belong under the
+          thumb rather than in a 4px-tall strip beside the logo. */}
+      {isMobile && (
+        <nav
+          aria-label="CV actions"
+          style={{
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 60,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 12px calc(8px + env(safe-area-inset-bottom))',
+            background: '#ffffff',
+            borderTop: `1px solid ${paneBorder}`,
+            boxShadow: '0 -4px 20px rgba(15,23,42,0.06)',
+          }}
+        >
+          <div style={{ display: 'flex', flex: 1, gap: 3, background: '#f1f5f9', borderRadius: 10, padding: 3 }}>
+            {([
+              { id: 'edit', label: 'Edit' },
+              { id: 'preview', label: 'Preview' },
+              { id: 'ats', label: 'ATS' },
+            ] as const).map((tab) => {
+              const on =
+                tab.id === 'ats'
+                  ? activeTab === 'ats'
+                  : activeTab === 'builder' && mobilePanel === (tab.id === 'edit' ? 'controls' : 'preview')
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    if (tab.id === 'ats') {
+                      setActiveTab('ats')
+                      setMobilePanel('controls')
+                    } else {
+                      setActiveTab('builder')
+                      setMobilePanel(tab.id === 'edit' ? 'controls' : 'preview')
+                    }
+                  }}
+                  aria-pressed={on}
+                  style={{
+                    flex: 1,
+                    padding: '9px 6px',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: on ? '#ffffff' : 'transparent',
+                    boxShadow: on ? '0 1px 3px rgba(15,23,42,0.12)' : 'none',
+                    color: on ? '#2563eb' : '#64748b',
+                    fontSize: 13,
+                    fontWeight: on ? 600 : 500,
+                    fontFamily: 'var(--font-dm-sans)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
+
+          <button
+            onClick={download.run}
+            disabled={download.busy}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 7,
+              padding: '10px 16px',
+              borderRadius: 10,
+              border: 'none',
+              background: '#2563eb',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 600,
+              fontFamily: 'var(--font-dm-sans)',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            PDF
+          </button>
+        </nav>
       )}
     </div>
   )

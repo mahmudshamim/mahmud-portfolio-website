@@ -862,7 +862,7 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
     <div
       style={{
         minHeight: '100%',
-        padding: isMobile ? '14px 12px 110px' : '16px 20px 32px',
+        padding: isMobile ? '14px 12px 24px' : '16px 20px 32px',
         background: canvas,
         fontFamily: 'var(--font-dm-sans)',
       }}
