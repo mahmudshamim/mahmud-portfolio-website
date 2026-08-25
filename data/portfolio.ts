@@ -147,6 +147,20 @@ export const portfolioData = {
       image: "/images/signingus.webp",
     },
     {
+      id: "core",
+      name: "CORE",
+      shortDesc: "Members-only business referral network",
+      fullDesc:
+        "Networking platform for Bridge USA Staffing — CORE, for Collaboration, Opportunity, Resources & Enterprise. Members join a local club that meets weekly, hold one seat per trade so referrals stay exclusive, and track passed business and one-to-ones from a dashboard.",
+      tech: ["Next.js", "React"],
+      github: "",
+      live: "https://core.bridgeusastaffing.com/",
+      featured: true,
+      category: "Full-Stack",
+      color: "#15803d",
+      image: "/images/core.webp",
+    },
+    {
       id: "ouropero",
       name: "OurOpero",
       shortDesc: "Team workspace — boards, automation, and dashboards",
