@@ -128,6 +128,17 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
     '--cv-photo-radius': ds.photoShape === 'circle' ? '50%' : ds.photoShape === 'rounded' ? '10px' : '0px',
   } as React.CSSProperties
 
+  /* A heading with nothing under it reads as a mistake, and on a blank CV the
+     document was four empty headings. `showSections` stays the person's
+     explicit choice; this only hides what has no content yet. */
+  const filled = {
+    summary: showSections.summary && Boolean(personal.summary?.trim()),
+    experience: showSections.experience && experience.length > 0,
+    projects: showSections.projects && projects.length > 0,
+    skills: showSections.skills && activeSkills.length > 0,
+    education: showSections.education && education.length > 0,
+  }
+
   const templateProps: TemplateProps = {
     personal,
     skills: activeSkills,
@@ -136,7 +147,7 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
     education,
     customSections,
     sectionOrder,
-    showSections,
+    showSections: filled,
     /* `hidden` has to drop the element, not just square its corners. */
     photo: ds.photoShape === 'hidden' ? '' : photo,
   }

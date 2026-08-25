@@ -4,6 +4,7 @@ import type { CSSProperties, Dispatch, FocusEvent, ReactNode, SetStateAction } f
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { CVData, CVTemplate } from '@/app/cv/page'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { buildTasks, nextTask, progressOf, type Task } from './NextSteps'
 
 type Skill = {
   name: string
@@ -704,23 +705,12 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
     skills,
   }), [cvData, skills])
 
-  /* Measured from the content, not from which step you happen to be on.
-     The old formula was (stepIndex + 1) / steps.length, which reported 14%
-     on a fully filled CV simply because the first section was open — and it
-     stopped meaning anything at all once the wizard became an accordion. */
-  const progress = (() => {
-    const done = [
-      Boolean(cvData.personal.name),
-      Boolean(cvData.personal.role),
-      Boolean(cvData.personal.email),
-      Boolean(cvData.personal.summary),
-      cvData.experience.length > 0,
-      cvData.projects.length > 0,
-      cvData.education.length > 0,
-      skills.filter((skill) => skill.included).length >= 3,
-    ]
-    return Math.round((done.filter(Boolean).length / done.length) * 100)
-  })()
+  /* Progress, the hint and the checklist all read one model, so they cannot
+     disagree. The first version measured which wizard step was open and
+     reported 14% on a finished CV. */
+  const tasks = useMemo(() => buildTasks(cvData), [cvData])
+  const progress = progressOf(tasks)
+  const next = nextTask(tasks)
 
   const updatePersonal = (field: keyof CVData['personal'], value: string) =>
     setCVData((prev) => ({ ...prev, personal: { ...prev.personal, [field]: value } }))
@@ -867,14 +857,6 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
 
 
 
-  const completionHint =
-    !cvData.personal.name ? 'Add your name' :
-    !cvData.personal.role ? 'Add a target role' :
-    !cvData.personal.email ? 'Add contact info' :
-    cvData.experience.length === 0 ? 'Add your first role' :
-    skills.filter((skill) => skill.included).length < 3 ? 'Select a few skills' :
-    !cvData.personal.summary ? 'Write a quick summary' :
-    'Looking good'
 
   return (
     <div
@@ -902,7 +884,7 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
       >
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: text, lineHeight: 1.2 }}>Build your CV</div>
-          <div style={{ fontSize: 12, color: textMuted, marginTop: 2 }}>{completionHint}</div>
+          <div style={{ fontSize: 12, color: textMuted, marginTop: 2 }}>{next ? next.label : 'Ready to download'}</div>
         </div>
 
         {/* Save state */}
@@ -997,6 +979,18 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
 
       <ModeToggle mode={leftMode} setMode={setLeftMode} />
 
+      {leftMode === 'create' && (
+        <Checklist
+          tasks={tasks}
+          onGo={(section) => {
+            setOpenSections((prev) => (prev.includes(section) ? prev : [...prev, section]))
+            requestAnimationFrame(() => {
+              document.getElementById(`cv-section-${section}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            })
+          }}
+        />
+      )}
+
       {leftMode === 'templates' ? (
         <TemplateList cvData={memoizedCvData} selected={selectedTemplate} onSelect={setSelectedTemplate} />
       ) : (
@@ -1004,6 +998,7 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
           {steps.map((step) => (
             <Accordion
               key={step.id}
+              id={`cv-section-${step.id}`}
               title={step.title}
               description={step.description}
               open={openSections.includes(step.id)}
@@ -1384,12 +1379,14 @@ function ModeToggle({
  * wizard forced you through seven steps to change one line.
  */
 function Accordion({
+  id,
   title,
   description,
   open,
   onToggle,
   children,
 }: {
+  id?: string
   title: string
   description: string
   open: boolean
@@ -1398,7 +1395,9 @@ function Accordion({
 }) {
   return (
     <section
+      id={id}
       style={{
+        scrollMarginTop: 12,
         background: surface,
         border: `1px solid ${open ? borderStrong : border}`,
         borderRadius: 12,
@@ -1497,5 +1496,155 @@ function TemplateList({
         )
       })}
     </div>
+  )
+}
+
+
+/**
+ * What is left to do, in the order worth doing it.
+ *
+ * A progress bar tells you that you are not finished; it does not tell you
+ * what to type next. Each row jumps to the section that fixes it.
+ */
+function Checklist({ tasks, onGo }: { tasks: Task[]; onGo: (section: Task['section']) => void }) {
+  const [open, setOpen] = useState(true)
+  const remaining = tasks.filter((t) => !t.done)
+  const next = remaining[0]
+
+  if (!next) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 9,
+          background: '#f0fdf4',
+          border: '1px solid #bbf7d0',
+          borderRadius: 12,
+          padding: '12px 14px',
+          marginBottom: 12,
+          fontFamily: 'var(--font-dm-sans)',
+          fontSize: 13,
+          color: '#166534',
+          fontWeight: 500,
+        }}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        Everything is filled in. Download when you are ready.
+      </div>
+    )
+  }
+
+  return (
+    <section
+      style={{
+        background: surface,
+        border: `1px solid ${border}`,
+        borderRadius: 12,
+        marginBottom: 12,
+        overflow: 'hidden',
+        boxShadow: shadow,
+      }}
+    >
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          background: brandSoft,
+          border: 'none',
+          padding: '11px 14px',
+          cursor: 'pointer',
+          textAlign: 'left',
+        }}
+      >
+        <span style={{ minWidth: 0 }}>
+          <span style={{ display: 'block', fontSize: 12, fontWeight: 700, color: brand, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            Next up
+          </span>
+          <span style={{ display: 'block', fontSize: 13, color: text, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {next.label}
+          </span>
+        </span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: brand, flexShrink: 0 }}>
+          {remaining.length} left {open ? '▾' : '▸'}
+        </span>
+      </button>
+
+      {open && (
+        <ul style={{ listStyle: 'none', margin: 0, padding: 8, display: 'grid', gap: 2 }}>
+          {tasks.map((task) => (
+            <li key={task.id}>
+              <button
+                onClick={() => onGo(task.section)}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 9,
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '8px 8px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-dm-sans)',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = surfaceMuted)}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              >
+                <span
+                  aria-hidden
+                  style={{
+                    width: 16,
+                    height: 16,
+                    marginTop: 1,
+                    flexShrink: 0,
+                    borderRadius: '50%',
+                    display: 'grid',
+                    placeItems: 'center',
+                    background: task.done ? positive : 'transparent',
+                    border: task.done ? 'none' : `1.5px solid ${borderStrong}`,
+                  }}
+                >
+                  {task.done && (
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <span
+                    style={{
+                      display: 'block',
+                      fontSize: 13,
+                      fontWeight: task.done ? 400 : 500,
+                      color: task.done ? textMuted : text,
+                      textDecoration: task.done ? 'line-through' : 'none',
+                    }}
+                  >
+                    {task.label}
+                    {!task.required && !task.done && (
+                      <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 600, color: textMuted }}>optional</span>
+                    )}
+                  </span>
+                  {!task.done && (
+                    <span style={{ display: 'block', fontSize: 11.5, color: textMuted, lineHeight: 1.5, marginTop: 2 }}>
+                      {task.why}
+                    </span>
+                  )}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
