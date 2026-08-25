@@ -375,6 +375,11 @@ function PanelHeading({
 function PanelControls({ project, index, progress }: { project: Project; index: number; progress: MotionValue<number> }) {
   const { start, end, pad } = focusSlot(index)
   const opacity = useTransform(progress, [start, start + pad, end - pad, end], [0, 1, 1, 0])
+  /* All of these sit at inset:0 on top of each other and are hidden with
+     opacity alone, which does not stop them receiving clicks. Without this the
+     last one in DOM order swallowed every press, so "Visit site" always opened
+     the final project no matter which one was on screen. */
+  const pointerEvents = useTransform(opacity, (o) => (o > 0.5 ? 'auto' : 'none'))
 
   return (
     <motion.div
@@ -382,6 +387,7 @@ function PanelControls({ project, index, progress }: { project: Project; index: 
         position: 'absolute',
         inset: 0,
         opacity,
+        pointerEvents,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
