@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { CVData, CVTemplate } from '@/app/cv/page'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { buildTasks, nextTask, progressOf, type Task } from './NextSteps'
+import { Compare, Hint, LengthMeter, VerbPicker } from './WritingHelp'
 
 type Skill = {
   name: string
@@ -585,6 +586,23 @@ function ExperienceCard({
         onFocus={focusStyle}
         onBlur={blurStyle}
       />
+
+      <LengthMeter value={item.desc} ideal={[20, 60]} />
+      <VerbPicker
+        onPick={(verb) => {
+          const base = item.desc.trimEnd()
+          onChange({ ...item, desc: base ? `${base}\n${verb} ` : `${verb} ` })
+        }}
+      />
+      <Hint title="What makes a good line here?">
+        One line per role reads as a job list. Say what you built and what changed because of
+        it — a number, a time saved, a problem that stopped happening. Put each point on its
+        own line.
+        <Compare
+          weak="Responsible for the company website."
+          strong="Rebuilt the marketing site in Next.js; pages load in under a second and the team ships copy changes without a developer."
+        />
+      </Hint>
     </div>
   )
 }
@@ -1312,9 +1330,16 @@ export default function CVBuilder({ cvData, setCVData, selectedTemplate, setSele
                     onBlur={blurStyle}
                   />
                 </div>
-                <div style={{ padding: 16, borderRadius: 20, background: surfaceMuted, border: `1px solid ${border}`, color: textMuted, fontSize: 13, lineHeight: 1.7 }}>
-                  Keep it short and specific. Mention your years of experience, core tools, and the value you bring.
-                </div>
+                <LengthMeter value={cvData.personal.summary} ideal={[35, 70]} />
+                <Hint title="How do I write this?">
+                  Three or four lines, in this order: what you are, what you build, and what you
+                  are looking for. Name the tools you actually want to be hired for — this is the
+                  part screening software reads first.
+                  <Compare
+                    weak="Hard-working developer seeking a challenging opportunity in a reputed company."
+                    strong="Full-stack developer with two years in React and Node, currently building client platforms at Khulna Technologies. Looking for product work where I own features end to end."
+                  />
+                </Hint>
               </>
             )}
 

@@ -71,6 +71,25 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
    * so the CV is named after its owner rather than after me.
    */
   const handleDownload = () => {
+    /* Shown once per browser. The print dialog defaults to stamping the page
+       URL and today's date into the margins, which lands on a CV as a footer
+       reading "localhost:3000/cv". People cannot fix what they were never
+       told to look for. */
+    try {
+      if (!window.localStorage.getItem('cv-print-tip-seen')) {
+        window.localStorage.setItem('cv-print-tip-seen', '1')
+        window.alert(
+          'In the print dialog that opens next:\n\n' +
+          '  •  Destination: Save as PDF\n' +
+          '  •  Margins: None\n' +
+          '  •  Turn OFF "Headers and footers"\n\n' +
+          'Otherwise the page URL and date print on your CV.'
+        )
+      }
+    } catch {
+      /* Private mode: skip the tip rather than block the download. */
+    }
+
     const previousTitle = document.title
     const owner = (cvData.personal.name || 'Resume')
       .replace(/[^\w\s-]/g, '')
@@ -1490,6 +1509,7 @@ function ProfileSplitTemplate({ personal, skills, projects, experience, educatio
             </RuleSection>
           )}
 
+          {[personal.email, (personal as { phone?: string }).phone, personal.location, personal.portfolio].some(Boolean) && (
           <RuleSection title="Contact">
             <div style={{ display: 'grid', gap: 9 }}>
               {[
@@ -1507,6 +1527,7 @@ function ProfileSplitTemplate({ personal, skills, projects, experience, educatio
                 ))}
             </div>
           </RuleSection>
+          )}
 
           {showSections.skills && (
             <RuleSection title="Skills">
