@@ -34,6 +34,16 @@
   box-sizing: border-box;
 }
 
+/* The custom cursor belongs to the portfolio, not to the CV builder.
+   A tool people type in needs the real pointer: an I-beam over a field, a
+   resize handle on the divider, and the native hit feedback they already
+   trust. `revert` hands each element back its UA default rather than forcing
+   one cursor everywhere. */
+.native-cursor,
+.native-cursor * {
+  cursor: revert;
+}
+
 html {
   scroll-behavior: smooth;
 }

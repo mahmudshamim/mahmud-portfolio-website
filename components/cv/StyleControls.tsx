@@ -227,6 +227,10 @@ export function ColorField({
   presets: string[]
   onChange: (v: string) => void
 }) {
+  /* Never trust a stored value to exist: a control that throws takes the whole
+     editor with it, and the CV people were writing goes with it. */
+  const current = (value || '#000000').toLowerCase()
+
   return (
     <div style={{ display: 'grid', gap: 6, width: '100%' }}>
       <label
@@ -243,11 +247,11 @@ export function ColorField({
       >
         <input
           type="color"
-          value={value}
+          value={current}
           onChange={(e) => onChange(e.target.value)}
           style={{ width: 18, height: 18, padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}
         />
-        <span style={{ fontSize: 11, fontFamily: 'monospace', color: text, textTransform: 'uppercase' }}>{value}</span>
+        <span style={{ fontSize: 11, fontFamily: 'monospace', color: text, textTransform: 'uppercase' }}>{current}</span>
       </label>
 
       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
@@ -256,7 +260,7 @@ export function ColorField({
             key={c}
             onClick={() => onChange(c)}
             aria-label={c}
-            aria-pressed={value.toLowerCase() === c.toLowerCase()}
+            aria-pressed={current === c.toLowerCase()}
             style={{
               width: 18,
               height: 18,
@@ -264,7 +268,7 @@ export function ColorField({
               borderRadius: 5,
               background: c,
               cursor: 'pointer',
-              border: value.toLowerCase() === c.toLowerCase() ? `2px solid ${text}` : `1px solid ${borderStrong}`,
+              border: current === c.toLowerCase() ? `2px solid ${text}` : `1px solid ${borderStrong}`,
             }}
           />
         ))}

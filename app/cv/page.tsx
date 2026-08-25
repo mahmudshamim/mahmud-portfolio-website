@@ -6,7 +6,6 @@ import CVBuilder from '@/components/cv/CVBuilder'
 import CVPreview from '@/components/cv/CVPreview'
 import ATSChecker from '@/components/cv/ATSChecker'
 import { CVOptions } from '@/components/cv/CVPanels'
-import Cursor from '@/components/Cursor'
 import MahmudLogo from '@/components/MahmudLogo'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { useCVDocs } from '@/hooks/useCVDocs'
@@ -244,8 +243,7 @@ export default function CVPage() {
   const handleResetCV = () => replaceActive(buildDefaultCVData())
 
   return (
-    <div className="min-h-screen bg-[#f4f3ef] flex flex-col">
-      <Cursor />
+    <div className="min-h-screen bg-[#f4f3ef] flex flex-col native-cursor">
 
       {/* Top navbar */}
       <div style={{

@@ -28,6 +28,33 @@ function isCVData(value: unknown): value is CVData {
 }
 
 /**
+ * Fill in anything a stored CV predates.
+ *
+ * Saved documents are whatever the schema looked like on the day they were
+ * written. When `docStyle` later gained `ink` and `headingFont`, every CV
+ * saved before that had them missing, and the colour control read
+ * `undefined.toLowerCase()` and took the page down. Merging the current
+ * defaults under each stored object means adding a field can never break an
+ * existing CV.
+ */
+function normalise(data: CVData, blank: CVData): CVData {
+  return {
+    ...blank,
+    ...data,
+    personal: { ...blank.personal, ...data.personal },
+    docStyle: { ...blank.docStyle, ...data.docStyle },
+    showSections: { ...blank.showSections, ...data.showSections },
+    skills: Array.isArray(data.skills) ? data.skills : blank.skills,
+    projects: Array.isArray(data.projects) ? data.projects : blank.projects,
+    experience: Array.isArray(data.experience) ? data.experience : blank.experience,
+    education: Array.isArray(data.education) ? data.education : blank.education,
+    customSections: Array.isArray(data.customSections) ? data.customSections : blank.customSections,
+    sectionOrder: Array.isArray(data.sectionOrder) ? data.sectionOrder : blank.sectionOrder,
+    selectedSkills: Array.isArray(data.selectedSkills) ? data.selectedSkills : blank.selectedSkills,
+  }
+}
+
+/**
  * Owns every CV the browser holds.
  *
  * One tool, many documents: people tailor a CV per application, and the old
@@ -48,8 +75,11 @@ export function useCVDocs(makeBlank: () => CVData, makeSample: () => CVData) {
       if (raw) {
         const parsed = JSON.parse(raw) as Store
         if (Array.isArray(parsed?.docs) && parsed.docs.length) {
+          const blank = makeBlank()
           next = {
-            docs: parsed.docs.filter((d) => d && isCVData(d.data)),
+            docs: parsed.docs
+              .filter((d) => d && isCVData(d.data))
+              .map((d) => ({ ...d, data: normalise(d.data, blank) })),
             activeId: parsed.activeId,
           }
         }
@@ -63,7 +93,7 @@ export function useCVDocs(makeBlank: () => CVData, makeSample: () => CVData) {
           if (isCVData(parsed)) {
             const id = newId()
             next = {
-              docs: [{ id, name: parsed.personal?.name ? `${parsed.personal.name}'s CV` : 'My CV', updatedAt: Date.now(), data: parsed }],
+              docs: [{ id, name: parsed.personal?.name ? `${parsed.personal.name}'s CV` : 'My CV', updatedAt: Date.now(), data: normalise(parsed, makeBlank()) }],
               activeId: id,
             }
           }
