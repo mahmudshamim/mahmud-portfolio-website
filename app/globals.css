@@ -44,6 +44,31 @@
   cursor: revert;
 }
 
+/* CV studio motion and scrollbars. Sheets rise, dialogs fade; the site's
+   orange 4px scrollbar belongs to the portfolio, not to a form. */
+@keyframes studioFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes studioRise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
+}
+.studio-scroll-row::-webkit-scrollbar {
+  display: none;
+}
+.studio ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.studio ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.studio ::-webkit-scrollbar-thumb {
+  background: #d6d3df;
+  border-radius: 8px;
+}
+
 html {
   scroll-behavior: smooth;
 }

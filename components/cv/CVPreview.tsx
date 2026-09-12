@@ -71,25 +71,6 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
    * so the CV is named after its owner rather than after me.
    */
   const handleDownload = () => {
-    /* Shown once per browser. The print dialog defaults to stamping the page
-       URL and today's date into the margins, which lands on a CV as a footer
-       reading "localhost:3000/cv". People cannot fix what they were never
-       told to look for. */
-    try {
-      if (!window.localStorage.getItem('cv-print-tip-seen')) {
-        window.localStorage.setItem('cv-print-tip-seen', '1')
-        window.alert(
-          'In the print dialog that opens next:\n\n' +
-          '  •  Destination: Save as PDF\n' +
-          '  •  Margins: None\n' +
-          '  •  Turn OFF "Headers and footers"\n\n' +
-          'Otherwise the page URL and date print on your CV.'
-        )
-      }
-    } catch {
-      /* Private mode: skip the tip rather than block the download. */
-    }
-
     const previousTitle = document.title
     const owner = (cvData.personal.name || 'Resume')
       .replace(/[^\w\s-]/g, '')
@@ -124,14 +105,102 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
     setTimeout(restore, 60000)
   }
 
-  const { personal, skills, projects, experience, education, customSections, sectionOrder, showSections, photo } = cvData
-  const activeSkills = skills.filter((s: any) => s.included !== false)
-
-  /* One bundle instead of nine repeated attributes per branch. */
   useEffect(() => {
     registerDownload?.(handleDownload, false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cvData, selectedTemplate])
+  return (
+    <div>
+      {/* No download button here: the toolbar owns that action now, and two
+          buttons doing the same thing on one screen is one too many.
+          `handleDownload` is published upward via `registerDownload`. */}
+
+      {/* CV Preview */}
+      <div
+        ref={previewFrameRef}
+        style={{ width: '100%', margin: '0 auto' }}
+      >
+        <div style={{ width: '100%', height: contentHeight * previewScale, position: 'relative' }}>
+          <div
+            style={{
+              width: A4_W,
+              minHeight: A4_H,
+              background: '#fff',
+              boxShadow: '0 8px 32px rgba(15,23,42,0.12)',
+              borderRadius: 4,
+              position: 'relative',
+              transform: `scale(${previewScale})`,
+              transformOrigin: 'top left',
+            }}
+          >
+            <CVDocument cvData={cvData} template={selectedTemplate} id="cv-preview-content" innerRef={contentRef} />
+
+            {/* Where the printer will actually break. Without this the second
+                page is a surprise you only meet in the PDF. */}
+            {Array.from({ length: Math.max(0, Math.ceil(contentHeight / A4_H) - 1) }, (_, i) => (
+              <div
+                key={i}
+                data-page-guide
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: (i + 1) * A4_H,
+                  borderTop: '1px dashed #94a3b8',
+                  pointerEvents: 'none',
+                }}
+              >
+                <span
+                  style={{
+                    position: 'absolute',
+                    right: 8,
+                    top: 6,
+                    fontFamily: 'var(--font-dm-sans)',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: '#64748b',
+                    background: '#f1f5f9',
+                    borderRadius: 4,
+                    padding: '2px 7px',
+                  }}
+                >
+                  Page {i + 2}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The document itself, and nothing else — no frame, no scaling, no print
+ * plumbing.
+ *
+ * Preview, template thumbnails and print all render through this one
+ * component. The thumbnails used to be separate hand-drawn miniatures in
+ * CVBuilder that drifted from the real templates (one had its text
+ * recoloured into invisibility); now a thumbnail is literally your CV in
+ * that template, shrunk.
+ */
+export function CVDocument({
+  cvData,
+  template,
+  id,
+  innerRef,
+}: {
+  cvData: CVData
+  template: CVTemplate
+  id?: string
+  innerRef?: React.Ref<HTMLDivElement>
+}) {
+  const { personal, skills, projects, experience, education, customSections, sectionOrder, showSections, photo } = cvData
+  const activeSkills = skills.filter((s: any) => s.included !== false)
+
+  /* One bundle instead of nine repeated attributes per branch. */
 
   const ds = cvData.docStyle
   const typefaces = {
@@ -184,105 +253,43 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
   }
 
   return (
-    <div>
-      {/* No download button here: the toolbar owns that action now, and two
-          buttons doing the same thing on one screen is one too many.
-          `handleDownload` is published upward via `registerDownload`. */}
-
-      {/* CV Preview */}
-      <div
-        ref={previewFrameRef}
-        style={{ width: '100%', margin: '0 auto' }}
-      >
-        <div style={{ width: '100%', height: contentHeight * previewScale, position: 'relative' }}>
-          <div
-            style={{
-              width: A4_W,
-              minHeight: A4_H,
-              background: '#fff',
-              boxShadow: '0 8px 32px rgba(15,23,42,0.12)',
-              borderRadius: 4,
-              position: 'relative',
-              transform: `scale(${previewScale})`,
-              transformOrigin: 'top left',
-            }}
-          >
-            <div id="cv-preview-content" ref={contentRef} style={{ width: A4_W, ...docVars }}>
-              {selectedTemplate === 'profile-split' && (
-                <ProfileSplitTemplate {...templateProps} />
-              )}
-              {selectedTemplate === 'swiss-grid' && (
-                <SwissGridTemplate {...templateProps} />
-              )}
-              {selectedTemplate === 'ats-compact' && (
-                <AtsCompactTemplate {...templateProps} />
-              )}
-              {selectedTemplate === 'accent-rule' && (
-                <AccentRuleTemplate {...templateProps} />
-              )}
-              {selectedTemplate === 'dark-pro' && (
-                <DarkProTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
-              )}
-              {selectedTemplate === 'clean-minimal' && (
-                <CleanMinimalTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
-              )}
-              {selectedTemplate === 'tech-blue' && (
-                <TechBlueTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
-              )}
-              {selectedTemplate === 'executive' && (
-                <ExecutiveTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
-              )}
-              {selectedTemplate === 'sidebar-light' && (
-                <SidebarLightTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
-              )}
-              {selectedTemplate === 'timeline' && (
-                <TimelineTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
-              )}
-              {selectedTemplate === 'bold-header' && (
-                <BoldHeaderTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
-              )}
-              {selectedTemplate === 'creative-panel' && (
-                <CreativePanelTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
-              )}
-            </div>
-
-            {/* Where the printer will actually break. Without this the second
-                page is a surprise you only meet in the PDF. */}
-            {Array.from({ length: Math.max(0, Math.ceil(contentHeight / A4_H) - 1) }, (_, i) => (
-              <div
-                key={i}
-                data-page-guide
-                aria-hidden
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  top: (i + 1) * A4_H,
-                  borderTop: '1px dashed #94a3b8',
-                  pointerEvents: 'none',
-                }}
-              >
-                <span
-                  style={{
-                    position: 'absolute',
-                    right: 8,
-                    top: 6,
-                    fontFamily: 'var(--font-dm-sans)',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: '#64748b',
-                    background: '#f1f5f9',
-                    borderRadius: 4,
-                    padding: '2px 7px',
-                  }}
-                >
-                  Page {i + 2}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+    <div id={id} ref={innerRef} style={{ width: 794, ...docVars }}>
+    {template === 'profile-split' && (
+      <ProfileSplitTemplate {...templateProps} />
+    )}
+    {template === 'swiss-grid' && (
+      <SwissGridTemplate {...templateProps} />
+    )}
+    {template === 'ats-compact' && (
+      <AtsCompactTemplate {...templateProps} />
+    )}
+    {template === 'accent-rule' && (
+      <AccentRuleTemplate {...templateProps} />
+    )}
+    {template === 'dark-pro' && (
+      <DarkProTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+    )}
+    {template === 'clean-minimal' && (
+      <CleanMinimalTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+    )}
+    {template === 'tech-blue' && (
+      <TechBlueTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+    )}
+    {template === 'executive' && (
+      <ExecutiveTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+    )}
+    {template === 'sidebar-light' && (
+      <SidebarLightTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+    )}
+    {template === 'timeline' && (
+      <TimelineTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+    )}
+    {template === 'bold-header' && (
+      <BoldHeaderTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+    )}
+    {template === 'creative-panel' && (
+      <CreativePanelTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+    )}
     </div>
   )
 }

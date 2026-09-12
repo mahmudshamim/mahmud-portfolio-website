@@ -2,12 +2,27 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CVData } from '@/app/cv/page'
+import { createVersion, type RoleVersion } from '@/components/cv/studio/model'
 
 export type CVDoc = {
   id: string
   name: string
   updatedAt: number
+  /** The profile: everything this person has done, entered once. */
   data: CVData
+  /** One per role they apply for — each a view over `data`. */
+  versions: RoleVersion[]
+  activeVersionId: string
+}
+
+/** Every document has at least one version; older saves get one made for them. */
+function withVersions(doc: Omit<CVDoc, 'versions' | 'activeVersionId'> & Partial<CVDoc>): CVDoc {
+  const versions =
+    Array.isArray(doc.versions) && doc.versions.length
+      ? doc.versions
+      : [createVersion(doc.data, doc.data.personal.role || '', 'profile-split')]
+  const activeVersionId = versions.some((v) => v.id === doc.activeVersionId) ? doc.activeVersionId! : versions[0].id
+  return { ...doc, versions, activeVersionId } as CVDoc
 }
 
 type Store = {
@@ -79,7 +94,7 @@ export function useCVDocs(makeBlank: () => CVData, makeSample: () => CVData) {
           next = {
             docs: parsed.docs
               .filter((d) => d && isCVData(d.data))
-              .map((d) => ({ ...d, data: normalise(d.data, blank) })),
+              .map((d) => withVersions({ ...d, data: normalise(d.data, blank) })),
             activeId: parsed.activeId,
           }
         }
@@ -93,7 +108,7 @@ export function useCVDocs(makeBlank: () => CVData, makeSample: () => CVData) {
           if (isCVData(parsed)) {
             const id = newId()
             next = {
-              docs: [{ id, name: parsed.personal?.name ? `${parsed.personal.name}'s CV` : 'My CV', updatedAt: Date.now(), data: normalise(parsed, makeBlank()) }],
+              docs: [withVersions({ id, name: parsed.personal?.name ? `${parsed.personal.name}'s CV` : 'My CV', updatedAt: Date.now(), data: normalise(parsed, makeBlank()) })],
               activeId: id,
             }
           }
@@ -105,7 +120,7 @@ export function useCVDocs(makeBlank: () => CVData, makeSample: () => CVData) {
 
     if (!next || !next.docs.length) {
       const id = newId()
-      next = { docs: [{ id, name: 'My CV', updatedAt: Date.now(), data: makeBlank() }], activeId: id }
+      next = { docs: [withVersions({ id, name: 'My CV', updatedAt: Date.now(), data: makeBlank() })], activeId: id }
     }
 
     if (!next.docs.some((d) => d.id === next!.activeId)) {
@@ -163,12 +178,12 @@ export function useCVDocs(makeBlank: () => CVData, makeSample: () => CVData) {
     const id = newId()
     setStore((prev) => {
       if (!prev) return prev
-      const doc: CVDoc = {
+      const doc = withVersions({
         id,
         name: preset === 'sample' ? 'Example CV' : `CV ${prev.docs.length + 1}`,
         updatedAt: Date.now(),
         data: preset === 'sample' ? makeSample() : makeBlank(),
-      }
+      })
       return { docs: [...prev.docs, doc], activeId: id }
     })
     return id
@@ -181,10 +196,10 @@ export function useCVDocs(makeBlank: () => CVData, makeSample: () => CVData) {
       const source = prev.docs.find((d) => d.id === id)
       if (!source) return prev
       const copy: CVDoc = {
+        ...JSON.parse(JSON.stringify(source)),
         id: newId(),
         name: `${source.name} copy`,
         updatedAt: Date.now(),
-        data: JSON.parse(JSON.stringify(source.data)),
       }
       return { docs: [...prev.docs, copy], activeId: copy.id }
     })
@@ -202,7 +217,7 @@ export function useCVDocs(makeBlank: () => CVData, makeSample: () => CVData) {
       const docs = prev.docs.filter((d) => d.id !== id)
       /* Never leave the editor with nothing to edit. */
       if (!docs.length) {
-        const fresh: CVDoc = { id: newId(), name: 'My CV', updatedAt: Date.now(), data: makeBlank() }
+        const fresh = withVersions({ id: newId(), name: 'My CV', updatedAt: Date.now(), data: makeBlank() })
         return { docs: [fresh], activeId: fresh.id }
       }
       return { docs, activeId: prev.activeId === id ? docs[0].id : prev.activeId }
@@ -210,21 +225,74 @@ export function useCVDocs(makeBlank: () => CVData, makeSample: () => CVData) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const replaceActive = useCallback((data: CVData, name?: string) => {
+  /** `versions` lets a restored backup keep its tailoring; omit it to start
+   *  the document over with one version for its current role. */
+  const replaceActive = useCallback((data: CVData, name?: string, versions?: RoleVersion[]) => {
+    const valid = versions?.filter((v) => v && typeof v.id === 'string' && v.hidden && v.template)
     setStore((prev) =>
       prev
         ? {
             ...prev,
             docs: prev.docs.map((d) =>
-              d.id === prev.activeId ? { ...d, data, name: name ?? d.name, updatedAt: Date.now() } : d
+              d.id === prev.activeId
+                ? withVersions({
+                    id: d.id,
+                    data: normalise(data, makeBlank()),
+                    name: name ?? d.name,
+                    updatedAt: Date.now(),
+                    ...(valid?.length ? { versions: valid, activeVersionId: valid[0].id } : {}),
+                  })
+                : d
             ),
           }
         : prev
     )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const mapActive = (fn: (doc: CVDoc) => CVDoc) =>
+    setStore((prev) =>
+      prev ? { ...prev, docs: prev.docs.map((d) => (d.id === prev.activeId ? { ...fn(d), updatedAt: Date.now() } : d)) } : prev
+    )
+
+  const selectVersion = useCallback((versionId: string) => mapActive((d) => ({ ...d, activeVersionId: versionId })), [])
+
+  const addVersion = useCallback(
+    (version: RoleVersion) => mapActive((d) => ({ ...d, versions: [...d.versions, version], activeVersionId: version.id })),
+    []
+  )
+
+  const updateVersion = useCallback(
+    (versionId: string, patch: Partial<RoleVersion> | ((v: RoleVersion) => Partial<RoleVersion>)) =>
+      mapActive((d) => ({
+        ...d,
+        versions: d.versions.map((v) =>
+          v.id === versionId ? { ...v, ...(typeof patch === 'function' ? patch(v) : patch) } : v
+        ),
+      })),
+    []
+  )
+
+  const removeVersion = useCallback(
+    (versionId: string) =>
+      mapActive((d) => {
+        const versions = d.versions.filter((v) => v.id !== versionId)
+        /* The last version cannot go: a CV has to be *for* something. */
+        if (!versions.length) return d
+        return { ...d, versions, activeVersionId: d.activeVersionId === versionId ? versions[0].id : d.activeVersionId }
+      }),
+    []
+  )
+
+  const activeVersion = active ? active.versions.find((v) => v.id === active.activeVersionId) ?? active.versions[0] : null
 
   return {
     hydrated,
+    activeVersion,
+    selectVersion,
+    addVersion,
+    updateVersion,
+    removeVersion,
     docs: store?.docs ?? [],
     activeId: store?.activeId ?? '',
     active,
