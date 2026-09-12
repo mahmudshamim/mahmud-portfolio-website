@@ -25,7 +25,7 @@ const GAP_RATIO = 0.1
 /*
  * The mark is three slanted bars reading as a stylised M.
  *
- * Geometry, in the 0–100 tall viewBox: each bar is a parallelogram whose top
+ * Geometry, in the 0-100 tall viewBox: each bar is a parallelogram whose top
  * edge sits SLANT units right of its bottom edge (≈21°), BAR wide, repeating
  * every PITCH. Derived rather than hand-plotted so the proportions hold at
  * any size and stay easy to retune.
@@ -79,7 +79,7 @@ export default function MahmudLogo({ size = 'md', color }: Props) {
           fontStyle: 'italic',
           fontSize: s.text,
           letterSpacing: '-0.005em',
-          /* The reference face is wider than Exo 2 — a small horizontal
+          /* The reference face is wider than Exo 2, a small horizontal
              stretch closes most of the gap without distorting the strokes. */
           transform: 'scaleX(1.06)',
           transformOrigin: 'left center',

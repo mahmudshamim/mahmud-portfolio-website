@@ -10,7 +10,7 @@ type Project = (typeof portfolioData.projects)[number] & { image?: string }
 
 /* Every project, not just the featured ones. Splitting them across a panel
    sequence and a separate grid meant half the work sat somewhere nobody
-   scrolled to. `featured` still orders them — flagged projects come first. */
+   scrolled to. `featured` still orders them, flagged projects come first. */
 const all = [...portfolioData.projects].sort(
   (a, b) => Number(b.featured) - Number(a.featured)
 ) as Project[]
@@ -20,7 +20,7 @@ const N = all.length
  * Fan and cascade spacing is capped so the deck always fits the frame.
  *
  * With four cards, `MINI * 62` gave a good overlap. With eleven it threw the
- * outermost card to ±93% of the panel width — right off screen. Taking the
+ * outermost card to ±93% of the panel width, right off screen. Taking the
  * lower of the two keeps the original look at small counts and compresses
  * automatically as projects are added.
  */
@@ -36,7 +36,7 @@ const span = (perCard: number, total: number) => Math.min(perCard, total / Math.
  *   → 1               ...repeated for each project in turn
  *
  * Cards live in the DOM at full panel size and are scaled DOWN for the fan and
- * cascade. Doing it the other way — small cards scaled up — rasterises the
+ * cascade. Doing it the other way, small cards scaled up, rasterises the
  * layer at 1x and stretches the bitmap, so the hero panel would open blurry.
  *
  * All offsets are percentages of the panel box rather than pixels, so the
@@ -97,7 +97,7 @@ export default function Projects() {
       >
         <Intro progress={progress} />
 
-        {/* Heading rail — cross-fades to whichever project holds the panel. */}
+        {/* Heading rail, cross-fades to whichever project holds the panel. */}
         <div style={{ position: 'relative', width: panelWidth, height: isMobile ? 56 : 84 }}>
           {all.map((p, i) => (
             <PanelHeading key={p.id} project={p} index={i} progress={progress} isMobile={isMobile} />
@@ -173,7 +173,7 @@ function Card({
   const opacity = useTransform(progress, points, [1, 1, 1, 0.55, 1, 1, 0.55, 0.55])
 
   /* Stepped, not eased: this only decides which card sits on top.
-     Resting order is reversed — `N - index`, not `index` — so the first
+     Resting order is reversed, `N - index`, not `index`, so the first
      project is the one in front of the fan rather than the one buried under
      every other card. The focused card still outranks all of them. */
   const zIndex = useTransform(
@@ -187,7 +187,7 @@ function Card({
       href={project.live || project.github || undefined}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label={`${project.name} — ${project.shortDesc}`}
+      aria-label={`${project.name}: ${project.shortDesc}`}
       style={{
         position: 'absolute',
         inset: 0,
@@ -233,7 +233,7 @@ function Card({
         </div>
       )}
 
-      {/* Name pill — the reference tags every card this way. It reads as a
+      {/* Name pill, the reference tags every card this way. It reads as a
           label on the mini cards and as a caption on the open panel. */}
       <div
         style={{

@@ -10,7 +10,7 @@ import { useIsMobile } from '@/hooks/useIsMobile'
  * Pinned, not `@latest`.
  *
  * `@latest` re-resolves on every request, so an upstream rename silently
- * turns an icon into a broken image with nothing in the build to catch it —
+ * turns an icon into a broken image with nothing in the build to catch it -
  * which is exactly how framer/adobexd/cloudinary ended up 404ing here. A tag
  * also lets jsDelivr serve these immutably instead of revalidating.
  */
@@ -39,11 +39,11 @@ const SKILL_ICONS: Record<string, string | null> = {
   'UX Design': `${DEVICONS}/xd/xd-original.svg`,
   'Wireframing': `${DEVICONS}/framermotion/framermotion-original.svg`,
   'Prototyping': `${DEVICONS}/framermotion/framermotion-original.svg`,
-  // No devicon entry — falls back to a monogram.
+  // No devicon entry, falls back to a monogram.
   'Cloudinary': null,
 }
 
-/** First letter of each word, capped at two — "UI Design" → "UD". */
+/** First letter of each word, capped at two, "UI Design" → "UD". */
 function monogram(name: string) {
   return name
     .split(/[\s.]+/)
@@ -93,7 +93,7 @@ export default function Skills() {
           perspectiveOrigin: '50% 50%',
         }}
       >
-        {/* Heading — parked, fades as the flight starts */}
+        {/* Heading, parked, fades as the flight starts */}
         <Heading progress={progress} />
 
         {/* The cloud */}
@@ -114,7 +114,7 @@ export default function Skills() {
           </div>
         </div>
 
-        {/* Category readout — swaps as you pass through each layer */}
+        {/* Category readout, swaps as you pass through each layer */}
         <CategoryReadout progress={progress} />
       </div>
     </div>
@@ -142,7 +142,7 @@ function Node({
 
   // Rounded to whole pixels on purpose. These trig results run to full float
   // precision (-233.6070266333721), React serialises that into the SSR style
-  // attribute verbatim, and the browser normalises it to -233.607px on parse —
+  // attribute verbatim, and the browser normalises it to -233.607px on parse -
   // so hydration compares two different numbers and reports a mismatch. Whole
   // pixels survive the round trip unchanged, and sub-pixel placement in a
   // scattered cloud buys nothing.

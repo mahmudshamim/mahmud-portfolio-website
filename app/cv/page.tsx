@@ -3,7 +3,6 @@
 import { portfolioData } from '@/data/portfolio'
 import { useCVDocs } from '@/hooks/useCVDocs'
 import Studio from '@/components/cv/studio/Studio'
-import { LangProvider } from '@/components/cv/studio/i18n'
 
 export type CVTemplate =
   | 'profile-split'
@@ -18,6 +17,12 @@ export type CVTemplate =
   | 'timeline'
   | 'bold-header'
   | 'creative-panel'
+  | 'aurora'
+  | 'soft-card'
+  | 'elegant'
+  | 'metro'
+  | 'monogram'
+  | 'compact-pro'
 
 /** Shared so the panel's Reset and a new CV agree on what "default" means. */
 export const DEFAULT_DOC_STYLE = {
@@ -143,8 +148,8 @@ function buildSampleCVData(): CVData {
  * The CV studio.
  *
  * An app on a phone, three panes on a desktop, and a version per role.
- * Everything that used to compete for the screen at once — a three-column
- * editor, a ten-item checklist, fifteen typography controls, two tab strips —
+ * Everything that used to compete for the screen at once, a three-column
+ * editor, a ten-item checklist, fifteen typography controls, two tab strips -
  * is now a section list, a design tab, or behind "More".
  */
 export default function CVPage() {
@@ -179,9 +184,5 @@ export default function CVPage() {
     }
   }
 
-  return (
-    <LangProvider>
-      <Studio api={api} blank={buildDefaultCVData} sample={buildSampleCVData} onExport={handleExport} onImport={handleImport} />
-    </LangProvider>
-  )
+  return <Studio api={api} blank={buildDefaultCVData} sample={buildSampleCVData} onExport={handleExport} onImport={handleImport} />
 }

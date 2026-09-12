@@ -10,7 +10,7 @@ import {
 
 /**
  * True only after the first client render. `useReducedMotion` reads matchMedia,
- * which is unavailable on the server — so a component that swaps its whole
+ * which is unavailable on the server, so a component that swaps its whole
  * tree on it would render one thing during SSR and another during hydration.
  * Gating on mount keeps the first client render identical to the server's,
  * then lets the static layout take over on the next paint.
@@ -24,7 +24,7 @@ export function useMounted() {
 /**
  * A "stage" is a tall section whose inner content is sticky at 100vh.
  * Scrolling through the tall outer element scrubs `progress` from 0 → 1,
- * which drives every transform inside. This is the whole cinematic system —
+ * which drives every transform inside. This is the whole cinematic system -
  * no video, no frame sequences, no extra bytes.
  *
  * `progress` is spring-smoothed so fast wheel/trackpad flicks glide instead

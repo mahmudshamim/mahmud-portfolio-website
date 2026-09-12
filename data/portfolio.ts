@@ -3,7 +3,7 @@
  *
  * Without this, TypeScript reads the shape off the literal below: the moment
  * every entry happened to carry an `image`, it became a required field and
- * CVBuilder's "add project" — which creates a blank entry with no screenshot —
+ * CVBuilder's "add project", which creates a blank entry with no screenshot -
  * stopped type-checking. Adding or removing a screenshot should never change
  * the public type.
  */
@@ -36,7 +36,7 @@ export const portfolioData = {
     upwork: "https://www.upwork.com/freelancers/~019aac0b0b5967360a",
     linkedin: "https://www.linkedin.com/in/md-abdulla-al-mahmud/",
     summary:
-      "Full-Stack Developer at Khulna Technologies LLC, specializing in React, Next.js, Node.js, and MongoDB. Background in UI/UX design and IT operations gives me a practical edge — I ship products that are fast, clean, and built for real users.",
+      "Full-Stack Developer at Khulna Technologies LLC, specializing in React, Next.js, Node.js, and MongoDB. Background in UI/UX design and IT operations gives me a practical edge: I ship products that are fast, clean, and built for real users.",
     photo: "/images/mahmud-profile.jpg",
     available: true,
   },
@@ -103,7 +103,7 @@ export const portfolioData = {
       name: "DoctorGiri",
       shortDesc: "Doctor appointment & healthcare platform",
       fullDesc:
-        "A full-stack healthcare web application built with Next.js. Patients can find doctors, book appointments, and manage their health — designed with a clean, user-friendly interface.",
+        "A full-stack healthcare web application built with Next.js. Patients can find doctors, book appointments, and manage their health, designed with a clean, user-friendly interface.",
       tech: ["Next.js", "React", "Tailwind CSS"],
       github: "",
       live: "https://doctorgiri.com/",
@@ -117,7 +117,7 @@ export const portfolioData = {
       name: "ExamFlow",
       shortDesc: "Online exam management system",
       fullDesc:
-        "Exam platform for administering and marking assessments — admin panel, exam creation, user management, and result handling. Ships as AssessmentFlow under the KhulnaTech brand.",
+        "Exam platform for administering and marking assessments: admin panel, exam creation, user management, and result handling. Ships as AssessmentFlow under the KhulnaTech brand.",
       tech: ["Next.js", "React", "Node.js", "MongoDB"],
       github: "https://github.com/mahmudshamim",
       live: "https://examflow.khulnatech.us/login",
@@ -127,7 +127,7 @@ export const portfolioData = {
       image: "/images/examflow.webp",
     },
 
-    /* `featured` orders the panel sequence rather than filtering it — flagged
+    /* `featured` orders the panel sequence rather than filtering it, flagged
        projects come first, everything else follows. Nothing is hidden.
 
        Descriptions and stacks below come from each live site (page title, meta
@@ -135,7 +135,7 @@ export const portfolioData = {
     {
       id: "signingus",
       name: "SigningUs",
-      shortDesc: "Digital signature platform — send, sign, and track documents",
+      shortDesc: "Digital signature platform to send, sign, and track documents",
       fullDesc:
         "E-signature SaaS. Draw, type, or upload a signature; multi-party ordered signing workflows, reusable templates, file collection, and a status dashboard. Delivery over email, WhatsApp, or link, with tiered plans and API access.",
       tech: ["Next.js", "React"],
@@ -151,7 +151,7 @@ export const portfolioData = {
       name: "CORE",
       shortDesc: "Members-only business referral network",
       fullDesc:
-        "Networking platform for Bridge USA Staffing — CORE, for Collaboration, Opportunity, Resources & Enterprise. Members join a local club that meets weekly, hold one seat per trade so referrals stay exclusive, and track passed business and one-to-ones from a dashboard.",
+        "Networking platform for Bridge USA Staffing: CORE, for Collaboration, Opportunity, Resources & Enterprise. Members join a local club that meets weekly, hold one seat per trade so referrals stay exclusive, and track passed business and one-to-ones from a dashboard.",
       tech: ["Next.js", "React"],
       github: "",
       live: "https://core.bridgeusastaffing.com/",
@@ -163,7 +163,7 @@ export const portfolioData = {
     {
       id: "ouropero",
       name: "OurOpero",
-      shortDesc: "Team workspace — boards, automation, and dashboards",
+      shortDesc: "Team workspace with boards, automation, and dashboards",
       fullDesc:
         "Project workspace combining boards, automation, dashboards, and team collaboration in one place. Positioned for fast-moving teams with data privacy as a first-class concern.",
       tech: ["Next.js", "React", "Vite"],
@@ -235,7 +235,7 @@ export const portfolioData = {
       name: "Porta Dell'Arsenale",
       shortDesc: "Venetian restaurant and wood-fired pizzeria",
       fullDesc:
-        "Site for a ristorante and pizzeria in the historic Arsenale quarter of Venice — wood-fired oven, Venetian cooking, Adriatic seafood, and Neapolitan pizza, with table booking.",
+        "Site for a ristorante and pizzeria in the historic Arsenale quarter of Venice: wood-fired oven, Venetian cooking, Adriatic seafood, and Neapolitan pizza, with table booking.",
       tech: ["Next.js", "React"],
       github: "",
       live: "https://portadellaarsenale.com/",
@@ -250,46 +250,46 @@ export const portfolioData = {
     {
       role: "Web Developer",
       company: "Khulna Technologies LLC",
-      date: "Aug 2024 — Present",
+      date: "Aug 2024 - Present",
       desc: "Full-stack web development with Next.js 15+ · AWS Amplify & Vercel deployment · Cloudinary media integration · GA4 analytics setup · Monday.com workflow automation · HRM system support · Technical documentation.",
       current: true,
     },
     {
       role: "User Interface Designer",
       company: "Druto Soft",
-      date: "Jan 2024 — Aug 2024",
-      desc: "Full-time UI Designer at Druto Soft for 8 months. Designed user interfaces for software products — wireframes, high-fidelity screens, and design systems in Figma.",
+      date: "Jan 2024 - Aug 2024",
+      desc: "Full-time UI Designer at Druto Soft for 8 months. Designed user interfaces for software products: wireframes, high-fidelity screens, and design systems in Figma.",
       current: false,
     },
     {
       role: "Entrepreneur",
       company: "Chosma Gallery",
-      date: "2022 — 2024",
-      desc: "3 years of direct customer-facing experience in business operations. Developed deep understanding of user behavior, communication, and customer needs — a natural foundation for UX thinking.",
+      date: "2022 - 2024",
+      desc: "3 years of direct customer-facing experience in business operations. Developed deep understanding of user behavior, communication, and customer needs, a natural foundation for UX thinking.",
       current: false,
     },
   ],
 
   education: [
     {
-      degree: "Complete Web Development — 6 Month Bootcamp (Batch WEB12)",
+      degree: "Complete Web Development, 6 Month Bootcamp (Batch WEB12)",
       school: "Programming Hero",
       date: "2025",
     },
     {
-      degree: "UI/UX Graduation Program — 6 Month Course",
+      degree: "UI/UX Graduation Program, 6 Month Course",
       school: "Ostad",
       date: "2024",
     },
     {
-      degree: "Master of Business Administration (MBA) — Accounting",
+      degree: "Master of Business Administration (MBA), Accounting",
       school: "Shamsur Rahman College, Gosairhat, Shariatpur",
-      date: "2022 — 2023",
+      date: "2022 - 2023",
     },
     {
       degree: "Bachelor of Business Administration (BBA)",
       school: "National University, Bangladesh",
-      date: "2015 — 2020",
+      date: "2015 - 2020",
     },
   ],
 

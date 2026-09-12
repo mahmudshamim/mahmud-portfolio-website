@@ -14,13 +14,13 @@ export type SurfaceVariant = 'grid' | 'plain' | 'alt' | 'dark'
  * whole page, which flattened every section into the same field. Sections now
  * declare their own ground instead, so the page reads as a sequence:
  *
- *   grid  — drafting paper, for sections that want structure behind them
- *   plain — flat paper, for sections whose content is already busy
- *   alt   — a half-step darker, to separate two light sections
- *   dark  — inverted; the section's own text must be light
+ *   grid , drafting paper, for sections that want structure behind them
+ *   plain, flat paper, for sections whose content is already busy
+ *   alt  , a half-step darker, to separate two light sections
+ *   dark , inverted; the section's own text must be light
  *
  * The grid parallaxes gently inside its own band. Clipping happens on the grid
- * layer only — the wrapper stays overflow-free so the sticky stages nested
+ * layer only, the wrapper stays overflow-free so the sticky stages nested
  * inside keep resolving against the viewport.
  */
 export default function Surface({
@@ -61,7 +61,7 @@ export default function Surface({
         background: ground,
         /* Deliberately no `overflow` here. The grid layer below clips itself,
            and every pinned stage in this tree depends on `position: sticky`
-           resolving against the viewport — an overflow value on an ancestor is
+           resolving against the viewport, an overflow value on an ancestor is
            the fastest way to silently break that. */
         zIndex: 1,
       }}
@@ -96,7 +96,7 @@ export default function Surface({
         </div>
       )}
 
-      {/* Warm wash — only on light grid bands, and only ever one accent note. */}
+      {/* Warm wash, only on light grid bands, and only ever one accent note. */}
       {variant === 'grid' && (
         <div
           aria-hidden

@@ -16,7 +16,7 @@ import Contact from '@/components/Contact'
  *   Skills      plain   the icon cloud is busy enough on its own
  *   Projects    grid    structure behind the opening panels (all 11)
  *   Experience  alt     a half-step darker, to break two light bands
- *   Education   —       owns its ground: the one dark section, unwrapped
+ *   Education  ,       owns its ground: the one dark section, unwrapped
  *   Contact     plain   lands flat and quiet
  *
  * `Deck` is only the colour showing through anywhere a section leaves a gap.

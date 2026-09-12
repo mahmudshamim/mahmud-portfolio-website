@@ -10,7 +10,7 @@ export type CVDoc = {
   updatedAt: number
   /** The profile: everything this person has done, entered once. */
   data: CVData
-  /** One per role they apply for — each a view over `data`. */
+  /** One per role they apply for, each a view over `data`. */
   versions: RoleVersion[]
   activeVersionId: string
 }
@@ -74,7 +74,7 @@ function normalise(data: CVData, blank: CVData): CVData {
  *
  * One tool, many documents: people tailor a CV per application, and the old
  * single-key store meant editing for one job destroyed the version written for
- * another. Everything stays in localStorage — a CV is full of personal data,
+ * another. Everything stays in localStorage, a CV is full of personal data,
  * and keeping it on the device means there is no server copy to secure,
  * export, or delete on request.
  */
@@ -141,7 +141,7 @@ export function useCVDocs(makeBlank: () => CVData, makeSample: () => CVData) {
       try {
         window.localStorage.setItem(KEY, JSON.stringify(store))
       } catch {
-        /* Quota or private mode — the session still works, it just will not
+        /* Quota or private mode, the session still works, it just will not
            survive a reload. */
       }
     }, 400)

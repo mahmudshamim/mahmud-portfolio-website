@@ -243,7 +243,7 @@ export default function Experience() {
       ctx.stroke()
       ctx.shadowBlur  = 0
 
-      // Dot markers — one per experience item + endpoints
+      // Dot markers, one per experience item + endpoints
       for (let i = 0; i <= ITEM_COUNT; i++) {
         const t   = i / ITEM_COUNT
         const idx = Math.min(Math.round(t * (points.length - 1)), points.length - 1)
@@ -326,7 +326,7 @@ export default function Experience() {
           </h2>
         </div>
 
-        {/* Timeline — canvas rope replaces the static line */}
+        {/* Timeline, canvas rope replaces the static line */}
         <div ref={timelineRef} style={{ position: 'relative' }}>
 
           {/* Physics rope canvas */}

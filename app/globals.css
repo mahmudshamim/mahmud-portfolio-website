@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Mirrors lib/theme.ts — change both together. */
+/* Mirrors lib/theme.ts, change both together. */
 :root {
   --paper: #f4f3ef;
   --paper-alt: #eceae4;
@@ -35,12 +35,12 @@
 
 /* The portfolio draws its own cursor (components/Cursor.tsx), and that
    component puts this class on <html> only while it is mounted. Everywhere
-   else — the CV studio, a shared CV — the system pointer stays: an I-beam
+   else, the CV studio, a shared CV, the system pointer stays: an I-beam
    over a field, a hand over a button.
 
    This used to be a global `* { cursor: none }` with a `cursor: revert`
    escape hatch on the CV page. But cursor is inherited, and `revert` on an
-   element the browser has no rule for falls back to inheriting — so every
+   element the browser has no rule for falls back to inheriting, so every
    plain block on the CV page inherited `none` from <body>, and the pointer
    vanished over text. Scoping the rule removes the need for an escape hatch.
 
@@ -141,7 +141,7 @@ body {
 /* ── Printing the CV ──────────────────────────────────────────────────────
    `handleDownload` clones the document into #cv-print-root and calls
    window.print(). Cloning to the body avoids every ancestor problem the
-   preview has — the sheet is inside a scaled, scrolling, sticky column, and
+   preview has, the sheet is inside a scaled, scrolling, sticky column, and
    a transformed or clipped ancestor breaks pagination.
 
    This replaces an html2canvas pipeline that produced a JPEG inside a PDF:

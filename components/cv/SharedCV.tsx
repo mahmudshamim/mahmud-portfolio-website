@@ -38,7 +38,7 @@ export default function SharedCV() {
   }, [])
 
   useEffect(() => {
-    if (typeof state === 'object' && state.cv.personal.name) document.title = `${state.cv.personal.name} — CV`
+    if (typeof state === 'object' && state.cv.personal.name) document.title = `${state.cv.personal.name} | CV`
   }, [state])
 
   return (
@@ -111,7 +111,7 @@ export default function SharedCV() {
                 </svg>
               </span>
               <span style={{ flex: 1 }}>
-                <span style={{ display: 'block', fontSize: 16, fontWeight: 700, color: '#15131d' }}>Make a CV like this — free</span>
+                <span style={{ display: 'block', fontSize: 16, fontWeight: 700, color: '#15131d' }}>Make a CV like this for free</span>
                 <span style={{ display: 'block', fontSize: 13.5, color: '#716d80', marginTop: 2 }}>No sign-up. Works on your phone.</span>
               </span>
               <span style={{ color: '#a3a0b1', fontSize: 22 }}>›</span>

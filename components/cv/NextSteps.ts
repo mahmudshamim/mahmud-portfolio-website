@@ -27,7 +27,7 @@ const words = (v?: string) => (v || '').trim().split(/\s+/).filter(Boolean).leng
  * The single source of "what should I do next".
  *
  * Progress, the toolbar hint and the checklist all read from this, so they can
- * never disagree — the old progress bar measured which wizard step was open,
+ * never disagree, the old progress bar measured which wizard step was open,
  * and reported 14% on a finished CV.
  */
 export function buildTasks(cv: CVData): Task[] {

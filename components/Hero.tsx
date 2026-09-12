@@ -12,18 +12,18 @@ const WORD = 'MAHMUD'
  * The portrait sits in a centred column. The wordmark is rendered three times
  * at exactly the same position and clipped into three vertical bands: solid
  * either side, outline-only across the middle so the face reads through the
- * letterforms. Same trick as a printed cover — no masks, no compositing, and
+ * letterforms. Same trick as a printed cover, no masks, no compositing, and
  * it stays crisp at any size because it is real text the whole way.
  */
-const BAND_START = 36 // % — left edge of the outlined letters
-const BAND_END = 64 // % — right edge
+const BAND_START = 36 // %, left edge of the outlined letters
+const BAND_END = 64 // %, right edge
 
 /**
  * The portrait column, sized independently of the outline band.
  *
  * These used to share one pair of numbers, which meant the photo inherited a
- * 28%-wide column at 78vh tall. On a phone that is roughly 109x658 — an
- * aspect of 0.17 against the desktop's 0.54 — so `object-fit: cover` threw
+ * 28%-wide column at 78vh tall. On a phone that is roughly 109x658, an
+ * aspect of 0.17 against the desktop's 0.54, so `object-fit: cover` threw
  * away everything either side of the nose.
  *
  * Keeping them separate is also truer to the reference: the photo is meant to
@@ -33,7 +33,7 @@ const BAND_END = 64 // % — right edge
 const PHOTO = {
   desktop: { left: 32, width: 36, height: 'min(78vh, 720px)', wordTop: '50%' },
   /* Taller and wider than desktop in percentage terms. The portrait is
-     bottom-anchored, so its height decides where the composition starts —
+     bottom-anchored, so its height decides where the composition starts -
      at 58vh everything below the top rail sat empty down to 42vh. Width grows
      with it to hold the aspect near 0.52 and keep `cover` off the face. */
   mobile: { left: 14, width: 72, height: 'min(70vh, 540px)', wordTop: '44%' },
@@ -164,7 +164,7 @@ export default function Hero() {
             }}
           >
             <div>{personal.location}</div>
-            <div style={{ color: T.faint }}>2026 — Portfolio</div>
+            <div style={{ color: T.faint }}>2026 · Portfolio</div>
           </div>
         </motion.div>
 
@@ -179,7 +179,7 @@ export default function Hero() {
             zIndex: 2,
           }}
         >
-          {/* Portrait column — behind the type */}
+          {/* Portrait column, behind the type */}
           <motion.div
             style={{
               position: 'absolute',
@@ -210,7 +210,7 @@ export default function Hero() {
                 filter: 'grayscale(1) contrast(1.05) sepia(0.14) brightness(0.965)',
                 /* An ellipse biased upward, so every edge dissolves and the
                    bottom goes first. A straight bottom-only fade left the
-                   other three sides as hard rectangle edges — that boxed-in
+                   other three sides as hard rectangle edges, that boxed-in
                    look was the actual problem, not the whiteness. */
                 maskImage: PHOTO_MASK,
                 WebkitMaskImage: PHOTO_MASK,
@@ -218,7 +218,7 @@ export default function Hero() {
             />
           </motion.div>
 
-          {/* Wordmark — three clipped copies, identical geometry */}
+          {/* Wordmark, three clipped copies, identical geometry */}
           <div
             style={{
               position: 'absolute',
@@ -236,7 +236,7 @@ export default function Hero() {
               {WORD}
             </span>
 
-            {/* The real heading. The visible wordmark is decorative — this is
+            {/* The real heading. The visible wordmark is decorative, this is
                 what search engines and screen readers get. */}
             <h1
               style={{
@@ -252,7 +252,7 @@ export default function Hero() {
                 border: 0,
               }}
             >
-              {personal.name} — {personal.role}
+              {personal.name}, {personal.role}
             </h1>
 
             {/* Solid left */}

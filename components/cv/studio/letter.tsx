@@ -5,14 +5,13 @@ import type { CVData } from '@/app/cv/page'
 import { fileSafe, printElement } from '../print'
 import { matchJob, type RoleVersion } from './model'
 import type { EditCtx } from './sections'
-import { useLang } from './i18n'
 import { Button, Icon, Label, Segmented, TextArea, TextField, c, font, radius } from './ui'
 
 /*
  * A cover letter per role version.
  *
- * It is drafted from what the CV already says — the current job, the skills
- * this version shows, a project or two — so it can never claim something the
+ * It is drafted from what the CV already says, the current job, the skills
+ * this version shows, a project or two, so it can never claim something the
  * CV does not. The draft is a starting point in an ordinary text box; the
  * page it prints on carries the same name, contact line and accent colour as
  * the CV, so the two read as a set.
@@ -70,7 +69,7 @@ export function letterDraft(cv: CVData, role: string, o: { company: string; mana
     .filter(Boolean)
     .slice(0, 4)
   let middle = skills.length ? `The skills I would bring to the team are ${list(skills)}.` : ''
-  if (spelled.length) middle += ` Your advert asks for ${list(spelled)} — ${friendly ? 'these are things I work with every day' : 'these are areas where I already have practical experience'}.`
+  if (spelled.length) middle += ` Your advert asks for ${list(spelled)}, and ${friendly ? 'these are things I work with every day' : 'these are areas where I already have practical experience'}.`
 
   const projects = cv.projects.filter((p) => p.name).slice(0, 2)
   const proof = projects.length
@@ -78,7 +77,7 @@ export function letterDraft(cv: CVData, role: string, o: { company: string; mana
     : ''
 
   const close = friendly
-    ? `I would really enjoy talking about how I could help ${company}. Thank you for reading — I hope to hear from you soon.`
+    ? `I would really enjoy talking about how I could help ${company}. Thank you for reading, and I hope to hear from you soon.`
     : `I would welcome the opportunity to discuss how I can contribute to ${company}. Thank you for your time and consideration.`
   const sign = `${friendly ? 'Best regards,' : 'Sincerely,'}\n${cv.personal.name || ''}`.trim()
 
@@ -171,7 +170,6 @@ export async function copyText(text: string) {
 }
 
 export function LetterEditor({ ctx, inlinePreview }: { ctx: EditCtx; inlinePreview: boolean }) {
-  const { t } = useLang()
   const { cv, version, role, updateVersion, confirm, toast } = ctx
   const letter = version.letter ?? emptyLetter
   const [ad, setAd] = useState('')
@@ -182,60 +180,60 @@ export function LetterEditor({ ctx, inlinePreview }: { ctx: EditCtx; inlinePrevi
   const write = async () => {
     if (letter.body.trim()) {
       const ok = await confirm({
-        title: t('Replace your letter?'),
-        body: t('We will write a new draft from your CV. Your current text will be replaced.'),
-        confirmLabel: t('Replace'),
+        title: 'Replace your letter?',
+        body: 'We will write a new draft from your CV. Your current text will be replaced.',
+        confirmLabel: 'Replace',
         tone: 'warn',
         icon: 'sparkle',
       })
       if (!ok) return
     }
     set({ body: letterDraft(cv, role, { company: letter.company, manager: letter.manager, ad, tone: letter.tone }) })
-    toast(t('Draft written — read it through and make it yours'))
+    toast('Draft written. Read it through and make it yours.')
   }
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      <TextField label={t('Company name')} placeholder={t('e.g. Brain Station 23')} value={letter.company} onChange={(e) => set({ company: e.target.value })} autoCapitalize="words" />
-      <TextField label={t('Hiring manager')} hint={t('optional')} placeholder={t('e.g. Ms. Nusrat Jahan')} value={letter.manager} onChange={(e) => set({ manager: e.target.value })} autoCapitalize="words" />
+      <TextField label="Company name" placeholder="e.g. Brain Station 23" value={letter.company} onChange={(e) => set({ company: e.target.value })} autoCapitalize="words" />
+      <TextField label="Hiring manager" hint="optional" placeholder="e.g. Ms. Nusrat Jahan" value={letter.manager} onChange={(e) => set({ manager: e.target.value })} autoCapitalize="words" />
       <div>
-        <Label>{t('Tone')}</Label>
+        <Label>Tone</Label>
         <Segmented
           full
           value={letter.tone}
           options={[
-            { v: 'formal', l: t('Formal') },
-            { v: 'friendly', l: t('Friendly') },
+            { v: 'formal', l: 'Formal' },
+            { v: 'friendly', l: 'Friendly' },
           ]}
           onChange={(v) => set({ tone: v })}
         />
       </div>
 
       {adOpen ? (
-        <TextArea label={t('Job advert')} hint={t('optional')} placeholder={t('Paste the job description here…')} value={ad} rows={5} onChange={(e) => setAd(e.target.value)} />
+        <TextArea label="Job advert" hint="optional" placeholder="Paste the job description here…" value={ad} rows={5} onChange={(e) => setAd(e.target.value)} />
       ) : (
         <button
           onClick={() => setAdOpen(true)}
           style={{ justifySelf: 'start', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: font, fontSize: 14, fontWeight: 600, color: c.brandInk, background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer' }}
         >
-          <Icon name="plus" size={16} /> {t('Paste the job advert, so the letter mentions what it asks for')}
+          <Icon name="plus" size={16} /> Paste the job advert, so the letter mentions what it asks for
         </button>
       )}
 
       <Button variant="primary" icon="sparkle" block onClick={write}>
-        {letter.body.trim() ? t('Write a new draft') : t('Write my letter')}
+        {letter.body.trim() ? 'Write a new draft' : 'Write my letter'}
       </Button>
 
       <TextArea
-        label={t('Your letter')}
-        placeholder={t('Tap “Write my letter” for a draft, or write your own here.')}
+        label="Your letter"
+        placeholder="Tap “Write my letter” for a draft, or write your own here."
         value={letter.body}
         rows={14}
         onChange={(e) => set({ body: e.target.value })}
       />
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <span style={{ fontFamily: font, fontSize: 13, color: words === 0 ? c.faint : words < 150 || words > 400 ? c.warn : c.good }}>
-          {t('{n} words', { n: words })} {words > 0 && (words < 150 ? t('· a bit short') : words > 400 ? t('· keep it under one page') : t('· good length'))}
+          {`${words} words`} {words > 0 && (words < 150 ? '· a bit short' : words > 400 ? '· keep it under one page' : '· good length')}
         </span>
         <span style={{ flex: 1 }} />
         <Button
@@ -244,14 +242,14 @@ export function LetterEditor({ ctx, inlinePreview }: { ctx: EditCtx; inlinePrevi
           disabled={!letter.body.trim()}
           onClick={async () => {
             const ok = await copyText(letter.body)
-            toast(ok ? t('Letter copied') : t('Could not copy — select the text and copy it'))
+            toast(ok ? 'Letter copied' : 'Could not copy. Select the text and copy it.')
           }}
         >
-          {t('Copy text')}
+          Copy text
         </Button>
       </div>
       <p style={{ margin: 0, fontFamily: font, fontSize: 13, lineHeight: 1.55, color: c.muted }}>
-        {t('Each CV version keeps its own letter. This one is for {role}.', { role: role || t('this role') })}
+        {`Each CV version keeps its own letter. This one is for ${role || 'this role'}.`}
       </p>
 
       {inlinePreview && letter.body.trim() && (

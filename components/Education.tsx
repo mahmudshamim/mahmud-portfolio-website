@@ -6,7 +6,7 @@ const educationData = [
   {
     year: '25',
     range: '2025',
-    title: 'Complete Web Development — 6 Month Bootcamp',
+    title: 'Complete Web Development, 6 Month Bootcamp',
     school: 'Programming Hero · Batch WEB12',
     tag: 'Bootcamp',
     tagColor: '#4f8ef7',
@@ -15,7 +15,7 @@ const educationData = [
   {
     year: '24',
     range: '2024',
-    title: 'UI/UX Graduation Program — 6 Month Course',
+    title: 'UI/UX Graduation Program, 6 Month Course',
     school: 'Ostad',
     tag: 'Design',
     tagColor: '#a855f7',
@@ -23,7 +23,7 @@ const educationData = [
   },
   {
     year: '23',
-    range: '2022 — 2023',
+    range: '2022 - 2023',
     title: 'Master of Business Administration (MBA)',
     school: 'Shamsur Rahman College, Gosairhat, Shariatpur',
     tag: 'Academic',
@@ -32,7 +32,7 @@ const educationData = [
   },
   {
     year: '20',
-    range: '2015 — 2020',
+    range: '2015 - 2020',
     title: 'Bachelor of Business Administration (BBA)',
     school: 'National University, Bangladesh',
     tag: 'Academic',

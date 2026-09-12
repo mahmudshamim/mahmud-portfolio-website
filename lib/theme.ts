@@ -3,7 +3,7 @@
  *
  * The site is built almost entirely with inline styles, so a CSS-variable-only
  * palette would not reach most of it. These constants mirror the custom
- * properties in globals.css one-for-one — change a value here and in the
+ * properties in globals.css one-for-one, change a value here and in the
  * `:root` block together.
  *
  * Palette: warm graph paper, heavy black type, single orange accent.
@@ -23,11 +23,11 @@ export const T = {
   faint: '#b6b3a7',      // hairline labels, ghost numerals
 
   /* Accent */
-  accent: '#e2701f',     // orange — links, active state, one-per-view
+  accent: '#e2701f',     // orange, links, active state, one-per-view
   accentSoft: '#fbe9d8', // accent tint fill
   accentInk: '#a44e10',  // accent text on tint
 
-  /* Support — kept for per-project identity chips */
+  /* Support, kept for per-project identity chips */
   blue: '#2f6fd0',
   violet: '#7a5bd6',
   green: '#2f8f5b',

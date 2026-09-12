@@ -3,7 +3,7 @@ import { ImageResponse } from 'next/og'
 /**
  * Raster fallback for browsers that do not take an SVG favicon (Safari before
  * 16, older Android). Generated at build time from the same geometry as
- * public/favicon.svg and components/MahmudLogo.tsx — one mark, three sources,
+ * public/favicon.svg and components/MahmudLogo.tsx, one mark, three sources,
  * so a tweak to the bars only needs repeating, never re-drawing.
  */
 export const size = { width: 512, height: 512 }

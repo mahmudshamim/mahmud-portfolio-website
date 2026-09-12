@@ -60,7 +60,7 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
    *
    * The old path rasterised the document to a JPEG and wrapped it in a PDF:
    * no selectable text, no clickable links, nothing for a screen reader, and
-   * — the real problem for a CV — nothing an applicant tracking system can
+   *, the real problem for a CV, nothing an applicant tracking system can
    * parse. The tool scored your CV for ATS friendliness and then handed you a
    * file no ATS could read.
    *
@@ -147,7 +147,7 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
 }
 
 /**
- * The document itself, and nothing else — no frame, no scaling, no print
+ * The document itself, and nothing else, no frame, no scaling, no print
  * plumbing.
  *
  * Preview, template thumbnails and print all render through this one
@@ -260,6 +260,12 @@ export function CVDocument({
     {template === 'creative-panel' && (
       <CreativePanelTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
     )}
+    {template === 'aurora' && <AuroraTemplate {...templateProps} />}
+    {template === 'soft-card' && <SoftCardTemplate {...templateProps} />}
+    {template === 'elegant' && <ElegantTemplate {...templateProps} />}
+    {template === 'metro' && <MetroTemplate {...templateProps} />}
+    {template === 'monogram' && <MonogramTemplate {...templateProps} />}
+    {template === 'compact-pro' && <CompactProTemplate {...templateProps} />}
     </div>
   )
 }
@@ -433,7 +439,7 @@ function DarkProTemplate({ personal, skills, projects, experience, education, cu
                 {education.map((e, i) => (
                   <div key={i}>
                     <strong>{e.degree}</strong>
-                    <p style={{ color: '#555' }}>{e.school} &mdash; {e.date}</p>
+                    <p style={{ color: '#555' }}>{e.school} · {e.date}</p>
                   </div>
                 ))}
               </Section>
@@ -481,7 +487,7 @@ function CleanMinimalTemplate({ personal, skills, projects, experience, educatio
               {experience.map((e, i) => (
                 <div key={i} style={{ marginBottom: 16 }}>
                   <strong style={{ fontSize: 13 }}>{e.role}</strong>
-                  <p style={{ color: '#777', fontSize: 11, margin: '2px 0' }}>{e.company} &mdash; {e.date}</p>
+                  <p style={{ color: '#777', fontSize: 11, margin: '2px 0' }}>{e.company} · {e.date}</p>
                   <BulletText content={e.desc} />
                 </div>
               ))}
@@ -579,14 +585,14 @@ function TechBlueTemplate({ personal, skills, projects, experience, education, c
   return (
     <div style={{ fontFamily: '"Fira Code", "Cascadia Code", "Courier New", monospace', fontSize: 11.5, color: c.dimWhite, background: c.bg }}>
 
-      {/* Editor chrome — window bar */}
+      {/* Editor chrome, window bar */}
       <div style={{ background: c.sidebar, borderBottom: `1px solid ${c.line}`, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ display: 'flex', gap: 7 }}>
           <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#ff5f57' }} />
           <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#ffbd2e' }} />
           <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#28c840' }} />
         </div>
-        <span style={{ color: c.gray, fontSize: 11 }}>profile.json — CV Builder</span>
+        <span style={{ color: c.gray, fontSize: 11 }}>profile.json · CV Builder</span>
       </div>
 
       {/* Tab bar */}
@@ -1008,7 +1014,7 @@ function TimelineTemplate({ personal, skills, projects, experience, education, c
           )}
         </div>
 
-        {/* Right main — timeline */}
+        {/* Right main, timeline */}
         <div style={{ flex: 1, padding: '0 32px 32px 28px' }}>
 
           {showSections.summary && (
@@ -1098,7 +1104,7 @@ function BoldHeaderTemplate({ personal, skills, projects, experience, education,
       {/* Thin accent strip */}
       <div style={{ height: 4, background: 'linear-gradient(90deg, #2980b9, #6dd5fa)' }} />
 
-      {/* Body — two columns */}
+      {/* Body, two columns */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: 0 }}>
 
         {/* Left column */}
@@ -1628,7 +1634,7 @@ function SwissGridTemplate({ personal, skills, projects, experience, education, 
           {projects.filter((p) => p.featured).map((p) => (
             <div key={p.id} style={{ marginBottom: 10 }}>
               <span style={{ fontWeight: 700 }}>{p.name}</span>
-              <span style={{ color: '#555' }}> — {p.shortDesc}</span>
+              <span style={{ color: '#555' }}>: {p.shortDesc}</span>
               <div style={{ fontSize: 9.5, color: '#999', marginTop: 2 }}>{p.tech.join(' / ')}</div>
             </div>
           ))}
@@ -1701,7 +1707,7 @@ function AtsCompactTemplate({ personal, skills, projects, experience, education,
           <H>Projects</H>
           {projects.filter((p) => p.featured).map((p) => (
             <div key={p.id} style={{ marginBottom: 8 }}>
-              <span style={{ fontWeight: 700 }}>{p.name}</span> — {p.shortDesc}
+              <span style={{ fontWeight: 700 }}>{p.name}</span>: {p.shortDesc}
               <div style={{ fontSize: 10.5, color: '#444' }}>Tech: {p.tech.join(', ')}</div>
             </div>
           ))}
@@ -1763,7 +1769,7 @@ function AccentRuleTemplate({ personal, skills, projects, experience, education,
         {showSections.experience && (
           <RuleSection title="Experience" color={accent}>
             {experience.map((e, i) => (
-              <div key={i} style={{ marginBottom: 15, paddingLeft: 12, borderLeft: `2px solid ${accent}22` }}>
+              <div key={i} style={{ marginBottom: 15, paddingLeft: 12, borderLeft: `2px solid color-mix(in srgb, ${accent} 14%, white)` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                   <span style={{ fontWeight: 700 }}>{e.role}</span>
                   <span style={{ fontSize: 10, color: '#9ca3af', whiteSpace: 'nowrap' }}>{e.date}</span>
@@ -1792,7 +1798,7 @@ function AccentRuleTemplate({ personal, skills, projects, experience, education,
             <RuleSection title="Skills" color={accent}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                 {skills.map((s) => (
-                  <span key={s.name} style={{ fontSize: 10, background: `${accent}12`, color: accent, borderRadius: 3, padding: '2px 7px' }}>
+                  <span key={s.name} style={{ fontSize: 10, background: `color-mix(in srgb, ${accent} 10%, white)`, color: accent, borderRadius: 3, padding: '2px 7px' }}>
                     {s.name}
                   </span>
                 ))}
@@ -1820,6 +1826,652 @@ function AccentRuleTemplate({ personal, skills, projects, experience, education,
           ) : null
         )}
       </div>
+    </div>
+  )
+}
+
+/* ─── Studio set ───────────────────────────────────────────────────────────
+   Six more looks, all driven by the same document-style variables as the
+   plain-paper set: accent, typefaces, size, spacing and photo shape. Tints
+   are mixed from the accent with color-mix, so every colour swatch works
+   without a second palette per template. Every entry carries data-cv-entry
+   so the printer never splits one job across two pages. */
+
+const tint = (pct: number) => `color-mix(in srgb, var(--cv-accent) ${pct}%, white)`
+const deep = (pct: number) => `color-mix(in srgb, var(--cv-accent) ${pct}%, black)`
+
+const paper: React.CSSProperties = {
+  fontFamily: 'var(--cv-font)',
+  fontSize: 'var(--cv-size)',
+  lineHeight: 'var(--cv-leading)',
+  letterSpacing: 'var(--cv-tracking)',
+  color: 'var(--cv-ink)',
+  background: '#fff',
+}
+
+const cleanUrl = (u?: string) => (u || '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
+
+function contactOf(p: CVData['personal']) {
+  return [p.email, p.phone, p.location, cleanUrl(p.portfolio), cleanUrl(p.linkedin)].filter(Boolean) as string[]
+}
+
+const initialsOf = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter((w) => w && !/^(md|mst|mr|mrs|ms|dr)\.?$/i.test(w))
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join('')
+
+function Photo({ src, scale = 1, ring }: { src: string; scale?: number; ring?: string }) {
+  if (!src) return null
+  const size = `calc(var(--cv-photo-size) * ${scale})`
+  return (
+    <img
+      src={src}
+      alt="Profile"
+      style={{ width: size, height: size, borderRadius: 'var(--cv-photo-radius)', objectFit: 'cover', flexShrink: 0, border: ring ? `3px solid ${ring}` : undefined, display: 'block' }}
+    />
+  )
+}
+
+function customBlocks(customSections: CVData['customSections'], render: (title: string, body: React.ReactNode, key: string) => React.ReactNode) {
+  return customSections.map((s) =>
+    s.title.trim() || s.content.trim() ? render(s.title || 'Additional', <CustomSectionBody content={s.content} />, s.id) : null
+  )
+}
+
+// ─── Aurora: a colour band across the top ────────────────────────────────────
+function AuroraHeading({ title }: { title: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+      <span style={{ fontFamily: 'var(--cv-heading-font)', fontSize: 11.5, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--cv-accent)', whiteSpace: 'nowrap' }}>{title}</span>
+      <span style={{ flex: 1, height: 1, background: tint(28) }} />
+    </div>
+  )
+}
+
+function AuroraTemplate({ personal, skills, projects, experience, education, customSections, showSections, photo }: TemplateProps) {
+  const Block = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <section style={{ marginBottom: 'var(--cv-gap)' }}>
+      <AuroraHeading title={title} />
+      {children}
+    </section>
+  )
+  return (
+    <div style={paper}>
+      <header style={{ padding: 'var(--cv-margin) var(--cv-margin) 28px', background: `linear-gradient(118deg, ${deep(82)} 0%, var(--cv-accent) 55%, ${tint(72)} 100%)`, color: '#fff' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
+          <Photo src={photo} scale={0.9} ring="rgba(255,255,255,.85)" />
+          <div style={{ minWidth: 0 }}>
+            <h1 style={{ fontFamily: 'var(--cv-heading-font)', fontSize: 32, fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.02em', margin: 0, color: '#fff' }}>{personal.name}</h1>
+            {personal.role && <div style={{ fontSize: 13.5, marginTop: 6, opacity: 0.92 }}>{personal.role}</div>}
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 18px', marginTop: 18, fontSize: 10.5, opacity: 0.95 }}>
+          {contactOf(personal).map((c) => (
+            <span key={c}>{c}</span>
+          ))}
+        </div>
+      </header>
+
+      <div style={{ padding: '26px var(--cv-margin) var(--cv-margin)' }}>
+        {showSections.summary && (
+          <Block title="Profile">
+            <p style={{ margin: 0, fontSize: 'calc(var(--cv-size) * 1.06)', lineHeight: 1.75, color: '#374151' }}>{personal.summary}</p>
+          </Block>
+        )}
+        {showSections.experience && (
+          <Block title="Experience">
+            {experience.map((e, i) => (
+              <div key={i} data-cv-entry style={{ marginBottom: 15 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
+                  <span style={{ fontWeight: 700, color: '#111827' }}>{e.role}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--cv-accent)', whiteSpace: 'nowrap' }}>{e.date}</span>
+                </div>
+                <div style={{ color: '#6b7280', margin: '1px 0 5px' }}>{e.company}</div>
+                <BulletText content={e.desc} />
+              </div>
+            ))}
+          </Block>
+        )}
+        {showSections.projects && (
+          <Block title="Projects">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 22px' }}>
+              {projects.filter((p) => p.featured).map((p) => (
+                <div key={p.id} data-cv-entry style={{ borderLeft: `3px solid ${tint(40)}`, paddingLeft: 10 }}>
+                  <div style={{ fontWeight: 700 }}>{p.name}</div>
+                  <div style={{ color: '#4b5563', lineHeight: 1.55 }}>{p.shortDesc}</div>
+                  {p.tech.length > 0 && <div style={{ fontSize: 9.5, color: '#9ca3af', marginTop: 3 }}>{p.tech.join(' · ')}</div>}
+                </div>
+              ))}
+            </div>
+          </Block>
+        )}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 28 }}>
+          {showSections.skills && (
+            <Block title="Skills">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px 14px' }}>
+                {skills.map((s) => (
+                  <div key={s.name} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--cv-accent)', flexShrink: 0 }} />
+                    <span>{s.name}</span>
+                  </div>
+                ))}
+              </div>
+            </Block>
+          )}
+          {showSections.education && (
+            <Block title="Education">
+              {education.map((e, i) => (
+                <div key={i} data-cv-entry style={{ marginBottom: 10 }}>
+                  <div style={{ fontWeight: 700 }}>{e.degree}</div>
+                  <div style={{ color: '#6b7280' }}>{e.school}</div>
+                  <div style={{ fontSize: 10, color: 'var(--cv-accent)', fontWeight: 600 }}>{e.date}</div>
+                </div>
+              ))}
+            </Block>
+          )}
+        </div>
+        {customBlocks(customSections, (title, body, key) => (
+          <Block key={key} title={title}>
+            {body}
+          </Block>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Soft Card: a tinted card for the header, two calm columns ──────────────
+function SoftHeading({ title }: { title: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+      <span style={{ width: 9, height: 9, borderRadius: 3, background: 'var(--cv-accent)' }} />
+      <span style={{ fontFamily: 'var(--cv-heading-font)', fontSize: 12.5, fontWeight: 800, color: deep(55) }}>{title}</span>
+    </div>
+  )
+}
+
+function SoftCardTemplate({ personal, skills, projects, experience, education, customSections, showSections, photo }: TemplateProps) {
+  const Block = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <section style={{ marginBottom: 'var(--cv-gap)' }}>
+      <SoftHeading title={title} />
+      {children}
+    </section>
+  )
+  return (
+    <div style={{ ...paper, padding: 'var(--cv-margin)' }}>
+      <header style={{ display: 'flex', alignItems: 'center', gap: 22, padding: 22, borderRadius: 18, background: tint(10), marginBottom: 28 }}>
+        <Photo src={photo} scale={0.85} ring="#fff" />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1 style={{ fontFamily: 'var(--cv-heading-font)', fontSize: 30, fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em', margin: 0, color: deep(45) }}>{personal.name}</h1>
+          {personal.role && <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--cv-accent)', marginTop: 5 }}>{personal.role}</div>}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+            {contactOf(personal).map((c) => (
+              <span key={c} style={{ fontSize: 10, background: '#fff', color: '#374151', borderRadius: 999, padding: '3px 10px' }}>
+                {c}
+              </span>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1.7fr 1fr', gap: 32, alignItems: 'start' }}>
+        <div>
+          {showSections.summary && (
+            <Block title="About me">
+              <p style={{ margin: 0, lineHeight: 1.75, color: '#374151' }}>{personal.summary}</p>
+            </Block>
+          )}
+          {showSections.experience && (
+            <Block title="Experience">
+              {experience.map((e, i) => (
+                <div key={i} data-cv-entry style={{ position: 'relative', paddingLeft: 16, marginBottom: 15 }}>
+                  <span style={{ position: 'absolute', left: 0, top: 6, width: 7, height: 7, borderRadius: '50%', background: tint(45) }} />
+                  <div style={{ fontWeight: 700 }}>{e.role}</div>
+                  <div style={{ fontSize: 10.5, color: '#6b7280', margin: '1px 0 5px' }}>
+                    {[e.company, e.date].filter(Boolean).join('  ·  ')}
+                  </div>
+                  <BulletText content={e.desc} />
+                </div>
+              ))}
+            </Block>
+          )}
+          {showSections.projects && (
+            <Block title="Projects">
+              {projects.filter((p) => p.featured).map((p) => (
+                <div key={p.id} data-cv-entry style={{ marginBottom: 11 }}>
+                  <div style={{ fontWeight: 700 }}>{p.name}</div>
+                  <div style={{ color: '#4b5563', lineHeight: 1.55 }}>{p.shortDesc}</div>
+                  {p.tech.length > 0 && <div style={{ fontSize: 9.5, color: '#9ca3af', marginTop: 2 }}>{p.tech.join(' · ')}</div>}
+                </div>
+              ))}
+            </Block>
+          )}
+        </div>
+        <div>
+          {showSections.skills && (
+            <Block title="Skills">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {skills.map((s) => (
+                  <span key={s.name} style={{ fontSize: 10, background: tint(12), color: deep(60), borderRadius: 999, padding: '3px 10px' }}>
+                    {s.name}
+                  </span>
+                ))}
+              </div>
+            </Block>
+          )}
+          {showSections.education && (
+            <Block title="Education">
+              {education.map((e, i) => (
+                <div key={i} data-cv-entry style={{ marginBottom: 11 }}>
+                  <div style={{ fontWeight: 700 }}>{e.degree}</div>
+                  <div style={{ color: '#6b7280' }}>{e.school}</div>
+                  <div style={{ fontSize: 10, color: '#9ca3af' }}>{e.date}</div>
+                </div>
+              ))}
+            </Block>
+          )}
+          {customBlocks(customSections, (title, body, key) => (
+            <Block key={key} title={title}>
+              {body}
+            </Block>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Elegant: centred, letterspaced, quiet ──────────────────────────────────
+function ElegantHeading({ title }: { title: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
+      <span style={{ flex: 1, height: 1, background: '#d9d6ce' }} />
+      <span style={{ fontFamily: 'var(--cv-heading-font)', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--cv-accent)' }}>{title}</span>
+      <span style={{ flex: 1, height: 1, background: '#d9d6ce' }} />
+    </div>
+  )
+}
+
+function ElegantTemplate({ personal, skills, projects, experience, education, customSections, showSections, photo }: TemplateProps) {
+  const Block = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <section style={{ marginBottom: 'var(--cv-gap)' }}>
+      <ElegantHeading title={title} />
+      {children}
+    </section>
+  )
+  return (
+    <div style={{ ...paper, padding: 'var(--cv-margin)' }}>
+      <header style={{ textAlign: 'center', marginBottom: 26 }}>
+        {photo && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+            <Photo src={photo} scale={0.8} />
+          </div>
+        )}
+        <h1 style={{ fontFamily: 'var(--cv-heading-font)', fontSize: 30, fontWeight: 400, letterSpacing: '0.16em', textTransform: 'uppercase', margin: 0, color: '#1c1b18' }}>{personal.name}</h1>
+        {personal.role && <div style={{ marginTop: 9, fontSize: 11, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--cv-accent)' }}>{personal.role}</div>}
+        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '4px 18px', marginTop: 13, fontSize: 10.5, color: '#6b675e' }}>
+          {contactOf(personal).map((c) => (
+            <span key={c}>{c}</span>
+          ))}
+        </div>
+      </header>
+
+      {showSections.summary && (
+        <Block title="Profile">
+          <p style={{ margin: '0 auto', maxWidth: 580, textAlign: 'center', lineHeight: 1.85, color: '#3f3c35' }}>{personal.summary}</p>
+        </Block>
+      )}
+      {showSections.experience && (
+        <Block title="Experience">
+          {experience.map((e, i) => (
+            <div key={i} data-cv-entry style={{ marginBottom: 15 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
+                <span>
+                  <span style={{ fontWeight: 700, color: '#1c1b18' }}>{e.role}</span>
+                  {e.company && <span style={{ fontStyle: 'italic', color: '#6b675e' }}>{`, ${e.company}`}</span>}
+                </span>
+                <span style={{ fontSize: 10, fontStyle: 'italic', color: '#8a867c', whiteSpace: 'nowrap' }}>{e.date}</span>
+              </div>
+              <div style={{ marginTop: 5 }}>
+                <BulletText content={e.desc} />
+              </div>
+            </div>
+          ))}
+        </Block>
+      )}
+      {showSections.projects && (
+        <Block title="Selected projects">
+          {projects.filter((p) => p.featured).map((p) => (
+            <div key={p.id} data-cv-entry style={{ marginBottom: 10 }}>
+              <span style={{ fontWeight: 700, color: '#1c1b18' }}>{p.name}</span>
+              {p.shortDesc && <span style={{ color: '#4a463e' }}>{`. ${p.shortDesc}`}</span>}
+              {p.tech.length > 0 && <div style={{ fontSize: 9.5, fontStyle: 'italic', color: '#8a867c', marginTop: 2 }}>{p.tech.join(', ')}</div>}
+            </div>
+          ))}
+        </Block>
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+        {showSections.education && (
+          <Block title="Education">
+            {education.map((e, i) => (
+              <div key={i} data-cv-entry style={{ marginBottom: 10, textAlign: 'center' }}>
+                <div style={{ fontWeight: 700, color: '#1c1b18' }}>{e.degree}</div>
+                <div style={{ fontStyle: 'italic', color: '#6b675e' }}>{e.school}</div>
+                <div style={{ fontSize: 10, color: '#8a867c' }}>{e.date}</div>
+              </div>
+            ))}
+          </Block>
+        )}
+        {showSections.skills && (
+          <Block title="Skills">
+            <p style={{ margin: 0, textAlign: 'center', lineHeight: 2, color: '#3f3c35' }}>{skills.map((s) => s.name).join('   ·   ')}</p>
+          </Block>
+        )}
+      </div>
+      {customBlocks(customSections, (title, body, key) => (
+        <Block key={key} title={title}>
+          {body}
+        </Block>
+      ))}
+    </div>
+  )
+}
+
+// ─── Metro: numbered sections, a timeline, one strong colour ────────────────
+function MetroHeading({ n, title }: { n: number; title: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12 }}>
+      <span style={{ fontFamily: 'var(--cv-heading-font)', fontSize: 20, fontWeight: 900, color: 'var(--cv-accent)', lineHeight: 1 }}>{String(n).padStart(2, '0')}</span>
+      <span style={{ fontFamily: 'var(--cv-heading-font)', fontSize: 12.5, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#111827' }}>{title}</span>
+      <span style={{ flex: 1, height: 2, background: '#111827', alignSelf: 'center' }} />
+    </div>
+  )
+}
+
+function MetroTemplate({ personal, skills, projects, experience, education, customSections, showSections, photo }: TemplateProps) {
+  /* Numbers come from the list of sections that will actually render, not
+     from a counter bumped during render (StrictMode renders twice). */
+  const order = (['summary', 'experience', 'projects', 'skills', 'education'] as const).filter((id) => showSections[id])
+  const filledCustom = customSections.filter((c) => c.title.trim() || c.content.trim())
+  const num = (id: string) => {
+    const i = order.indexOf(id as (typeof order)[number])
+    return i >= 0 ? i + 1 : order.length + filledCustom.findIndex((c) => c.id === id) + 1
+  }
+  const Block = ({ id, title, children }: { id: string; title: string; children: React.ReactNode }) => (
+    <section style={{ marginBottom: 'var(--cv-gap)' }}>
+      <MetroHeading n={num(id)} title={title} />
+      {children}
+    </section>
+  )
+  return (
+    <div style={{ ...paper, padding: 'var(--cv-margin)' }}>
+      <header style={{ marginBottom: 26 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20 }}>
+          <div style={{ minWidth: 0 }}>
+            <h1 style={{ fontFamily: 'var(--cv-heading-font)', fontSize: 40, fontWeight: 900, lineHeight: 1, letterSpacing: '-0.03em', margin: 0, color: '#111827' }}>{personal.name}</h1>
+            {personal.role && (
+              <div style={{ display: 'inline-block', marginTop: 10, background: 'var(--cv-accent)', color: '#fff', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.04em', padding: '4px 10px', borderRadius: 4 }}>{personal.role}</div>
+            )}
+          </div>
+          <Photo src={photo} scale={0.85} />
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 14 }}>
+          {contactOf(personal).map((c) => (
+            <span key={c} style={{ fontSize: 10, border: `1px solid ${tint(40)}`, color: '#374151', borderRadius: 999, padding: '3px 10px' }}>
+              {c}
+            </span>
+          ))}
+        </div>
+      </header>
+
+      {showSections.summary && (
+        <Block id="summary" title="Profile">
+          <p style={{ margin: 0, lineHeight: 1.75, color: '#374151' }}>{personal.summary}</p>
+        </Block>
+      )}
+      {showSections.experience && (
+        <Block id="experience" title="Experience">
+          <div style={{ borderLeft: `2px solid ${tint(35)}`, marginLeft: 5, paddingLeft: 18 }}>
+            {experience.map((e, i) => (
+              <div key={i} data-cv-entry style={{ position: 'relative', marginBottom: 15 }}>
+                <span style={{ position: 'absolute', left: -25, top: 3, width: 12, height: 12, borderRadius: '50%', background: '#fff', border: '3px solid var(--cv-accent)', boxSizing: 'border-box' }} />
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--cv-accent)', letterSpacing: '0.04em' }}>{e.date}</div>
+                <div style={{ fontWeight: 800, color: '#111827', marginTop: 1 }}>{e.role}</div>
+                <div style={{ color: '#6b7280', margin: '1px 0 5px' }}>{e.company}</div>
+                <BulletText content={e.desc} />
+              </div>
+            ))}
+          </div>
+        </Block>
+      )}
+      {showSections.projects && (
+        <Block id="projects" title="Projects">
+          {projects.filter((p) => p.featured).map((p) => (
+            <div key={p.id} data-cv-entry style={{ marginBottom: 11 }}>
+              <div style={{ fontWeight: 800, color: '#111827' }}>{p.name}</div>
+              <div style={{ color: '#4b5563', lineHeight: 1.55 }}>{p.shortDesc}</div>
+              {p.tech.length > 0 && <div style={{ fontSize: 9.5, color: '#9ca3af', marginTop: 2 }}>{p.tech.join(' / ')}</div>}
+            </div>
+          ))}
+        </Block>
+      )}
+      {showSections.skills && (
+        <Block id="skills" title="Skills">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {skills.map((s) => (
+              <span key={s.name} style={{ fontSize: 10.5, fontWeight: 600, background: tint(12), color: deep(55), borderRadius: 4, padding: '3px 9px' }}>
+                {s.name}
+              </span>
+            ))}
+          </div>
+        </Block>
+      )}
+      {showSections.education && (
+        <Block id="education" title="Education">
+          {education.map((e, i) => (
+            <div key={i} data-cv-entry style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, marginBottom: 8 }}>
+              <div>
+                <div style={{ fontWeight: 700 }}>{e.degree}</div>
+                <div style={{ color: '#6b7280' }}>{e.school}</div>
+              </div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--cv-accent)', whiteSpace: 'nowrap' }}>{e.date}</div>
+            </div>
+          ))}
+        </Block>
+      )}
+      {customBlocks(customSections, (title, body, key) => (
+        <Block key={key} id={key} title={title}>
+          {body}
+        </Block>
+      ))}
+    </div>
+  )
+}
+
+// ─── Monogram: an initials badge, labels in the margin ──────────────────────
+function MonogramTemplate({ personal, skills, projects, experience, education, customSections, showSections, photo }: TemplateProps) {
+  const Row = ({ label, children }: { label: string; children: React.ReactNode }) => (
+    <section style={{ display: 'grid', gridTemplateColumns: '118px 1fr', gap: 22, paddingTop: 14, marginBottom: 'calc(var(--cv-gap) * 0.6)', borderTop: '1px solid #eceae4' }}>
+      <div style={{ fontFamily: 'var(--cv-heading-font)', fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--cv-accent)', paddingTop: 2 }}>{label}</div>
+      <div style={{ minWidth: 0 }}>{children}</div>
+    </section>
+  )
+  return (
+    <div style={{ ...paper, padding: 'var(--cv-margin)' }}>
+      <header style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 20, marginBottom: 24 }}>
+        {photo ? (
+          <Photo src={photo} scale={0.8} />
+        ) : (
+          <div style={{ width: 70, height: 70, borderRadius: 20, background: 'var(--cv-accent)', color: '#fff', display: 'grid', placeItems: 'center', fontFamily: 'var(--cv-heading-font)', fontSize: 26, fontWeight: 800, letterSpacing: '0.02em' }}>
+            {initialsOf(personal.name) || 'CV'}
+          </div>
+        )}
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{ fontFamily: 'var(--cv-heading-font)', fontSize: 28, fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em', margin: 0 }}>{personal.name}</h1>
+          {personal.role && <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>{personal.role}</div>}
+        </div>
+        <div style={{ fontSize: 10, lineHeight: 1.75, color: '#4b5563', textAlign: 'right' }}>
+          {contactOf(personal).map((c) => (
+            <div key={c}>{c}</div>
+          ))}
+        </div>
+      </header>
+
+      {showSections.summary && (
+        <Row label="Profile">
+          <p style={{ margin: 0, lineHeight: 1.75, color: '#374151' }}>{personal.summary}</p>
+        </Row>
+      )}
+      {showSections.experience && (
+        <Row label="Experience">
+          {experience.map((e, i) => (
+            <div key={i} data-cv-entry style={{ marginBottom: 13 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                <span style={{ fontWeight: 700 }}>{e.role}</span>
+                <span style={{ fontSize: 10, color: '#9ca3af', whiteSpace: 'nowrap' }}>{e.date}</span>
+              </div>
+              <div style={{ color: 'var(--cv-accent)', fontSize: 11, margin: '1px 0 4px' }}>{e.company}</div>
+              <BulletText content={e.desc} />
+            </div>
+          ))}
+        </Row>
+      )}
+      {showSections.projects && (
+        <Row label="Projects">
+          {projects.filter((p) => p.featured).map((p) => (
+            <div key={p.id} data-cv-entry style={{ marginBottom: 9 }}>
+              <div style={{ fontWeight: 700 }}>{p.name}</div>
+              <div style={{ color: '#4b5563', lineHeight: 1.55 }}>{p.shortDesc}</div>
+            </div>
+          ))}
+        </Row>
+      )}
+      {showSections.skills && (
+        <Row label="Skills">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+            {skills.map((s) => (
+              <span key={s.name} style={{ fontSize: 10, border: `1px solid ${tint(35)}`, borderRadius: 999, padding: '2px 9px' }}>
+                {s.name}
+              </span>
+            ))}
+          </div>
+        </Row>
+      )}
+      {showSections.education && (
+        <Row label="Education">
+          {education.map((e, i) => (
+            <div key={i} data-cv-entry style={{ marginBottom: 7 }}>
+              <span style={{ fontWeight: 700 }}>{e.degree}</span>
+              <span style={{ color: '#6b7280' }}>{[e.school, e.date].filter(Boolean).map((x) => `, ${x}`).join('')}</span>
+            </div>
+          ))}
+        </Row>
+      )}
+      {customBlocks(customSections, (title, body, key) => (
+        <Row key={key} label={title}>
+          {body}
+        </Row>
+      ))}
+    </div>
+  )
+}
+
+// ─── Compact Pro: dense, one page, still easy on the eye ────────────────────
+function CompactProTemplate({ personal, skills, projects, experience, education, customSections, showSections }: TemplateProps) {
+  const H = ({ children }: { children: React.ReactNode }) => (
+    <h2 style={{ fontFamily: 'var(--cv-heading-font)', fontSize: 10.5, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', borderLeft: '3px solid var(--cv-accent)', paddingLeft: 8, margin: 'calc(var(--cv-gap) * 0.6) 0 7px', color: '#111827' }}>
+      {children}
+    </h2>
+  )
+  /* One line per category reads faster than a cloud of tags. */
+  const groups = skills.reduce<Record<string, string[]>>((acc, s) => {
+    const k = s.category && s.category !== 'Skill' ? s.category : 'Skills'
+    ;(acc[k] ||= []).push(s.name)
+    return acc
+  }, {})
+  return (
+    <div style={{ ...paper, padding: 'var(--cv-margin)', borderTop: '6px solid var(--cv-accent)' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 20, paddingBottom: 12, borderBottom: '1px solid #e5e7eb' }}>
+        <div style={{ minWidth: 0 }}>
+          <h1 style={{ fontFamily: 'var(--cv-heading-font)', fontSize: 26, fontWeight: 800, letterSpacing: '-0.01em', margin: 0 }}>{personal.name}</h1>
+          {personal.role && <div style={{ color: 'var(--cv-accent)', fontWeight: 700, marginTop: 3 }}>{personal.role}</div>}
+        </div>
+        <div style={{ fontSize: 10, lineHeight: 1.6, color: '#4b5563', textAlign: 'right' }}>
+          {contactOf(personal).map((c) => (
+            <div key={c}>{c}</div>
+          ))}
+        </div>
+      </header>
+
+      {showSections.summary && (
+        <>
+          <H>Summary</H>
+          <p style={{ margin: 0, color: '#374151' }}>{personal.summary}</p>
+        </>
+      )}
+      {showSections.experience && (
+        <>
+          <H>Experience</H>
+          {experience.map((e, i) => (
+            <div key={i} data-cv-entry style={{ marginBottom: 9 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                <span>
+                  <span style={{ fontWeight: 700 }}>{e.role}</span>
+                  {e.company && <span style={{ color: '#6b7280' }}>{`  |  ${e.company}`}</span>}
+                </span>
+                <span style={{ fontSize: 10, color: '#6b7280', whiteSpace: 'nowrap' }}>{e.date}</span>
+              </div>
+              <BulletText content={e.desc} />
+            </div>
+          ))}
+        </>
+      )}
+      {showSections.projects && (
+        <>
+          <H>Projects</H>
+          {projects.filter((p) => p.featured).map((p) => (
+            <div key={p.id} data-cv-entry style={{ marginBottom: 6 }}>
+              <span style={{ fontWeight: 700 }}>{p.name}</span>
+              {p.shortDesc && <span style={{ color: '#374151' }}>{`: ${p.shortDesc}`}</span>}
+              {p.tech.length > 0 && <span style={{ color: '#9ca3af', fontSize: 10 }}>{`  (${p.tech.join(', ')})`}</span>}
+            </div>
+          ))}
+        </>
+      )}
+      {showSections.skills && (
+        <>
+          <H>Skills</H>
+          {Object.entries(groups).map(([k, names]) => (
+            <div key={k} style={{ marginBottom: 3 }}>
+              {Object.keys(groups).length > 1 && <span style={{ fontWeight: 700 }}>{`${k}: `}</span>}
+              <span style={{ color: '#374151' }}>{names.join(', ')}</span>
+            </div>
+          ))}
+        </>
+      )}
+      {showSections.education && (
+        <>
+          <H>Education</H>
+          {education.map((e, i) => (
+            <div key={i} data-cv-entry style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 4 }}>
+              <span>
+                <span style={{ fontWeight: 700 }}>{e.degree}</span>
+                {e.school && <span style={{ color: '#6b7280' }}>{`, ${e.school}`}</span>}
+              </span>
+              <span style={{ fontSize: 10, color: '#6b7280', whiteSpace: 'nowrap' }}>{e.date}</span>
+            </div>
+          ))}
+        </>
+      )}
+      {customBlocks(customSections, (title, body, key) => (
+        <div key={key}>
+          <H>{title}</H>
+          {body}
+        </div>
+      ))}
     </div>
   )
 }

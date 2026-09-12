@@ -5,7 +5,7 @@ import type { CVData, CVTemplate } from '@/app/cv/page'
  *
  * There is no database, so the link carries the CV itself: the tailored
  * version's data, compressed and base64url-encoded into the URL fragment.
- * The fragment never reaches a server — not even ours — so sharing leaks
+ * The fragment never reaches a server, not even ours, so sharing leaks
  * nothing beyond the person you send it to. The trade-off is honest and
  * shown in the UI: the link is long, and it freezes the CV as it was when
  * shared.

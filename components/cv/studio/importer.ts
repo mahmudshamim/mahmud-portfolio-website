@@ -4,7 +4,7 @@ import type { CVData } from '@/app/cv/page'
  * Turn an old CV or a LinkedIn profile into a starting point.
  *
  * Retyping a CV on a phone is the main reason people give up. This reads the
- * text — from a PDF, or pasted — and sorts it into sections by their
+ * text, from a PDF, or pasted, and sorts it into sections by their
  * headings, then pulls jobs apart at their date ranges. It is a heuristic and
  * says so: the result is a draft to check, not a finished CV.
  *
@@ -31,9 +31,9 @@ const GITHUB = /(https?:\/\/)?(www\.)?github\.com\/[\w-]+/i
 const URL_RE = /(https?:\/\/)?(www\.)?[a-z0-9][a-z0-9-]*(\.[a-z0-9-]+)*\.(com|dev|io|me|net|org|xyz|app|bd|co|site|tech|us|info|online|page)(\/[^\s,;)]*)?/i
 const MONTH = '(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\\.?'
 const DATE = `(?:${MONTH}\\s*,?\\s*)?(?:19|20)\\d{2}|(?:0?[1-9]|1[0-2])\\/(?:19|20)\\d{2}`
-const RANGE = new RegExp(`(${DATE})\\s*(?:-|–|—|to|until)\\s*(${DATE}|present|current|now|ongoing|till date|to date)`, 'i')
+const RANGE = new RegExp(`(${DATE})\\s*(?:-|\u2013|\u2014|to|until)\\s*(${DATE}|present|current|now|ongoing|till date|to date)`, 'i')
 const YEAR = /\b(19|20)\d{2}\b/
-const BULLET = /^[•·●▪◦‣\-*–>➤✓]\s*/
+const BULLET = /^[•·●▪◦‣*>➤✓\-\u2013\u2014]\s*/
 const TITLE_WORDS =
   /\b(developer|engineer|designer|manager|officer|executive|analyst|consultant|specialist|intern|assistant|lead|head|director|founder|entrepreneur|freelancer|marketer|writer|teacher|accountant|coordinator|administrator|support|representative|trainee|associate|architect|programmer|student)\b/i
 const COMPANY_WORDS =
@@ -45,7 +45,7 @@ const SCHOOL = /\b(university|college|school|institute|academy|polytechnic|madra
 const clean = (s: string) => s.replace(/\s+/g, ' ').trim()
 const strip = (s: string) => clean(s.replace(BULLET, ''))
 const capWord = (s: string) => s.replace(/\b([a-z])/g, (m) => m.toUpperCase())
-const normDate = (m: RegExpMatchArray) => `${capWord(clean(m[1]))} – ${capWord(clean(m[2]))}`
+const normDate = (m: RegExpMatchArray) => `${capWord(clean(m[1]))} - ${capWord(clean(m[2]))}`
 
 function headingOf(line: string): Section | null {
   const l = line
@@ -92,7 +92,7 @@ function parseJobs(lines: string[], linkedin: boolean): Job[] {
   const heads = dates.map((d, k) => {
     const prev = k ? dates[k - 1] : -1
     const m = ls[d].match(RANGE)!
-    const rest = clean(ls[d].replace(RANGE, '').replace(/^[\s|,·–—-]+|[\s|,·–—-]+$/g, ''))
+    const rest = clean(ls[d].replace(RANGE, '').replace(/^[\s|,·\u2013\u2014-]+|[\s|,·\u2013\u2014-]+$/g, ''))
     const before: string[] = []
     for (let j = d - 1; j > prev && before.length < (rest ? 1 : 2); j--) {
       const l = ls[j]
@@ -107,7 +107,7 @@ function parseJobs(lines: string[], linkedin: boolean): Job[] {
     let role = ''
     let company = ''
     if (lines.length === 1) {
-      const parts = lines[0].split(/\s+(?:at|@)\s+|\s*[|–—]\s*|\s+-\s+|,\s+/)
+      const parts = lines[0].split(/\s+(?:at|@)\s+|\s*[|\u2013\u2014]\s*|\s+-\s+|,\s+/)
       role = parts[0] ?? ''
       company = parts[1] ?? ''
     } else if (lines.length >= 2) {
@@ -152,7 +152,7 @@ function parseSchools(lines: string[]): School[] {
         .replace(RANGE, '')
         .replace(/\(\s*\)/g, '')
         .replace(/[,(\s]*\b(19|20)\d{2}\)?$/, '')
-        .replace(/^[\s|,·–—-]+|[\s|,·–—-]+$/g, '')
+        .replace(/^[\s|,·\u2013\u2014-]+|[\s|,·\u2013\u2014-]+$/g, '')
     )
     const isDeg = DEGREE.test(text)
     const isSch = SCHOOL.test(text) && !isDeg
@@ -185,7 +185,7 @@ function parseProjects(lines: string[]): Project[] {
     if (!bullet && l.length <= 60 && !/\.$/.test(l) && (!cur || cur.shortDesc)) {
       cur = {
         id: `p-${Date.now().toString(36)}-${out.length}`,
-        name: clean(l.replace(URL_RE, '').replace(/[\s|–—-]+$/, '')) || 'Project',
+        name: clean(l.replace(URL_RE, '').replace(/[\s|\u2013\u2014-]+$/, '')) || 'Project',
         shortDesc: '',
         fullDesc: '',
         tech: [],
@@ -211,7 +211,7 @@ function parseSkills(lines: string[]): string[] {
   const out: string[] = []
   for (const raw of lines) {
     let l = strip(raw)
-    /* "Languages: JavaScript, Python" — keep what follows a short label. */
+    /* "Languages: JavaScript, Python", keep what follows a short label. */
     const colon = l.indexOf(':')
     if (colon > 0 && colon < 26) l = l.slice(colon + 1)
     for (const part of l.split(/\s*[,•·|;]\s*|\s{2,}/)) {
@@ -293,7 +293,7 @@ export function parseCVText(text: string, blank: CVData): ImportResult {
   const phone =
     lines
       .map((l) => l.match(/(\+?\d[\d\s().-]{7,}\d)/)?.[0] ?? '')
-      .find((p) => p.replace(/\D/g, '').length >= 9 && !RANGE.test(p) && !/^(19|20)\d{2}\s*[-–]/.test(p)) ?? ''
+      .find((p) => p.replace(/\D/g, '').length >= 9 && !RANGE.test(p) && !/^(19|20)\d{2}\s*[-\u2013\u2014]/.test(p)) ?? ''
   const emailDomain = email.split('@')[1] ?? ''
   const website =
     (text.match(new RegExp(URL_RE.source, 'gi')) ?? []).find(
@@ -347,7 +347,7 @@ export function parseCVText(text: string, blank: CVData): ImportResult {
 /**
  * Text out of a PDF, in reading order, in the browser.
  *
- * pdf.js is loaded only here, on demand — it is most of a megabyte, and
+ * pdf.js is loaded only here, on demand, it is most of a megabyte, and
  * nobody who types their CV in should download it.
  */
 export async function pdfToText(file: File): Promise<string> {

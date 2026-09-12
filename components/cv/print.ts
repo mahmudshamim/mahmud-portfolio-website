@@ -1,5 +1,5 @@
 /**
- * Print one element as the whole document — the CV, or a cover letter.
+ * Print one element as the whole document, the CV, or a cover letter.
  *
  * Print, not html2canvas: the browser's own engine gives real text, real
  * links and automatic pagination, which is what an applicant tracking system

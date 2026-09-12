@@ -3,8 +3,8 @@ import type { CVData, CVTemplate } from '@/app/cv/page'
 /*
  * One profile, many role versions.
  *
- * People enter everything they have done once — every job, project and
- * skill — and then keep a version per role they apply for. A version is a
+ * People enter everything they have done once, every job, project and
+ * skill, and then keep a version per role they apply for. A version is a
  * view over that profile: which items show, in what order, under which title,
  * with which summary and template. Change the role and the CV re-picks and
  * re-orders itself; nothing is copied, so fixing a typo in a job fixes it in
@@ -33,7 +33,7 @@ type Skill = CVData['skills'][number]
 export const newVersionId = () => `v-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`
 
 /** Content-derived, so it survives reordering. Editing the text makes it a
- *  "new" item, which is shown — the safe way to fail. */
+ *  "new" item, which is shown, the safe way to fail. */
 export const jobKey = (j: Job) => `${j.role}@@${j.company}@@${j.date}`
 
 export const ROLE_PRESETS: { title: string; keywords: string[] }[] = [
@@ -50,10 +50,27 @@ export const ROLE_PRESETS: { title: string; keywords: string[] }[] = [
   { title: 'Customer Support', keywords: ['customer', 'support', 'service', 'communication', 'crm', 'zendesk', 'client', 'helpdesk'] },
   { title: 'Sales Executive', keywords: ['sales', 'business development', 'client', 'crm', 'negotiation', 'lead', 'revenue', 'customer'] },
   { title: 'IT Support', keywords: ['it', 'support', 'network', 'hardware', 'troubleshooting', 'windows', 'helpdesk', 'system', 'administration'] },
+  { title: 'Software Engineer', keywords: ['software', 'engineer', 'programming', 'javascript', 'typescript', 'python', 'java', 'c++', 'algorithms', 'data structures', 'api', 'sql', 'git', 'testing'] },
+  { title: 'QA Engineer', keywords: ['qa', 'quality', 'testing', 'test cases', 'selenium', 'cypress', 'automation', 'manual testing', 'bug', 'jira', 'api testing'] },
+  { title: 'DevOps Engineer', keywords: ['devops', 'docker', 'kubernetes', 'ci/cd', 'aws', 'linux', 'terraform', 'jenkins', 'github actions', 'monitoring', 'cloud'] },
+  { title: 'Network Engineer', keywords: ['network', 'networking', 'cisco', 'ccna', 'routing', 'switching', 'firewall', 'mikrotik', 'lan', 'wan', 'vpn'] },
+  { title: 'Business Analyst', keywords: ['business analysis', 'analyst', 'requirements', 'stakeholder', 'process', 'documentation', 'sql', 'excel', 'jira', 'user stories'] },
+  { title: 'Content Writer', keywords: ['content', 'writing', 'writer', 'copywriting', 'seo', 'blog', 'editing', 'research', 'wordpress', 'social media'] },
+  { title: 'Video Editor', keywords: ['video', 'editing', 'editor', 'premiere', 'after effects', 'davinci', 'motion graphics', 'youtube', 'color grading'] },
+  { title: 'Social Media Manager', keywords: ['social media', 'facebook', 'instagram', 'tiktok', 'content', 'community', 'ads', 'canva', 'analytics', 'campaign'] },
+  { title: 'HR Executive', keywords: ['hr', 'human resources', 'recruitment', 'hiring', 'onboarding', 'payroll', 'employee relations', 'training', 'performance', 'labour law'] },
+  { title: 'Accountant', keywords: ['accounting', 'accountant', 'accounts', 'bookkeeping', 'tally', 'quickbooks', 'excel', 'vat', 'tax', 'audit', 'financial statements', 'reconciliation'] },
+  { title: 'Admin Officer', keywords: ['admin', 'administration', 'office management', 'documentation', 'procurement', 'scheduling', 'ms office', 'coordination', 'vendor'] },
+  { title: 'Teacher', keywords: ['teaching', 'teacher', 'lesson planning', 'classroom', 'curriculum', 'assessment', 'students', 'education', 'tutoring'] },
+  { title: 'Merchandiser', keywords: ['merchandising', 'merchandiser', 'garments', 'apparel', 'buyer', 'sampling', 'costing', 'production', 'fabric', 'quality'] },
+  { title: 'Supply Chain Officer', keywords: ['supply chain', 'procurement', 'purchase', 'inventory', 'logistics', 'warehouse', 'vendor', 'sap', 'import', 'export'] },
+  { title: 'Civil Engineer', keywords: ['civil', 'engineer', 'autocad', 'structural', 'construction', 'site', 'estimation', 'etabs', 'surveying'] },
+  { title: 'Electrical Engineer', keywords: ['electrical', 'engineer', 'plc', 'autocad', 'power', 'maintenance', 'wiring', 'substation', 'scada'] },
+  { title: 'Bank Officer', keywords: ['banking', 'bank', 'customer service', 'credit', 'loan', 'compliance', 'kyc', 'aml', 'cash', 'accounts'] },
 ]
 
 /** Real skill names to suggest per role. The matching keywords above include
- *  words like "designer" and "interface" — useful for scoring, useless as a
+ *  words like "designer" and "interface", useful for scoring, useless as a
  *  chip that says "+ Designer". */
 const SKILL_IDEAS: Record<string, string[]> = {
   'Frontend Developer': ['React', 'Next.js', 'TypeScript', 'JavaScript', 'HTML', 'CSS', 'Tailwind CSS', 'Redux', 'REST APIs', 'Responsive Design', 'Git', 'Jest'],
@@ -69,6 +86,23 @@ const SKILL_IDEAS: Record<string, string[]> = {
   'Customer Support': ['Customer Service', 'Communication', 'CRM', 'Zendesk', 'Problem Solving', 'Live Chat', 'Email Support', 'Ticketing', 'Conflict Resolution'],
   'Sales Executive': ['Sales', 'Negotiation', 'Lead Generation', 'CRM', 'Business Development', 'Cold Calling', 'Client Relationships', 'Presentations'],
   'IT Support': ['Troubleshooting', 'Windows', 'Networking', 'Hardware', 'Active Directory', 'Microsoft 365', 'Help Desk', 'Linux', 'System Administration'],
+  'Software Engineer': ['JavaScript', 'TypeScript', 'Python', 'Java', 'Data Structures', 'Algorithms', 'REST APIs', 'SQL', 'Git', 'Unit Testing'],
+  'QA Engineer': ['Manual Testing', 'Test Cases', 'Selenium', 'Cypress', 'Postman', 'API Testing', 'Jira', 'Regression Testing', 'Bug Reporting'],
+  'DevOps Engineer': ['Docker', 'Kubernetes', 'CI/CD', 'AWS', 'Linux', 'Terraform', 'GitHub Actions', 'Jenkins', 'Nginx', 'Monitoring'],
+  'Network Engineer': ['CCNA', 'Routing', 'Switching', 'Firewall', 'MikroTik', 'LAN/WAN', 'VPN', 'Network Security', 'Troubleshooting'],
+  'Business Analyst': ['Requirements Gathering', 'Stakeholder Management', 'Process Mapping', 'User Stories', 'SQL', 'Excel', 'Jira', 'Documentation'],
+  'Content Writer': ['Copywriting', 'SEO Writing', 'Blog Writing', 'Editing', 'Proofreading', 'Research', 'WordPress', 'Social Media Content'],
+  'Video Editor': ['Adobe Premiere Pro', 'After Effects', 'DaVinci Resolve', 'Motion Graphics', 'Colour Grading', 'Sound Editing', 'YouTube', 'Storytelling'],
+  'Social Media Manager': ['Facebook Ads', 'Instagram', 'TikTok', 'Content Calendar', 'Community Management', 'Canva', 'Meta Business Suite', 'Analytics'],
+  'HR Executive': ['Recruitment', 'Onboarding', 'Payroll', 'Employee Relations', 'HRIS', 'Performance Management', 'Training', 'Bangladesh Labour Law'],
+  'Accountant': ['Bookkeeping', 'Tally', 'QuickBooks', 'Excel', 'VAT & Tax', 'Bank Reconciliation', 'Financial Statements', 'Audit Support'],
+  'Admin Officer': ['Office Management', 'Documentation', 'MS Office', 'Procurement', 'Scheduling', 'Vendor Management', 'Record Keeping', 'Communication'],
+  'Teacher': ['Lesson Planning', 'Classroom Management', 'Curriculum Design', 'Assessment', 'Student Mentoring', 'Communication', 'MS Office', 'Online Teaching'],
+  'Merchandiser': ['Buyer Communication', 'Sampling', 'Costing', 'Time & Action Plan', 'Fabric Knowledge', 'Production Follow-up', 'Quality Control', 'Excel'],
+  'Supply Chain Officer': ['Procurement', 'Inventory Management', 'Logistics', 'Vendor Management', 'SAP', 'Import & Export', 'Warehouse Management', 'Excel'],
+  'Civil Engineer': ['AutoCAD', 'ETABS', 'Structural Design', 'Estimation', 'Site Supervision', 'Surveying', 'BOQ', 'Project Planning'],
+  'Electrical Engineer': ['AutoCAD Electrical', 'PLC', 'SCADA', 'Power Systems', 'Maintenance', 'Wiring', 'Substation', 'Safety Compliance'],
+  'Bank Officer': ['Customer Service', 'Account Opening', 'KYC', 'AML Compliance', 'Credit Analysis', 'Cash Handling', 'Banking Software', 'Sales'],
 }
 
 const STOP = new Set(
@@ -122,6 +156,33 @@ export function skillIdeas(role: string): string[] {
   return Array.from(new Set(presets.flatMap((p) => SKILL_IDEAS[p.title] ?? [])))
 }
 
+/**
+ * Preset roles closest to what someone typed, best first.
+ *
+ * "acc" finds Accountant as the letters go in; "react developer" finds
+ * Frontend and Full-Stack through their keywords. An empty result is a real
+ * answer: the title works as typed, there is just no ready-made list for it.
+ */
+export function closestRoles(input: string, limit = 6) {
+  const q = (input || '').toLowerCase().trim()
+  if (!q) return []
+  const words = tokenize(q)
+  return ROLE_PRESETS.map((p) => {
+    const title = p.title.toLowerCase()
+    let score = title.includes(q) || q.includes(title) ? 10 : 0
+    for (const w of words) {
+      if (tokenize(title).some((t) => t.startsWith(w))) score += 4
+      if (w.length > 2 && p.keywords.some((k) => k === w || k.startsWith(w))) score += 2
+      if (w.length > 2 && (SKILL_IDEAS[p.title] ?? []).some((s) => s.toLowerCase().includes(w))) score += 1
+    }
+    return { p, score }
+  })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((x) => x.p)
+}
+
 export function relevance(text: string, keywords: string[]) {
   let score = 0
   for (const k of keywords) if (has(text, k)) score += k.includes(' ') ? 2 : 1
@@ -134,7 +195,7 @@ export const projectText = (p: Project) => `${p.name} ${p.shortDesc} ${p.fullDes
 /**
  * Pick what a role version should leave out.
  *
- * Skills and projects with no connection to the role are hidden — but never
+ * Skills and projects with no connection to the role are hidden, but never
  * so many that a section empties. Jobs are never auto-hidden: a gap in work
  * history reads worse to a recruiter than an unrelated job does.
  */
