@@ -2,40 +2,38 @@
 
 import { useEffect, useState } from 'react'
 import type { CVData, CVTemplate } from '@/app/cv/page'
-import { DEFAULT_DOC_STYLE } from '@/app/cv/page'
 import MahmudLogo from '@/components/MahmudLogo'
 import CVPreview from './CVPreview'
-import { readShareLink } from './share'
+import { decodePayload } from './share'
 
 const brand = '#5b47e0'
 const font = 'var(--font-dm-sans), system-ui, sans-serif'
 
-/** What someone sees when they open a shared CV link. */
-export default function SharedCV() {
+/**
+ * What someone sees when they open a shared CV link.
+ *
+ * `payload` comes from the server for a short link (/c/<id>): a string, or
+ * null when the id is unknown or expired. Left undefined, the CV is read
+ * from the URL fragment of a long link (/cv/view#...).
+ */
+export default function SharedCV({ payload }: { payload?: string | null }) {
   const [state, setState] = useState<{ cv: CVData; template: CVTemplate } | 'loading' | 'error'>('loading')
   const [download, setDownload] = useState<() => void>(() => () => {})
 
   useEffect(() => {
+    if (payload === null) {
+      setState('error')
+      return
+    }
     const read = () =>
-      readShareLink(window.location.hash)
-        .then((r) =>
-          setState({
-            template: r.template,
-            /* Older links, or hand-edited ones, may miss newer fields. */
-            cv: {
-              ...r.cv,
-              docStyle: { ...DEFAULT_DOC_STYLE, ...(r.cv.docStyle || {}) },
-              showSections: Object.assign({ summary: true, experience: true, projects: true, skills: true, education: true }, r.cv.showSections),
-              customSections: r.cv.customSections || [],
-              sectionOrder: r.cv.sectionOrder || ['summary', 'experience', 'projects', 'education'],
-            },
-          })
-        )
+      decodePayload(payload ?? window.location.hash)
+        .then(setState)
         .catch(() => setState('error'))
     read()
+    if (payload !== undefined) return
     window.addEventListener('hashchange', read)
     return () => window.removeEventListener('hashchange', read)
-  }, [])
+  }, [payload])
 
   useEffect(() => {
     if (typeof state === 'object' && state.cv.personal.name) document.title = `${state.cv.personal.name} | CV`
@@ -80,7 +78,11 @@ export default function SharedCV() {
         {state === 'error' && (
           <div style={{ maxWidth: 420, margin: '80px auto', textAlign: 'center', background: '#fff', borderRadius: 24, padding: 28 }}>
             <h1 style={{ margin: 0, fontSize: 22, color: '#15131d' }}>This link doesn’t open a CV</h1>
-            <p style={{ color: '#716d80', lineHeight: 1.6 }}>It may have been cut short when it was copied. Ask the sender to share it again.</p>
+            <p style={{ color: '#716d80', lineHeight: 1.6 }}>
+              {payload === null
+                ? 'The link may have expired, or a letter in it may be wrong. Ask the sender to share it again.'
+                : 'It may have been cut short when it was copied. Ask the sender to share it again.'}
+            </p>
             <a href="/cv" style={{ display: 'inline-block', marginTop: 8, padding: '12px 20px', borderRadius: 999, background: brand, color: '#fff', textDecoration: 'none', fontWeight: 650 }}>
               Make your own CV
             </a>

@@ -5,6 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
+      /* Shared CVs belong to the people who shared them. */
+      disallow: ['/c/', '/cv/view'],
     },
     sitemap: 'https://mahmud.dev/sitemap.xml',
   }

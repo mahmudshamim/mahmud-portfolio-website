@@ -7,7 +7,7 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import MahmudLogo from '@/components/MahmudLogo'
 import CVPreview from '../CVPreview'
 import { buildTasks, progressOf, type Task } from '../NextSteps'
-import { buildShareLink } from '../share'
+import { createShareLink, shortLinksEnabled } from '../share'
 import { applyVersion, createVersion, keywordsFor, tailor, type RoleVersion } from './model'
 import { RolePicker, SECTIONS, SectionEditor, sectionStatus, type EditCtx, type SectionId, type Status } from './sections'
 import { DesignPanel, JobMatchPanel, MiniCV, templateLabel } from './design'
@@ -1084,38 +1084,73 @@ function DownloadSheet({
 }
 
 function ShareSheet({ open, onClose, cv, template, role, toast }: { open: boolean; onClose: () => void; cv: CVData; template: CVTemplate; role: string; toast: (m: string) => void }) {
-  const [withPhoto, setWithPhoto] = useState(false)
-  const [link, setLink] = useState('')
+  /* Photo is on by default when links are short (size no longer matters),
+     off for long links, where a photo multiplies the length. */
+  const [withPhoto, setWithPhoto] = useState<boolean | null>(null)
+  const [link, setLink] = useState<{ url: string; short: boolean } | null>(null)
   const hasPhoto = Boolean(cv.photo || cv.personal.photo)
+  const empty = !cv.personal.name.trim() && !cv.experience.length && !cv.skills.length && !cv.projects.length && !cv.education.length
 
+  /* Settle the photo choice first, then make exactly one link for it. */
   useEffect(() => {
-    if (!open) return
+    if (!open || withPhoto !== null) return
     let live = true
-    setLink('')
-    buildShareLink(cv, template, withPhoto)
-      .then((l) => live && setLink(l))
-      .catch(() => live && setLink(''))
+    shortLinksEnabled().then((short) => live && setWithPhoto(short))
     return () => {
       live = false
     }
-  }, [open, cv, template, withPhoto])
+  }, [open, withPhoto])
+
+  useEffect(() => {
+    if (!open || empty || withPhoto === null) return
+    let live = true
+    setLink(null)
+    createShareLink(cv, template, withPhoto)
+      .catch(() => null)
+      .then((made) => live && setLink(made))
+    return () => {
+      live = false
+    }
+  }, [open, empty, cv, template, withPhoto])
 
   const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+  const url = link?.url ?? ''
+
+  if (empty) {
+    return (
+      <Sheet open={open} onClose={onClose}>
+        <div style={{ textAlign: 'center' }}>
+          <Badge icon="alert" tone="warn" />
+          <h2 style={sheetTitle}>Your CV is still empty</h2>
+          <p style={sheetLead}>Add your name and at least one section, like a job or your skills, before you share it.</p>
+        </div>
+        <div style={{ marginTop: 20 }}>
+          <Button variant="dark" block onClick={onClose}>
+            Got it
+          </Button>
+        </div>
+      </Sheet>
+    )
+  }
 
   return (
     <Sheet open={open} onClose={onClose}>
       <div style={{ textAlign: 'center' }}>
         <Badge icon="share" tone="brand" />
         <h2 style={sheetTitle}>Share your CV as a link</h2>
-        <p style={sheetLead}>{`Anyone with the link can open and download your ${role || 'current'} CV. The CV travels inside the link, so nothing is stored on a server.`}</p>
+        <p style={sheetLead}>
+          {link?.short === false
+            ? `Anyone with the link can open and download your ${role || 'current'} CV. The CV travels inside the link, so it is long.`
+            : `Anyone with the link can open and download your ${role || 'current'} CV. The link works for a year.`}
+        </p>
       </div>
 
       {hasPhoto && (
         <label style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 18, padding: '12px 14px', borderRadius: 16, background: c.sunken, fontFamily: font, fontSize: 14.5, color: c.body }}>
-          <Toggle on={withPhoto} onChange={setWithPhoto} label="Include my photo" />
+          <Toggle on={Boolean(withPhoto)} onChange={setWithPhoto} label="Include my photo" />
           <span style={{ flex: 1 }}>
             Include my photo
-            <span style={{ display: 'block', fontSize: 12.5, color: c.muted }}>Makes the link longer</span>
+            {link?.short === false && <span style={{ display: 'block', fontSize: 12.5, color: c.muted }}>Makes the link longer</span>}
           </span>
         </label>
       )}
@@ -1127,44 +1162,35 @@ function ShareSheet({ open, onClose, cv, template, role, toast }: { open: boolea
           borderRadius: 16,
           border: `1px dashed ${c.lineStrong}`,
           fontFamily: 'ui-monospace, Menlo, monospace',
-          fontSize: 12.5,
+          fontSize: link?.short ? 14 : 12.5,
           lineHeight: 1.5,
-          color: link ? c.body : c.faint,
+          color: url ? c.body : c.faint,
           wordBreak: 'break-all',
           maxHeight: 62,
           overflow: 'hidden',
+          textAlign: link?.short ? 'center' : 'left',
         }}
       >
-        {link || 'Making your link…'}
+        {url || 'Making your link…'}
       </div>
-      {link.length > 6000 && <p style={{ margin: '8px 2px 0', fontFamily: font, fontSize: 13, color: c.warn }}>This link is long. Some apps cut long links, so try it without the photo.</p>}
+      {url.length > 6000 && <p style={{ margin: '8px 2px 0', fontFamily: font, fontSize: 13, color: c.warn }}>This link is long. Some apps cut long links, so try it without the photo.</p>}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 10, marginTop: 16 }}>
-        <Button
-          variant="dark"
-          icon="copy"
-          disabled={!link}
-          onClick={async () => toast((await copyText(link)) ? 'Link copied. Paste it anywhere.' : 'Could not copy the link')}
-        >
+        <Button variant="dark" icon="copy" disabled={!url} onClick={async () => toast((await copyText(url)) ? 'Link copied. Paste it anywhere.' : 'Could not copy the link')}>
           Copy link
         </Button>
         {canShare ? (
-          <Button
-            variant="primary"
-            icon="share"
-            disabled={!link}
-            onClick={() => navigator.share({ title: `${cv.personal.name || 'CV'} | CV`, url: link }).catch(() => {})}
-          >
+          <Button variant="primary" icon="share" disabled={!url} onClick={() => navigator.share({ title: `${cv.personal.name || 'CV'} | CV`, url }).catch(() => {})}>
             Share…
           </Button>
         ) : (
-          <Button icon="eye" disabled={!link} onClick={() => window.open(link, '_blank', 'noopener')}>
+          <Button icon="eye" disabled={!url} onClick={() => window.open(url, '_blank', 'noopener')}>
             Open link
           </Button>
         )}
       </div>
       <p style={{ margin: '14px 2px 0', fontFamily: font, fontSize: 13, lineHeight: 1.5, color: c.muted, textAlign: 'center' }}>
-        Edited your CV later? Share a new link. An old link keeps the old version.
+        Edited your CV later? Share again for a new link. An old link keeps the old version.
       </p>
     </Sheet>
   )
