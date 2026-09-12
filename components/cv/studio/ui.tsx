@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useLang } from './i18n'
 
 /*
  * Studio design tokens and primitives.
@@ -32,7 +33,9 @@ export const c = {
   badSoft: '#fef2f2',
 }
 
-export const font = 'var(--font-dm-sans), system-ui, sans-serif'
+/* DM Sans has no Bengali glyphs; the browser falls through to the next face
+   per character, so Bangla text picks up a Bengali system font. */
+export const font = 'var(--font-dm-sans), "Hind Siliguri", "Noto Sans Bengali", "Kohinoor Bangla", system-ui, sans-serif'
 
 export const radius = { sm: 10, md: 14, lg: 22, xl: 28, pill: 999 }
 
@@ -79,6 +82,9 @@ const PATHS: Record<string, React.ReactNode> = {
   shield: <><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z" /><path d="m9 12 2 2 4-4" /></>,
   bolt: <path d="M13 2 4 14h7l-1 8 9-12h-7z" />,
   phone: <><rect x="6" y="2" width="12" height="20" rx="3" /><path d="M11 18h2" /></>,
+  globe: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></>,
+  share: <><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></>,
+  copy: <><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></>,
 }
 
 export type IconName = keyof typeof PATHS
@@ -462,6 +468,7 @@ export function Sheet({
   children: React.ReactNode
   wide?: boolean
 }) {
+  const { t } = useLang()
   const [narrow, setNarrow] = useState(true)
   useEffect(() => {
     const check = () => setNarrow(window.innerWidth < 720)
@@ -520,7 +527,7 @@ export function Sheet({
         {title && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
             <h2 style={{ flex: 1, margin: 0, fontFamily: font, fontSize: 20, fontWeight: 750, letterSpacing: '-.01em', color: c.ink }}>{title}</h2>
-            <IconButton icon="x" label="Close" variant="soft" size={38} onClick={onClose} />
+            <IconButton icon="x" label={t('Close')} variant="soft" size={38} onClick={onClose} />
           </div>
         )}
         {children}
@@ -548,6 +555,7 @@ type ConfirmOpts = { title: string; body?: string; confirmLabel?: string; tone?:
 
 /** window.confirm, but one people can read on a phone. */
 export function useConfirm() {
+  const { t } = useLang()
   const [opts, setOpts] = useState<ConfirmOpts | null>(null)
   const resolver = useRef<((v: boolean) => void) | null>(null)
 
@@ -572,9 +580,9 @@ export function useConfirm() {
           <h2 style={{ margin: 0, fontFamily: font, fontSize: 20, fontWeight: 750, color: c.ink }}>{opts.title}</h2>
           {opts.body && <p style={{ margin: '8px auto 0', maxWidth: 340, fontFamily: font, fontSize: 14.5, lineHeight: 1.55, color: c.muted }}>{opts.body}</p>}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 22 }}>
-            <Button variant="muted" onClick={() => settle(false)}>Cancel</Button>
+            <Button variant="muted" onClick={() => settle(false)}>{t('Cancel')}</Button>
             <Button variant={opts.tone === 'bad' ? 'danger' : 'dark'} onClick={() => settle(true)} style={opts.tone === 'bad' ? { background: c.bad, color: '#fff', borderColor: c.bad } : undefined}>
-              {opts.confirmLabel ?? 'Yes'}
+              {opts.confirmLabel ?? t('Yes')}
             </Button>
           </div>
         </div>

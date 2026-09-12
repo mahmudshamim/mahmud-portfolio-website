@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { CVData, CVTemplate } from '@/app/cv/page'
+import { fileSafe, printElement } from './print'
 import { MdEmail, MdPhone, MdLocationOn, MdLanguage, MdPerson, MdWork, MdSchool, MdCode, MdBuild } from 'react-icons/md'
 
 type Props = {
@@ -71,38 +72,7 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
    * so the CV is named after its owner rather than after me.
    */
   const handleDownload = () => {
-    const previousTitle = document.title
-    const owner = (cvData.personal.name || 'Resume')
-      .replace(/[^\w\s-]/g, '')
-      .trim()
-      .replace(/\s+/g, '-')
-    document.title = `${owner || 'Resume'}-CV`
-
-    const restore = () => {
-      document.title = previousTitle
-      window.removeEventListener('afterprint', restore)
-    }
-    window.addEventListener('afterprint', restore)
-
-    /* Clone rather than print in place: the sheet lives inside a scaled,
-       scrolling column, and a transformed or clipped ancestor breaks
-       pagination. Styles are inline, so the clone renders identically. */
-    const source = document.getElementById('cv-preview-content')
-    const root = document.createElement('div')
-    root.id = 'cv-print-root'
-    if (source) root.appendChild(source.cloneNode(true))
-    document.body.appendChild(root)
-
-    const cleanup = () => {
-      root.remove()
-      window.removeEventListener('afterprint', cleanup)
-    }
-    window.addEventListener('afterprint', cleanup)
-
-    window.print()
-    setTimeout(cleanup, 60000)
-    /* Safari fires afterprint unreliably; make sure the tab title recovers. */
-    setTimeout(restore, 60000)
+    printElement(document.getElementById('cv-preview-content'), `${fileSafe(cvData.personal.name) || 'Resume'}-CV`)
   }
 
   useEffect(() => {

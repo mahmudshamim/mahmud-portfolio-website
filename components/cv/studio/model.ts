@@ -22,6 +22,8 @@ export type RoleVersion = {
   /** Keys of profile items this version leaves out. New items show by default. */
   hidden: { skills: string[]; projects: string[]; experience: string[] }
   template: CVTemplate
+  /** A cover letter for this role, drafted from the CV and edited freely. */
+  letter?: { company: string; manager: string; tone: 'formal' | 'friendly'; body: string }
 }
 
 type Job = CVData['experience'][number]

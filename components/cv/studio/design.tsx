@@ -6,6 +6,7 @@ import { DEFAULT_DOC_STYLE } from '@/app/cv/page'
 import { CVDocument } from '../CVPreview'
 import { matchJob, type RoleVersion } from './model'
 import { Button, Eyebrow, Icon, Segmented, TextArea, TextField, c, font, radius } from './ui'
+import { useLang } from './i18n'
 
 export const TEMPLATES: { id: CVTemplate; label: string; note: string }[] = [
   { id: 'profile-split', label: 'Profile', note: 'Clean, two columns' },
@@ -45,11 +46,12 @@ export const MiniCV = memo(function MiniCV({ cv, template, width }: { cv: CVData
 })
 
 function Thumb({ cv, t, active, onPick, width }: { cv: CVData; t: (typeof TEMPLATES)[number]; active: boolean; onPick: () => void; width: number }) {
+  const { t: tr } = useLang()
   return (
     <button
       onClick={onPick}
       aria-pressed={active}
-      aria-label={`${t.label} template — ${t.note}`}
+      aria-label={`${t.label} — ${tr(t.note)}`}
       style={{ flexShrink: 0, width, textAlign: 'center', background: 'none', border: 'none', padding: 0, cursor: 'pointer', scrollSnapAlign: 'center' }}
     >
       <div
@@ -95,6 +97,7 @@ export function DesignPanel({
 }) {
   /* Twelve full CVs re-render on every keystroke otherwise. Deferring lets
      typing stay instant and the thumbnails catch up a beat later. */
+  const { t } = useLang()
   const lazy = useDeferredValue(cv)
   const ds = profile.docStyle
   const setDoc = (patch: Partial<CVData['docStyle']>) => setProfile((p) => ({ ...p, docStyle: { ...p.docStyle, ...patch } }))
@@ -105,9 +108,9 @@ export function DesignPanel({
     <div style={{ display: 'grid', gap: 22, minWidth: 0 }}>
       <div style={{ minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
-          <Eyebrow>Template</Eyebrow>
+          <Eyebrow>{t('Template')}</Eyebrow>
           <span style={{ fontFamily: font, fontSize: 13, color: c.muted }}>
-            {current.label} · {current.note}
+            {current.label} · {t(current.note)}
           </span>
         </div>
         {layout === 'carousel' ? (
@@ -115,27 +118,27 @@ export function DesignPanel({
             className="studio-scroll-row"
             style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollSnapType: 'x mandatory', padding: '6px 4px 10px', margin: '0 -4px', scrollbarWidth: 'none' }}
           >
-            {TEMPLATES.map((t) => (
-              <Thumb key={t.id} cv={lazy} t={t} width={112} active={version.template === t.id} onPick={() => updateVersion({ template: t.id })} />
+            {TEMPLATES.map((tp) => (
+              <Thumb key={tp.id} cv={lazy} t={tp} width={112} active={version.template === tp.id} onPick={() => updateVersion({ template: tp.id })} />
             ))}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
-            {TEMPLATES.map((t) => (
-              <GridThumb key={t.id} cv={lazy} t={t} active={version.template === t.id} onPick={() => updateVersion({ template: t.id })} />
+            {TEMPLATES.map((tp) => (
+              <GridThumb key={tp.id} cv={lazy} t={tp} active={version.template === tp.id} onPick={() => updateVersion({ template: tp.id })} />
             ))}
           </div>
         )}
       </div>
 
       <div>
-        <Eyebrow style={{ marginBottom: 12 }}>Colour</Eyebrow>
+        <Eyebrow style={{ marginBottom: 12 }}>{t('Colour')}</Eyebrow>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           {ACCENTS.map((a) => (
             <button
               key={a}
               onClick={() => setDoc({ accent: a })}
-              aria-label={`Colour ${a}`}
+              aria-label={t('Colour {c}', { c: a })}
               aria-pressed={ds.accent === a}
               style={{ width: 38, height: 38, borderRadius: '50%', background: a, cursor: 'pointer', border: 'none', boxShadow: ds.accent === a ? `0 0 0 3px ${c.surface}, 0 0 0 5.5px ${a}` : 'inset 0 0 0 1px rgba(0,0,0,.08)', transition: 'box-shadow .15s' }}
             />
@@ -144,13 +147,13 @@ export function DesignPanel({
       </div>
 
       <div>
-        <Eyebrow style={{ marginBottom: 10 }}>Font</Eyebrow>
+        <Eyebrow style={{ marginBottom: 10 }}>{t('Font')}</Eyebrow>
         <Segmented
           full
           value={ds.typeface === 'serif' ? 'serif' : 'sans'}
           options={[
-            { v: 'sans', l: 'Modern' },
-            { v: 'serif', l: 'Classic' },
+            { v: 'sans', l: t('Modern') },
+            { v: 'serif', l: t('Classic') },
           ]}
           onChange={(v) => setDoc({ typeface: v, headingFont: 'match' })}
         />
@@ -158,30 +161,30 @@ export function DesignPanel({
 
       <div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
-          <Eyebrow>Spacing</Eyebrow>
-          <span style={{ fontFamily: font, fontSize: 12.5, color: c.muted }}>Compact helps fit one page</span>
+          <Eyebrow>{t('Spacing')}</Eyebrow>
+          <span style={{ fontFamily: font, fontSize: 12.5, color: c.muted }}>{t('Compact helps fit one page')}</span>
         </div>
         <Segmented
           full
           value={density ?? ''}
           options={[
-            { v: 'compact', l: 'Compact' },
-            { v: 'comfortable', l: 'Normal' },
-            { v: 'spacious', l: 'Airy' },
+            { v: 'compact', l: t('Compact') },
+            { v: 'comfortable', l: t('Normal') },
+            { v: 'spacious', l: t('Airy') },
           ]}
           onChange={(v) => setDoc(DENSITY[v])}
         />
       </div>
 
       <div>
-        <Eyebrow style={{ marginBottom: 10 }}>Photo</Eyebrow>
+        <Eyebrow style={{ marginBottom: 10 }}>{t('Photo')}</Eyebrow>
         <Segmented
           full
           value={ds.photoShape === 'hidden' ? 'hidden' : ds.photoShape === 'circle' ? 'circle' : 'square'}
           options={[
-            { v: 'circle', l: 'Round' },
-            { v: 'square', l: 'Square' },
-            { v: 'hidden', l: 'Hide' },
+            { v: 'circle', l: t('Round') },
+            { v: 'square', l: t('Square') },
+            { v: 'hidden', l: t('Hide') },
           ]}
           onChange={(v) => setDoc({ photoShape: v })}
         />
@@ -191,20 +194,21 @@ export function DesignPanel({
         onClick={() => setDoc({ ...DEFAULT_DOC_STYLE })}
         style={{ justifySelf: 'start', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: font, fontSize: 13.5, color: c.muted, background: 'none', border: 'none', padding: '6px 0', cursor: 'pointer' }}
       >
-        <Icon name="swap" size={15} /> Reset colour, font and spacing
+        <Icon name="swap" size={15} /> {t('Reset colour, font and spacing')}
       </button>
     </div>
   )
 }
 
 function GridThumb({ cv, t, active, onPick }: { cv: CVData; t: (typeof TEMPLATES)[number]; active: boolean; onPick: () => void }) {
+  const { t: tr } = useLang()
   /* Fixed 94px render inside a fluid cell: measuring each cell would cost a
      ResizeObserver per thumbnail for a difference nobody can see. */
   return (
     <button
       onClick={onPick}
       aria-pressed={active}
-      aria-label={`${t.label} template — ${t.note}`}
+      aria-label={`${t.label} — ${tr(t.note)}`}
       style={{ minWidth: 0, textAlign: 'center', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
     >
       <div
@@ -249,6 +253,7 @@ function Ring({ value }: { value: number }) {
 
 /** Paste a job ad, see what it asks for, and spin off a version aimed at it. */
 export function JobMatchPanel({ cv, onTailor }: { cv: CVData; onTailor: (role: string, keywords: string[]) => void }) {
+  const { t } = useLang()
   const [ad, setAd] = useState('')
   const [title, setTitle] = useState('')
   const enough = ad.trim().split(/\s+/).length >= 25
@@ -257,10 +262,10 @@ export function JobMatchPanel({ cv, onTailor }: { cv: CVData; onTailor: (role: s
   return (
     <div style={{ display: 'grid', gap: 16, minWidth: 0 }}>
       <p style={{ margin: 0, fontFamily: font, fontSize: 14.5, lineHeight: 1.55, color: c.body }}>
-        Paste a job advert. We show which of its keywords your CV already covers — counted honestly, from your own words only.
+        {t('Paste a job advert. We show which of its keywords your CV already covers — counted honestly, from your own words only.')}
       </p>
-      <TextArea aria-label="Job advert" placeholder="Paste the job description here…" value={ad} rows={7} onChange={(e) => setAd(e.target.value)} />
-      {ad.trim() && !result && <p style={{ margin: 0, fontFamily: font, fontSize: 13.5, color: c.muted }}>Paste a bit more of the advert to check it.</p>}
+      <TextArea aria-label={t('Job advert')} placeholder={t('Paste the job description here…')} value={ad} rows={7} onChange={(e) => setAd(e.target.value)} />
+      {ad.trim() && !result && <p style={{ margin: 0, fontFamily: font, fontSize: 13.5, color: c.muted }}>{t('Paste a bit more of the advert to check it.')}</p>}
 
       {result && (
         <div style={{ display: 'grid', gap: 16 }}>
@@ -268,17 +273,17 @@ export function JobMatchPanel({ cv, onTailor }: { cv: CVData; onTailor: (role: s
             <Ring value={result.score} />
             <div style={{ minWidth: 0 }}>
               <div style={{ fontFamily: font, fontSize: 16, fontWeight: 700, color: c.ink }}>
-                {result.score >= 70 ? 'Strong match' : result.score >= 40 ? 'Partial match' : 'Weak match'}
+                {result.score >= 70 ? t('Strong match') : result.score >= 40 ? t('Partial match') : t('Weak match')}
               </div>
               <div style={{ fontFamily: font, fontSize: 13.5, color: c.muted, marginTop: 3, lineHeight: 1.45 }}>
-                {result.matched.length} of {result.keywords.length} keywords from the advert are in this CV.
+                {t('{m} of {k} keywords from the advert are in this CV.', { m: result.matched.length, k: result.keywords.length })}
               </div>
             </div>
           </div>
 
           {result.missing.length > 0 && (
             <div>
-              <div style={{ fontFamily: font, fontSize: 13.5, fontWeight: 650, color: c.ink, marginBottom: 8 }}>Missing — add the ones that are true</div>
+              <div style={{ fontFamily: font, fontSize: 13.5, fontWeight: 650, color: c.ink, marginBottom: 8 }}>{t('Missing — add the ones that are true')}</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {result.missing.map((k) => (
                   <span key={k} style={{ fontFamily: font, fontSize: 13, padding: '6px 11px', borderRadius: radius.pill, background: c.warnSoft, color: c.warn, border: '1px solid #fde68a' }}>
@@ -290,7 +295,7 @@ export function JobMatchPanel({ cv, onTailor }: { cv: CVData; onTailor: (role: s
           )}
           {result.matched.length > 0 && (
             <div>
-              <div style={{ fontFamily: font, fontSize: 13.5, fontWeight: 650, color: c.ink, marginBottom: 8 }}>Already in your CV</div>
+              <div style={{ fontFamily: font, fontSize: 13.5, fontWeight: 650, color: c.ink, marginBottom: 8 }}>{t('Already in your CV')}</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {result.matched.map((k) => (
                   <span key={k} style={{ fontFamily: font, fontSize: 13, padding: '6px 11px', borderRadius: radius.pill, background: c.goodSoft, color: '#166534', border: '1px solid #bbf7d0' }}>
@@ -302,9 +307,9 @@ export function JobMatchPanel({ cv, onTailor }: { cv: CVData; onTailor: (role: s
           )}
 
           <div style={{ display: 'grid', gap: 10, paddingTop: 16, borderTop: `1px solid ${c.line}` }}>
-            <TextField label="Job title in the advert" placeholder="e.g. Junior React Developer" value={title} onChange={(e) => setTitle(e.target.value)} />
+            <TextField label={t('Job title in the advert')} placeholder="e.g. Junior React Developer" value={title} onChange={(e) => setTitle(e.target.value)} />
             <Button variant="primary" block icon="sparkle" disabled={!title.trim()} onClick={() => onTailor(title.trim(), result.keywords)}>
-              Make a CV version for this job
+              {t('Make a CV version for this job')}
             </Button>
           </div>
         </div>
@@ -312,10 +317,10 @@ export function JobMatchPanel({ cv, onTailor }: { cv: CVData; onTailor: (role: s
 
       {!ad.trim() && (
         <div style={{ display: 'grid', gap: 8 }}>
-          {['Paste the whole advert, not just the title', 'Add missing keywords only if they are true', 'Then make a version for that job in one tap'].map((t, i) => (
-            <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: font, fontSize: 13.5, color: c.body }}>
+          {[t('Paste the whole advert, not just the title'), t('Add missing keywords only if they are true'), t('Then make a version for that job in one tap')].map((tip, i) => (
+            <div key={tip} style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: font, fontSize: 13.5, color: c.body }}>
               <span style={{ width: 24, height: 24, borderRadius: '50%', background: c.brandSoft, color: c.brandInk, display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{i + 1}</span>
-              {t}
+              {tip}
             </div>
           ))}
         </div>

@@ -1,16 +1,39 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { CVData } from '@/app/cv/page'
+import type { CVData, CVTemplate } from '@/app/cv/page'
 import type { CVDoc } from '@/hooks/useCVDocs'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import MahmudLogo from '@/components/MahmudLogo'
 import CVPreview from '../CVPreview'
 import { buildTasks, progressOf, type Task } from '../NextSteps'
+import { buildShareLink } from '../share'
 import { ROLE_PRESETS, applyVersion, createVersion, keywordsFor, tailor, type RoleVersion } from './model'
 import { SECTIONS, SectionEditor, sectionStatus, type EditCtx, type SectionId, type Status } from './sections'
 import { DesignPanel, JobMatchPanel, MiniCV, templateLabel } from './design'
-import { Badge, Button, Chip, Eyebrow, Icon, IconButton, Segmented, Sheet, TextField, c, font, radius, shadow, useConfirm, useToast, type IconName } from './ui'
+import { LetterEditor, LetterPreview, copyText, downloadLetter, emptyLetter } from './letter'
+import { parseCVText, pdfToText, type ImportResult } from './importer'
+import { useLang } from './i18n'
+import {
+  Badge,
+  Button,
+  Chip,
+  Eyebrow,
+  Icon,
+  IconButton,
+  Segmented,
+  Sheet,
+  TextArea,
+  TextField,
+  Toggle,
+  c,
+  font,
+  radius,
+  shadow,
+  useConfirm,
+  useToast,
+  type IconName,
+} from './ui'
 
 export type StudioApi = {
   hydrated: boolean
@@ -31,6 +54,8 @@ export type StudioApi = {
 }
 
 type Tab = 'edit' | 'design' | 'preview' | 'match'
+type Page = SectionId | 'letter'
+type SheetName = 'roles' | 'newRole' | 'more' | 'download' | 'share' | 'import'
 
 const TASK_SECTION: Record<string, SectionId> = {
   personal: 'about',
@@ -42,10 +67,14 @@ const TASK_SECTION: Record<string, SectionId> = {
   projects: 'projects',
 }
 
+const LETTER_META = { id: 'letter' as const, title: 'Cover letter', icon: 'mail' as IconName, lead: 'A letter for this job, written from your CV.' }
+
 /** "Md. Abdulla Al Mahmud" → "Abdulla". Honorific prefixes are not what
  *  anyone is called. */
 const firstName = (name: string) =>
   name.split(/\s+/).find((t) => t.length > 1 && !/^(md|mst|mr|mrs|ms|dr|mohammad|muhammad|mohammed|mohd)\.?$/i.test(t)) ?? ''
+
+const isEmptyCV = (d: CVData) => !d.personal.name && !d.experience.length && !d.skills.length && !d.projects.length && !d.education.length
 
 /**
  * The CV studio.
@@ -68,13 +97,14 @@ export default function Studio({
   onExport: () => void
   onImport: (file: File) => void
 }) {
+  const { t, lang, setLang } = useLang()
   const compact = useIsMobile(1180)
   const { toast, toastNode } = useToast()
   const { confirm, confirmNode } = useConfirm()
   const [tab, setTab] = useState<Tab>('edit')
-  const [section, setSection] = useState<SectionId | null>(null)
+  const [page, setPage] = useState<Page | null>(null)
   const [side, setSide] = useState<'design' | 'match'>('design')
-  const [sheet, setSheet] = useState<null | 'roles' | 'newRole' | 'more' | 'download'>(null)
+  const [sheet, setSheet] = useState<SheetName | null>(null)
   const [download, setDownload] = useState<() => void>(() => () => {})
   const [started, setStarted] = useState(true)
   const restoreInput = useRef<HTMLInputElement>(null)
@@ -86,7 +116,7 @@ export default function Studio({
   const role = version?.role ?? ''
   const tasks = useMemo(() => buildTasks(cv), [cv])
   const progress = progressOf(tasks)
-  const missing = tasks.filter((t) => t.required && !t.done)
+  const missing = tasks.filter((x) => x.required && !x.done)
 
   /* Re-pick skills and projects when the role is committed — on blur or a
      chip tap — not on every keystroke. */
@@ -105,7 +135,7 @@ export default function Studio({
     committedRole.current = r
     const hidden = tailor(profile, keywordsFor(r))
     api.updateVersion(version.id, { role: r, hidden })
-    if (r) toast(`Re-picked for ${r}: ${profile.skills.length - hidden.skills.length} skills, ${profile.projects.length - hidden.projects.length} projects`)
+    if (r) toast(t('Re-picked for {role}: {s} skills, {p} projects', { role: r, s: profile.skills.length - hidden.skills.length, p: profile.projects.length - hidden.projects.length }))
   }
 
   const setHidden = (kind: 'skills' | 'projects' | 'experience', key: string, hide: boolean) =>
@@ -120,17 +150,17 @@ export default function Studio({
   const makeVersion = (title: string, keywords?: string[]) => {
     const v = createVersion(profile, title, version?.template ?? 'profile-split', keywords)
     api.addVersion(v)
-    toast(`New CV for ${title}: ${profile.skills.length - v.hidden.skills.length} skills, ${profile.projects.length - v.hidden.projects.length} projects picked`)
+    toast(t('New CV for {role}: {s} skills, {p} projects picked', { role: title, s: profile.skills.length - v.hidden.skills.length, p: profile.projects.length - v.hidden.projects.length }))
   }
 
   const switchVersion = (v: RoleVersion) => {
     if (v.id === version?.id) return
     api.selectVersion(v.id)
-    toast(`Showing your ${v.role || 'untitled'} CV`)
+    toast(t('Showing your {role} CV', { role: v.role || t('untitled') }))
   }
 
-  const openSection = (id: SectionId | null) => {
-    setSection(id)
+  const openPage = (id: Page | null) => {
+    setPage(id)
     setTab('edit')
     requestAnimationFrame(() => {
       window.scrollTo({ top: 0 })
@@ -138,15 +168,15 @@ export default function Studio({
     })
   }
 
-  const openTab = (t: Tab) => {
-    setTab(t)
-    if (t !== 'edit') setSection(null)
+  const openTab = (x: Tab) => {
+    setTab(x)
+    if (x !== 'edit') setPage(null)
     requestAnimationFrame(() => window.scrollTo({ top: 0 }))
   }
 
-  const fixTask = (t: Task) => {
+  const fixTask = (task: Task) => {
     setSheet(null)
-    openSection(TASK_SECTION[t.section] ?? 'about')
+    openPage(TASK_SECTION[task.section] ?? 'about')
   }
 
   const runDownload = () => {
@@ -156,8 +186,6 @@ export default function Studio({
   }
 
   /* First visit: a blank CV and no decision made yet. */
-  const isEmpty =
-    !profile.personal.name && !profile.experience.length && !profile.skills.length && !profile.projects.length && !profile.education.length
   useEffect(() => {
     try {
       setStarted(Boolean(window.localStorage.getItem('cv-studio-started')))
@@ -170,6 +198,18 @@ export default function Studio({
       window.localStorage.setItem('cv-studio-started', '1')
     } catch {}
     setStarted(true)
+  }
+
+  const applyImport = (r: ImportResult) => {
+    const name = r.data.personal.name
+    /* Never overwrite work: an import into a CV that has content becomes a
+       new CV next to it. */
+    if (!isEmptyCV(profile)) api.create('blank')
+    api.replaceActive(r.data, name ? `${name}’s CV` : undefined)
+    setSheet(null)
+    openPage(null)
+    markStarted()
+    toast(t('Imported — check each section'))
   }
 
   const restoreField = (
@@ -185,30 +225,64 @@ export default function Studio({
         onImport(f)
         markStarted()
         setSheet(null)
-        toast('Backup restored')
+        toast(t('Backup restored'))
       }}
     />
   )
+
+  const langButton = (
+    <button
+      onClick={() => setLang(lang === 'bn' ? 'en' : 'bn')}
+      aria-label={lang === 'bn' ? 'Switch to English' : 'বাংলায় দেখুন'}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        height: 44,
+        padding: '0 14px',
+        borderRadius: radius.pill,
+        border: `1px solid ${c.line}`,
+        background: c.surface,
+        color: c.ink,
+        fontFamily: font,
+        fontSize: 14,
+        fontWeight: 650,
+        cursor: 'pointer',
+        flexShrink: 0,
+      }}
+    >
+      <Icon name="globe" size={17} />
+      {lang === 'bn' ? 'English' : 'বাংলা'}
+    </button>
+  )
+
+  const importSheet = <ImportSheet open={sheet === 'import'} onClose={() => setSheet(null)} blank={blank} onUse={applyImport} />
 
   if (!api.hydrated) {
     return <div style={{ minHeight: '100vh', background: c.canvas }} />
   }
 
-  if (!started && isEmpty) {
+  if (!started && isEmptyCV(profile)) {
     return (
-      <StartScreen
-        sample={sample}
-        onScratch={() => {
-          markStarted()
-          setSection('about')
-        }}
-        onExample={() => {
-          api.create('sample')
-          markStarted()
-        }}
-        onRestore={() => restoreInput.current?.click()}
-        restoreInput={restoreField}
-      />
+      <>
+        <StartScreen
+          sample={sample}
+          langButton={langButton}
+          onScratch={() => {
+            markStarted()
+            setPage('about')
+          }}
+          onExample={() => {
+            api.create('sample')
+            markStarted()
+          }}
+          onImport={() => setSheet('import')}
+          onRestore={() => restoreInput.current?.click()}
+        />
+        {restoreField}
+        <div className="native-cursor">{importSheet}</div>
+        {toastNode}
+      </>
     )
   }
 
@@ -227,11 +301,20 @@ export default function Studio({
     toast,
     confirm,
   }
+  const letter = version.letter ?? emptyLetter
 
   const preview = <CVPreview cvData={cv} selectedTemplate={version.template} registerDownload={(run) => setDownload(() => run)} />
 
+  const doLetterDownload = () => {
+    if (!letter.body.trim()) {
+      toast(t('Write your letter first'))
+      return
+    }
+    downloadLetter(cv)
+  }
+
   const editHome = (
-    <div style={{ display: 'grid', gap: 20, minWidth: 0 }}>
+    <div style={{ display: 'grid', gap: 22, minWidth: 0 }}>
       <RoleBar
         versions={api.active?.versions ?? []}
         activeId={version.id}
@@ -239,59 +322,72 @@ export default function Studio({
         onAdd={() => setSheet('newRole')}
         onManage={() => setSheet('roles')}
       />
-      <HeroCard
-        cv={cv}
-        version={version}
-        progress={progress}
-        withThumb={compact}
-        onPreview={() => openTab('preview')}
-        onDownload={() => setSheet('download')}
-      />
+      <HeroCard cv={cv} version={version} progress={progress} withThumb={compact} onPreview={() => openTab('preview')} onDownload={() => setSheet('download')} />
       <div style={{ minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', margin: '2px 2px 12px' }}>
-          <h2 style={{ margin: 0, fontFamily: font, fontSize: 19, fontWeight: 750, letterSpacing: '-.01em', color: c.ink }}>Sections</h2>
-          <span style={{ fontFamily: font, fontSize: 13, color: c.muted }}>Tap one to edit</span>
+        <ListHeading title={t('Sections')} note={t('Tap one to edit')} />
+        <SectionList profile={profile} version={version} onOpen={openPage} />
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <ListHeading title={t('More tools')} />
+        <div style={{ display: 'grid', gap: 10 }}>
+          <ToolRow
+            icon="mail"
+            title={t('Cover letter')}
+            sub={letter.body.trim() ? t('Written for {name}', { name: letter.company || role || t('this role') }) : t('Write one for {role} in a minute', { role: role || t('this role') })}
+            done={Boolean(letter.body.trim())}
+            onClick={() => openPage('letter')}
+          />
+          <ToolRow icon="share" title={t('Share as a link')} sub={t('Send your CV on WhatsApp, Messenger or email')} onClick={() => setSheet('share')} />
+          <ToolRow icon="upload" title={t('Import your old CV')} sub={t('From a PDF or your LinkedIn profile')} onClick={() => setSheet('import')} />
         </div>
-        <SectionList profile={profile} version={version} onOpen={openSection} />
       </div>
     </div>
   )
 
-  const sectionIndex = section ? SECTIONS.findIndex((s) => s.id === section) : -1
+  const sectionIndex = page && page !== 'letter' ? SECTIONS.findIndex((s) => s.id === page) : -1
   const nextSection = sectionIndex >= 0 ? SECTIONS[sectionIndex + 1] : undefined
-  const sectionPage = section && (
-    <SectionPage
-      key={section}
-      id={section}
-      index={sectionIndex}
-      ctx={ctx}
+  const pageMeta = page === 'letter' ? LETTER_META : sectionIndex >= 0 ? SECTIONS[sectionIndex] : null
+
+  const pageView = page && pageMeta && (
+    <PageView
+      key={page}
+      meta={{ title: t(pageMeta.title), icon: pageMeta.icon, lead: t(pageMeta.lead) }}
+      step={sectionIndex >= 0 ? `${sectionIndex + 1}/${SECTIONS.length}` : undefined}
       sticky={compact}
-      onBack={() => openSection(null)}
+      onBack={() => openPage(null)}
       footer={
         compact ? null : (
-          <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-            <Button icon="left" onClick={() => openSection(null)}>
-              All sections
+          <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
+            <Button icon="left" onClick={() => openPage(null)}>
+              {t('All sections')}
             </Button>
             <span style={{ flex: 1 }} />
-            {nextSection ? (
-              <Button variant="dark" onClick={() => openSection(nextSection.id)}>
-                Next: {nextSection.title}
+            {page === 'letter' ? (
+              <Button variant="primary" icon="download" onClick={doLetterDownload}>
+                {t('Download letter')}
+              </Button>
+            ) : nextSection ? (
+              <Button variant="dark" onClick={() => openPage(nextSection.id)}>
+                {t('Next: {name}', { name: t(nextSection.title) })}
               </Button>
             ) : (
-              <Button variant="primary" icon="check" onClick={() => openSection(null)}>
-                Done
+              <Button variant="primary" icon="check" onClick={() => openPage(null)}>
+                {t('Done')}
               </Button>
             )}
           </div>
         )
       }
-    />
+    >
+      {page === 'letter' ? <LetterEditor ctx={ctx} inlinePreview={compact} /> : <SectionEditor id={page} ctx={ctx} />}
+    </PageView>
   )
 
   const sheets = (
     <>
       <DownloadSheet open={sheet === 'download'} onClose={() => setSheet(null)} missing={missing} role={role} onFix={fixTask} onDownload={runDownload} />
+      <ShareSheet open={sheet === 'share'} onClose={() => setSheet(null)} cv={cv} template={version.template} role={role} toast={toast} />
+      {importSheet}
       <RolesSheet
         open={sheet === 'roles'}
         onClose={() => setSheet(null)}
@@ -304,9 +400,9 @@ export default function Studio({
         onAdd={() => setSheet('newRole')}
         onRemove={async (v) => {
           const ok = await confirm({
-            title: `Delete the ${v.role || 'untitled'} CV?`,
-            body: 'Only this version goes. Your jobs, skills and projects stay in the others.',
-            confirmLabel: 'Delete',
+            title: t('Delete the {role} CV?', { role: v.role || t('untitled') }),
+            body: t('Only this version goes. Your jobs, skills and projects stay in the others.'),
+            confirmLabel: t('Delete'),
           })
           if (ok) api.removeVersion(v.id)
         }}
@@ -328,35 +424,36 @@ export default function Studio({
         onSelect={(id) => {
           api.select(id)
           setSheet(null)
-          openSection(null)
+          openPage(null)
         }}
         onNew={() => {
           api.create('blank')
           setSheet(null)
-          openSection('about')
+          openPage('about')
         }}
         onExample={() => {
           api.create('sample')
           setSheet(null)
-          openSection(null)
-          toast('Opened an example CV')
+          openPage(null)
+          toast(t('Opened an example CV'))
         }}
+        onImport={() => setSheet('import')}
         onBackup={() => {
           onExport()
-          toast('Backup downloaded')
+          toast(t('Backup downloaded'))
         }}
         onRestore={() => restoreInput.current?.click()}
         onStartOver={async () => {
           setSheet(null)
           const ok = await confirm({
-            title: 'Start over?',
-            body: 'This clears everything in this CV. It cannot be undone — download a backup first if you might want it.',
-            confirmLabel: 'Clear it',
+            title: t('Start over?'),
+            body: t('This clears everything in this CV. It cannot be undone — download a backup first if you might want it.'),
+            confirmLabel: t('Clear it'),
           })
           if (!ok) return
           api.replaceActive(blank(), 'My CV')
-          openSection('about')
-          toast('Started a fresh CV')
+          openPage('about')
+          toast(t('Started a fresh CV'))
         }}
       />
       {restoreField}
@@ -371,31 +468,32 @@ export default function Studio({
     return (
       <div className="native-cursor studio" style={{ minHeight: '100dvh', background: c.canvas, fontFamily: font }}>
         <div style={{ maxWidth: 620, margin: '0 auto', padding: '0 16px', paddingBottom: 'calc(128px + env(safe-area-inset-bottom))' }}>
-          {tab === 'edit' && !section && (
+          {tab === 'edit' && !page && (
             <>
-              <header style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 0 4px' }}>
-                <a href="/" aria-label="Back to portfolio" style={{ display: 'flex', textDecoration: 'none' }}>
+              <header style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '16px 0 4px' }}>
+                <a href="/" aria-label={t('Back to portfolio')} style={{ display: 'flex', textDecoration: 'none' }}>
                   <MahmudLogo size="sm" />
                 </a>
                 <span style={{ flex: 1 }} />
-                <IconButton icon="dots" label="More: your CVs, backup, start over" onClick={() => setSheet('more')} />
+                {langButton}
+                <IconButton icon="dots" label={t('More: your CVs, backup, start over')} onClick={() => setSheet('more')} />
               </header>
               <div style={{ margin: '14px 2px 20px' }}>
-                <div style={{ fontFamily: font, fontSize: 15, color: c.muted }}>{fname ? `Hi ${fname} 👋` : 'Welcome 👋'}</div>
-                <h1 style={{ margin: '4px 0 0', fontFamily: font, fontSize: 31, lineHeight: 1.1, fontWeight: 800, letterSpacing: '-.025em', color: c.ink }}>Build your CV</h1>
+                <div style={{ fontFamily: font, fontSize: 15, color: c.muted }}>{fname ? t('Hi {name} 👋', { name: fname }) : t('Welcome 👋')}</div>
+                <h1 style={{ margin: '4px 0 0', fontFamily: font, fontSize: 31, lineHeight: 1.15, fontWeight: 800, letterSpacing: '-.025em', color: c.ink }}>{t('Build your CV')}</h1>
               </div>
               {editHome}
             </>
           )}
 
-          {tab === 'edit' && section && sectionPage}
+          {tab === 'edit' && page && pageView}
 
           {tab === 'design' && (
             <>
-              <TabHeader title="Design" sub="Tap a style — your CV changes instantly." action={<IconButton icon="eye" label="Preview" onClick={() => openTab('preview')} />} />
+              <TabHeader title={t('Design')} sub={t('Tap a style — your CV changes instantly.')} action={<IconButton icon="eye" label={t('Preview')} onClick={() => openTab('preview')} />} />
               <button
                 onClick={() => openTab('preview')}
-                aria-label="Open full preview"
+                aria-label={t('Open full preview')}
                 style={{
                   display: 'grid',
                   placeItems: 'center',
@@ -420,9 +518,15 @@ export default function Studio({
 
           {tab === 'match' && (
             <>
-              <TabHeader title="Job match" sub="Check this CV against a real job advert." />
+              <TabHeader title={t('Job match')} sub={t('Check this CV against a real job advert.')} />
               <section style={{ background: c.surface, border: `1px solid ${c.line}`, borderRadius: radius.lg, padding: 18, boxShadow: shadow.card }}>
-                <JobMatchPanel cv={cv} onTailor={(t, kw) => { makeVersion(t, kw); openTab('edit') }} />
+                <JobMatchPanel
+                  cv={cv}
+                  onTailor={(title, kw) => {
+                    makeVersion(title, kw)
+                    openTab('edit')
+                  }}
+                />
               </section>
             </>
           )}
@@ -430,22 +534,25 @@ export default function Studio({
           {/* Always mounted: Download prints from this node, whichever tab is open. */}
           <div style={{ display: tab === 'preview' ? 'block' : 'none' }}>
             <TabHeader
-              title="Preview"
-              sub={`${role || 'Untitled'} · ${templateLabel(version.template)} template`}
+              title={t('Preview')}
+              sub={`${role || t('untitled')} · ${templateLabel(version.template)}`}
               action={
-                <Button size="sm" variant="primary" icon="download" onClick={() => setSheet('download')}>
-                  PDF
-                </Button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <IconButton icon="share" label={t('Share as a link')} onClick={() => setSheet('share')} />
+                  <Button size="sm" variant="primary" icon="download" onClick={() => setSheet('download')} style={{ minHeight: 44 }}>
+                    PDF
+                  </Button>
+                </div>
               }
             />
             {preview}
             <p style={{ margin: '14px 4px 0', fontFamily: font, fontSize: 13, color: c.muted, textAlign: 'center', lineHeight: 1.5 }}>
-              Pinch to zoom. A dashed line marks where a new page starts.
+              {t('Pinch to zoom. A dashed line marks where a new page starts.')}
             </p>
           </div>
         </div>
 
-        {tab === 'edit' && section ? (
+        {tab === 'edit' && page ? (
           <div
             style={{
               position: 'fixed',
@@ -460,17 +567,35 @@ export default function Studio({
             }}
           >
             <div style={{ maxWidth: 620, margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1.5fr)', gap: 10 }}>
-              <Button variant="muted" icon="eye" onClick={() => openTab('preview')}>
-                Preview
-              </Button>
-              {nextSection ? (
-                <Button variant="dark" onClick={() => openSection(nextSection.id)}>
-                  Next: {nextSection.title}
-                </Button>
+              {page === 'letter' ? (
+                <>
+                  <Button
+                    variant="muted"
+                    icon="copy"
+                    disabled={!letter.body.trim()}
+                    onClick={async () => toast((await copyText(letter.body)) ? t('Letter copied') : t('Could not copy — select the text and copy it'))}
+                  >
+                    {t('Copy')}
+                  </Button>
+                  <Button variant="primary" icon="download" onClick={doLetterDownload}>
+                    {t('Download letter')}
+                  </Button>
+                </>
               ) : (
-                <Button variant="primary" icon="check" onClick={() => openSection(null)}>
-                  Done
-                </Button>
+                <>
+                  <Button variant="muted" icon="eye" onClick={() => openTab('preview')}>
+                    {t('Preview')}
+                  </Button>
+                  {nextSection ? (
+                    <Button variant="dark" onClick={() => openPage(nextSection.id)} style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {t('Next: {name}', { name: t(nextSection.title) })}
+                    </Button>
+                  ) : (
+                    <Button variant="primary" icon="check" onClick={() => openPage(null)}>
+                      {t('Done')}
+                    </Button>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -486,8 +611,8 @@ export default function Studio({
   /* ── Desktop: content | live CV | design ──────────────────────────── */
   return (
     <div className="native-cursor studio" style={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: c.canvas, fontFamily: font }}>
-      <header style={{ height: 68, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 14, padding: '0 20px', background: c.surface, borderBottom: `1px solid ${c.line}` }}>
-        <a href="/" aria-label="Back to portfolio" style={{ display: 'flex', textDecoration: 'none' }}>
+      <header style={{ height: 68, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12, padding: '0 20px', background: c.surface, borderBottom: `1px solid ${c.line}` }}>
+        <a href="/" aria-label={t('Back to portfolio')} style={{ display: 'flex', textDecoration: 'none' }}>
           <MahmudLogo size="sm" />
         </a>
         <span style={{ width: 1, height: 26, background: c.line }} />
@@ -496,23 +621,27 @@ export default function Studio({
           style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, padding: '8px 12px', borderRadius: radius.pill, border: 'none', background: 'transparent', cursor: 'pointer' }}
         >
           <span style={{ fontFamily: font, fontSize: 15, fontWeight: 700, color: c.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 260 }}>
-            {profile.personal.name ? `${profile.personal.name}’s CV` : api.active?.name || 'My CV'}
+            {profile.personal.name ? t('{name}’s CV', { name: profile.personal.name }) : api.active?.name || t('My CV')}
           </span>
           <Icon name="down" size={16} style={{ color: c.muted }} />
         </button>
         <span style={{ flex: 1 }} />
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: font, fontSize: 13, color: c.muted }}>
-          <Icon name="shield" size={16} /> Saved on this device
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: font, fontSize: 13, color: c.muted, whiteSpace: 'nowrap' }}>
+          <Icon name="shield" size={16} /> {t('Saved on this device')}
         </span>
-        <IconButton icon="dots" label="More: your CVs, backup, start over" onClick={() => setSheet('more')} />
+        {langButton}
+        <IconButton icon="dots" label={t('More: your CVs, backup, start over')} onClick={() => setSheet('more')} />
+        <Button icon="share" onClick={() => setSheet('share')}>
+          {t('Share')}
+        </Button>
         <Button variant="primary" icon="download" onClick={() => setSheet('download')}>
-          Download PDF
+          {t('Download PDF')}
         </Button>
       </header>
 
       <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'clamp(340px, 27vw, 420px) minmax(0, 1fr) clamp(300px, 24vw, 370px)' }}>
         <aside ref={leftCol} style={{ minWidth: 0, overflowY: 'auto', padding: '22px 20px 48px', borderRight: `1px solid ${c.line}` }}>
-          {section ? sectionPage : editHome}
+          {page ? pageView : editHome}
         </aside>
 
         <main style={{ minWidth: 0, overflowY: 'auto', padding: '20px clamp(20px, 3vw, 44px) 56px', background: '#e9e7f1' }}>
@@ -520,13 +649,15 @@ export default function Studio({
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontFamily: font, fontSize: 13, fontWeight: 650, color: c.body }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: c.good, boxShadow: `0 0 0 4px ${c.good}22` }} />
-                Live preview
+                {page === 'letter' ? t('Cover letter') : t('Live preview')}
               </span>
               <span style={{ fontFamily: font, fontSize: 13, color: c.muted }}>
-                {role || 'Untitled'} · {templateLabel(version.template)} template
+                {role || t('untitled')} · {page === 'letter' ? letter.company || t('no company yet') : templateLabel(version.template)}
               </span>
             </div>
-            {preview}
+            {page === 'letter' && <LetterPreview cv={cv} letter={letter} />}
+            {/* Kept mounted under the letter: CV download prints from it. */}
+            <div style={{ display: page === 'letter' ? 'none' : 'block' }}>{preview}</div>
           </div>
         </main>
 
@@ -535,8 +666,8 @@ export default function Studio({
             full
             value={side}
             options={[
-              { v: 'design', l: 'Design' },
-              { v: 'match', l: 'Job match' },
+              { v: 'design', l: t('Design') },
+              { v: 'match', l: t('Job match') },
             ]}
             onChange={setSide}
           />
@@ -544,7 +675,7 @@ export default function Studio({
             {side === 'design' ? (
               <DesignPanel cv={cv} profile={profile} setProfile={ctx.setProfile} version={version} updateVersion={ctx.updateVersion} layout="grid" />
             ) : (
-              <JobMatchPanel cv={cv} onTailor={(t, kw) => makeVersion(t, kw)} />
+              <JobMatchPanel cv={cv} onTailor={(title, kw) => makeVersion(title, kw)} />
             )}
           </div>
         </aside>
@@ -557,11 +688,20 @@ export default function Studio({
 
 /* ── Pieces ───────────────────────────────────────────────────────────── */
 
+function ListHeading({ title, note }: { title: string; note?: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, margin: '2px 2px 12px' }}>
+      <h2 style={{ margin: 0, fontFamily: font, fontSize: 19, fontWeight: 750, letterSpacing: '-.01em', color: c.ink }}>{title}</h2>
+      {note && <span style={{ fontFamily: font, fontSize: 13, color: c.muted }}>{note}</span>}
+    </div>
+  )
+}
+
 function TabHeader({ title, sub, action }: { title: string; sub?: string; action?: React.ReactNode }) {
   return (
     <header style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '20px 2px 16px' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <h1 style={{ margin: 0, fontFamily: font, fontSize: 28, lineHeight: 1.1, fontWeight: 800, letterSpacing: '-.025em', color: c.ink }}>{title}</h1>
+        <h1 style={{ margin: 0, fontFamily: font, fontSize: 28, lineHeight: 1.15, fontWeight: 800, letterSpacing: '-.025em', color: c.ink }}>{title}</h1>
         {sub && <p style={{ margin: '5px 0 0', fontFamily: font, fontSize: 14, color: c.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</p>}
       </div>
       {action}
@@ -582,27 +722,28 @@ function RoleBar({
   onAdd: () => void
   onManage: () => void
 }) {
+  const { t } = useLang()
   return (
     <div style={{ minWidth: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 2px 10px' }}>
-        <Eyebrow>CV for which job?</Eyebrow>
+        <Eyebrow>{t('CV for which job?')}</Eyebrow>
         <button onClick={onManage} style={{ fontFamily: font, fontSize: 13, fontWeight: 650, color: c.brandInk, background: 'none', border: 'none', padding: '4px 2px', cursor: 'pointer' }}>
-          Manage
+          {t('Manage')}
         </button>
       </div>
       <div className="studio-scroll-row" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '2px', margin: '0 -2px', scrollbarWidth: 'none' }}>
         {versions.map((v) => (
           <Chip key={v.id} tone="dark" active={v.id === activeId} icon={v.id === activeId ? 'check' : undefined} onClick={() => onPick(v)}>
-            {v.role || 'Pick a job'}
+            {v.role || t('Pick a job')}
           </Chip>
         ))}
         <Chip dashed icon="plus" onClick={onAdd}>
-          Another job
+          {t('Another job')}
         </Chip>
       </div>
       {versions.length === 1 && (
         <p style={{ margin: '10px 2px 0', fontFamily: font, fontSize: 13, lineHeight: 1.5, color: c.muted }}>
-          Applying for different jobs? Add one — your skills and projects re-pick themselves for it.
+          {t('Applying for different jobs? Add one — your skills and projects re-pick themselves for it.')}
         </p>
       )}
     </div>
@@ -624,17 +765,18 @@ function HeroCard({
   onPreview: () => void
   onDownload: () => void
 }) {
+  const { t, num } = useLang()
   const ready = progress === 100
   const stats = [
-    { n: cv.experience.length, l: 'Jobs' },
-    { n: cv.skills.length, l: 'Skills' },
-    { n: cv.projects.length, l: 'Projects' },
+    { n: cv.experience.length, l: t('Jobs') },
+    { n: cv.skills.length, l: t('Skills') },
+    { n: cv.projects.length, l: t('Projects') },
   ]
   return (
     <section style={{ minWidth: 0, background: c.surface, border: `1px solid ${c.line}`, borderRadius: 24, padding: 16, boxShadow: shadow.card }}>
       <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
         {withThumb && (
-          <button onClick={onPreview} aria-label="Open preview" style={{ flexShrink: 0, padding: 0, border: `1px solid ${c.line}`, borderRadius: 10, overflow: 'hidden', background: '#fff', cursor: 'pointer', boxShadow: '0 6px 16px rgba(21,19,29,.10)' }}>
+          <button onClick={onPreview} aria-label={t('Open preview')} style={{ flexShrink: 0, padding: 0, border: `1px solid ${c.line}`, borderRadius: 10, overflow: 'hidden', background: '#fff', cursor: 'pointer', boxShadow: '0 6px 16px rgba(21,19,29,.10)' }}>
             <MiniCV cv={cv} template={version.template} width={86} />
           </button>
         )}
@@ -654,13 +796,13 @@ function HeroCard({
             }}
           >
             {ready && <Icon name="check" size={13} stroke={3} />}
-            {ready ? 'Ready to send' : `${progress}% ready`}
+            {ready ? t('Ready to send') : t('{n}% ready', { n: progress })}
           </span>
           <div style={{ marginTop: 8, fontFamily: font, fontSize: 18, fontWeight: 750, color: c.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {cv.personal.name || 'Your name'}
+            {cv.personal.name || t('Your name')}
           </div>
           <div style={{ marginTop: 2, fontFamily: font, fontSize: 14, color: c.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {version.role || 'Pick the job you want'}
+            {version.role || t('Pick the job you want')}
           </div>
           <div style={{ marginTop: 10, height: 6, borderRadius: 6, background: '#ebe9f1', overflow: 'hidden' }}>
             <div style={{ width: `${progress}%`, height: '100%', borderRadius: 6, background: ready ? c.good : c.brand, transition: 'width .4s' }} />
@@ -671,7 +813,7 @@ function HeroCard({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', marginTop: 16, paddingTop: 14, borderTop: `1px solid ${c.line}` }}>
         {stats.map((s, i) => (
           <div key={s.l} style={{ paddingLeft: i ? 14 : 2, borderLeft: i ? `1px solid ${c.line}` : 'none' }}>
-            <div style={{ fontFamily: font, fontSize: 20, fontWeight: 750, color: c.ink }}>{s.n}</div>
+            <div style={{ fontFamily: font, fontSize: 20, fontWeight: 750, color: c.ink }}>{num(s.n)}</div>
             <div style={{ fontFamily: font, fontSize: 12.5, color: c.muted }}>{s.l}</div>
           </div>
         ))}
@@ -680,10 +822,10 @@ function HeroCard({
       {withThumb && (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 10, marginTop: 16 }}>
           <Button variant="muted" icon="eye" onClick={onPreview}>
-            Preview
+            {t('Preview')}
           </Button>
           <Button variant="primary" icon="download" onClick={onDownload}>
-            Download
+            {t('Download')}
           </Button>
         </div>
       )}
@@ -704,50 +846,42 @@ function StatusMark({ state }: { state: Status['state'] }) {
   return <span style={{ width: 22, height: 22, borderRadius: '50%', border: `2px dashed ${c.lineStrong}`, flexShrink: 0 }} />
 }
 
+const rowStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 14,
+  width: '100%',
+  minWidth: 0,
+  textAlign: 'left',
+  padding: 14,
+  borderRadius: 20,
+  border: `1px solid ${c.line}`,
+  background: c.surface,
+  boxShadow: shadow.card,
+  cursor: 'pointer',
+}
+
+function RowText({ title, sub, tone }: { title: string; sub: string; tone?: string }) {
+  return (
+    <span style={{ flex: 1, minWidth: 0 }}>
+      <span style={{ display: 'block', fontFamily: font, fontSize: 16, fontWeight: 650, color: c.ink }}>{title}</span>
+      <span style={{ display: 'block', marginTop: 3, fontFamily: font, fontSize: 13, color: tone ?? c.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</span>
+    </span>
+  )
+}
+
 function SectionList({ profile, version, onOpen }: { profile: CVData; version: RoleVersion; onOpen: (id: SectionId) => void }) {
+  const { t } = useLang()
   return (
     <div style={{ display: 'grid', gap: 10 }}>
       {SECTIONS.map((s) => {
-        const st = sectionStatus(s.id, profile, version)
+        const st = sectionStatus(s.id, profile, version, t)
         return (
-          <button
-            key={s.id}
-            onClick={() => onOpen(s.id)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 14,
-              width: '100%',
-              minWidth: 0,
-              textAlign: 'left',
-              padding: 14,
-              borderRadius: 20,
-              border: `1px solid ${c.line}`,
-              background: c.surface,
-              boxShadow: shadow.card,
-              cursor: 'pointer',
-            }}
-          >
+          <button key={s.id} onClick={() => onOpen(s.id)} style={rowStyle}>
             <span style={{ width: 46, height: 46, borderRadius: 15, background: c.brandSoft, color: c.brand, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
               <Icon name={s.icon} size={22} />
             </span>
-            <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: 'block', fontFamily: font, fontSize: 16, fontWeight: 650, color: c.ink }}>{s.title}</span>
-              <span
-                style={{
-                  display: 'block',
-                  marginTop: 3,
-                  fontFamily: font,
-                  fontSize: 13,
-                  color: st.state === 'warn' ? c.warn : st.state === 'todo' ? c.brandInk : c.muted,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {st.text}
-              </span>
-            </span>
+            <RowText title={t(s.title)} sub={st.text} tone={st.state === 'warn' ? c.warn : st.state === 'todo' ? c.brandInk : undefined} />
             <StatusMark state={st.state} />
             <Icon name="right" size={18} style={{ color: c.faint }} />
           </button>
@@ -757,22 +891,35 @@ function SectionList({ profile, version, onOpen }: { profile: CVData; version: R
   )
 }
 
-function SectionPage({
-  id,
-  index,
-  ctx,
+function ToolRow({ icon, title, sub, onClick, done }: { icon: IconName; title: string; sub: string; onClick: () => void; done?: boolean }) {
+  return (
+    <button onClick={onClick} style={rowStyle}>
+      <span style={{ width: 46, height: 46, borderRadius: 15, background: c.night, color: '#fff', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+        <Icon name={icon} size={21} />
+      </span>
+      <RowText title={title} sub={sub} />
+      {done && <StatusMark state="done" />}
+      <Icon name="right" size={18} style={{ color: c.faint }} />
+    </button>
+  )
+}
+
+function PageView({
+  meta,
+  step,
   sticky,
   onBack,
   footer,
+  children,
 }: {
-  id: SectionId
-  index: number
-  ctx: EditCtx
+  meta: { title: string; icon: IconName; lead: string }
+  step?: string
   sticky: boolean
   onBack: () => void
   footer: React.ReactNode
+  children: React.ReactNode
 }) {
-  const s = SECTIONS[index]
+  const { t } = useLang()
   return (
     <div style={{ minWidth: 0 }}>
       <header
@@ -783,40 +930,37 @@ function SectionPage({
           display: 'flex',
           alignItems: 'center',
           gap: 10,
-          padding: sticky ? '12px 0' : '0 0 8px',
+          padding: sticky ? '12px 16px' : '0 0 8px',
           margin: sticky ? '0 -16px' : 0,
-          paddingLeft: sticky ? 16 : 0,
-          paddingRight: sticky ? 16 : 0,
           background: sticky ? 'rgba(244,243,248,.92)' : 'transparent',
           backdropFilter: sticky ? 'blur(12px)' : undefined,
         }}
       >
-        <IconButton icon="left" label="Back to all sections" onClick={onBack} />
-        <span style={{ flex: 1, fontFamily: font, fontSize: 15, fontWeight: 650, color: c.body, textAlign: 'center' }}>{sticky ? s.title : ''}</span>
-        <span style={{ minWidth: 44, textAlign: 'right', fontFamily: font, fontSize: 13, fontWeight: 600, color: c.muted }}>
-          {index + 1}/{SECTIONS.length}
+        <IconButton icon="left" label={t('Back to all sections')} onClick={onBack} />
+        <span style={{ flex: 1, minWidth: 0, fontFamily: font, fontSize: 15, fontWeight: 650, color: c.body, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {sticky ? meta.title : ''}
         </span>
+        <span style={{ minWidth: 44, textAlign: 'right', fontFamily: font, fontSize: 13, fontWeight: 600, color: c.muted }}>{step ?? ''}</span>
       </header>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '10px 2px 18px' }}>
         <span style={{ width: 52, height: 52, borderRadius: 17, background: c.brand, color: '#fff', display: 'grid', placeItems: 'center', flexShrink: 0, boxShadow: `0 8px 20px ${c.brand}40` }}>
-          <Icon name={s.icon} size={24} />
+          <Icon name={meta.icon} size={24} />
         </span>
         <div style={{ minWidth: 0 }}>
-          <h1 style={{ margin: 0, fontFamily: font, fontSize: 25, lineHeight: 1.15, fontWeight: 800, letterSpacing: '-.02em', color: c.ink }}>{s.title}</h1>
-          <p style={{ margin: '4px 0 0', fontFamily: font, fontSize: 14, lineHeight: 1.45, color: c.muted }}>{s.lead}</p>
+          <h1 style={{ margin: 0, fontFamily: font, fontSize: 25, lineHeight: 1.2, fontWeight: 800, letterSpacing: '-.02em', color: c.ink }}>{meta.title}</h1>
+          <p style={{ margin: '4px 0 0', fontFamily: font, fontSize: 14, lineHeight: 1.45, color: c.muted }}>{meta.lead}</p>
         </div>
       </div>
 
-      <section style={{ background: c.surface, border: `1px solid ${c.line}`, borderRadius: radius.lg, padding: 18, boxShadow: shadow.card, minWidth: 0 }}>
-        <SectionEditor id={id} ctx={ctx} />
-      </section>
+      <section style={{ background: c.surface, border: `1px solid ${c.line}`, borderRadius: radius.lg, padding: 18, boxShadow: shadow.card, minWidth: 0 }}>{children}</section>
       {footer}
     </div>
   )
 }
 
-function BottomNav({ tab, onTab, onDownload }: { tab: Tab; onTab: (t: Tab) => void; onDownload: () => void }) {
+function BottomNav({ tab, onTab, onDownload }: { tab: Tab; onTab: (x: Tab) => void; onDownload: () => void }) {
+  const { t } = useLang()
   const item = (id: Tab, label: string, icon: IconName) => {
     const on = tab === id
     return (
@@ -830,6 +974,7 @@ function BottomNav({ tab, onTab, onDownload }: { tab: Tab; onTab: (t: Tab) => vo
           alignItems: 'center',
           justifyContent: 'center',
           gap: 3,
+          minWidth: 0,
           height: 54,
           margin: '0 2px',
           borderRadius: 27,
@@ -841,6 +986,7 @@ function BottomNav({ tab, onTab, onDownload }: { tab: Tab; onTab: (t: Tab) => vo
           fontWeight: on ? 700 : 550,
           cursor: 'pointer',
           transition: 'background .15s, color .15s',
+          whiteSpace: 'nowrap',
         }}
       >
         <Icon name={icon} size={21} />
@@ -850,7 +996,7 @@ function BottomNav({ tab, onTab, onDownload }: { tab: Tab; onTab: (t: Tab) => vo
   }
   return (
     <nav
-      aria-label="Studio"
+      aria-label={t('Studio')}
       style={{
         position: 'fixed',
         left: 0,
@@ -879,23 +1025,26 @@ function BottomNav({ tab, onTab, onDownload }: { tab: Tab; onTab: (t: Tab) => vo
           boxShadow: shadow.float,
         }}
       >
-        {item('edit', 'Edit', 'edit')}
-        {item('design', 'Design', 'palette')}
+        {item('edit', t('Edit'), 'edit')}
+        {item('design', t('Design'), 'palette')}
         <button
           onClick={onDownload}
-          aria-label="Download PDF"
+          aria-label={t('Download PDF')}
           style={{ justifySelf: 'center', width: 56, height: 56, borderRadius: '50%', border: 'none', background: c.brand, color: '#fff', display: 'grid', placeItems: 'center', cursor: 'pointer', boxShadow: `0 8px 22px ${c.brand}66` }}
         >
           <Icon name="download" size={24} stroke={2.2} />
         </button>
-        {item('preview', 'Preview', 'eye')}
-        {item('match', 'Match', 'target')}
+        {item('preview', t('Preview'), 'eye')}
+        {item('match', t('Match'), 'target')}
       </div>
     </nav>
   )
 }
 
 /* ── Sheets ───────────────────────────────────────────────────────────── */
+
+const sheetTitle: React.CSSProperties = { margin: 0, fontFamily: font, fontSize: 21, fontWeight: 800, color: c.ink }
+const sheetLead: React.CSSProperties = { margin: '8px auto 0', maxWidth: 360, fontFamily: font, fontSize: 14.5, lineHeight: 1.55, color: c.muted }
 
 function DownloadSheet({
   open,
@@ -909,34 +1058,35 @@ function DownloadSheet({
   onClose: () => void
   missing: Task[]
   role: string
-  onFix: (t: Task) => void
+  onFix: (task: Task) => void
   onDownload: () => void
 }) {
+  const { t } = useLang()
   const gaps = missing.length > 0
   return (
     <Sheet open={open} onClose={onClose}>
       <div style={{ textAlign: 'center' }}>
         <Badge icon={gaps ? 'alert' : 'download'} tone={gaps ? 'warn' : 'brand'} />
-        <h2 style={{ margin: 0, fontFamily: font, fontSize: 21, fontWeight: 800, color: c.ink }}>{gaps ? 'Almost there' : 'Your CV is ready'}</h2>
-        <p style={{ margin: '8px auto 0', maxWidth: 340, fontFamily: font, fontSize: 14.5, lineHeight: 1.55, color: c.muted }}>
+        <h2 style={sheetTitle}>{gaps ? t('Almost there') : t('Your CV is ready')}</h2>
+        <p style={sheetLead}>
           {gaps
-            ? `${missing.length} thing${missing.length > 1 ? 's' : ''} recruiters look for ${missing.length > 1 ? 'are' : 'is'} still empty.`
-            : `Your ${role || ''} CV has everything recruiters look for. Download it as a PDF job portals can read.`}
+            ? t(missing.length === 1 ? '{n} thing recruiters look for is still empty.' : '{n} things recruiters look for are still empty.', { n: missing.length })
+            : t('Your {role} CV has everything recruiters look for. Download it as a PDF job portals can read.', { role })}
         </p>
       </div>
 
       {gaps && (
         <div style={{ display: 'grid', gap: 8, marginTop: 18 }}>
-          {missing.map((t) => (
+          {missing.map((task) => (
             <button
-              key={t.id}
-              onClick={() => onFix(t)}
+              key={task.id}
+              onClick={() => onFix(task)}
               style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left', padding: '12px 14px', borderRadius: 16, border: `1px solid ${c.line}`, background: c.surface, cursor: 'pointer' }}
             >
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#d97706', flexShrink: 0 }} />
               <span style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ display: 'block', fontFamily: font, fontSize: 15, fontWeight: 650, color: c.ink }}>{t.label}</span>
-                <span style={{ display: 'block', fontFamily: font, fontSize: 12.5, color: c.muted, marginTop: 2 }}>{t.why}</span>
+                <span style={{ display: 'block', fontFamily: font, fontSize: 15, fontWeight: 650, color: c.ink }}>{t(task.label)}</span>
+                <span style={{ display: 'block', fontFamily: font, fontSize: 12.5, color: c.muted, marginTop: 2 }}>{t(task.why)}</span>
               </span>
               <Icon name="right" size={18} style={{ color: c.faint }} />
             </button>
@@ -945,25 +1095,257 @@ function DownloadSheet({
       )}
 
       <div style={{ marginTop: 18, padding: 14, borderRadius: 16, background: c.sunken, fontFamily: font, fontSize: 13.5, lineHeight: 1.6, color: c.body }}>
-        <b style={{ color: c.ink }}>In the print window that opens:</b>
-        <div>1. Destination → <b>Save as PDF</b></div>
-        <div>2. Turn off <b>Headers and footers</b>, so no web address prints on your CV</div>
+        <b style={{ color: c.ink }}>{t('In the print window that opens:')}</b>
+        <div>{t('1. Destination → Save as PDF')}</div>
+        <div>{t('2. Turn off “Headers and footers”, so no web address prints on your CV')}</div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 10, marginTop: 18 }}>
         {gaps ? (
           <Button variant="muted" onClick={() => onFix(missing[0])}>
-            Fix first
+            {t('Fix first')}
           </Button>
         ) : (
           <Button variant="muted" onClick={onClose}>
-            Close
+            {t('Close')}
           </Button>
         )}
         <Button variant="dark" icon="download" onClick={onDownload}>
-          {gaps ? 'Download anyway' : 'Download PDF'}
+          {gaps ? t('Download anyway') : t('Download PDF')}
         </Button>
       </div>
+    </Sheet>
+  )
+}
+
+function ShareSheet({ open, onClose, cv, template, role, toast }: { open: boolean; onClose: () => void; cv: CVData; template: CVTemplate; role: string; toast: (m: string) => void }) {
+  const { t } = useLang()
+  const [withPhoto, setWithPhoto] = useState(false)
+  const [link, setLink] = useState('')
+  const hasPhoto = Boolean(cv.photo || cv.personal.photo)
+
+  useEffect(() => {
+    if (!open) return
+    let live = true
+    setLink('')
+    buildShareLink(cv, template, withPhoto)
+      .then((l) => live && setLink(l))
+      .catch(() => live && setLink(''))
+    return () => {
+      live = false
+    }
+  }, [open, cv, template, withPhoto])
+
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
+
+  return (
+    <Sheet open={open} onClose={onClose}>
+      <div style={{ textAlign: 'center' }}>
+        <Badge icon="share" tone="brand" />
+        <h2 style={sheetTitle}>{t('Share your CV as a link')}</h2>
+        <p style={sheetLead}>{t('Anyone with the link can open and download your {role} CV. The CV travels inside the link — nothing is stored on a server.', { role: role || t('current') })}</p>
+      </div>
+
+      {hasPhoto && (
+        <label style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 18, padding: '12px 14px', borderRadius: 16, background: c.sunken, fontFamily: font, fontSize: 14.5, color: c.body }}>
+          <Toggle on={withPhoto} onChange={setWithPhoto} label={t('Include my photo')} />
+          <span style={{ flex: 1 }}>
+            {t('Include my photo')}
+            <span style={{ display: 'block', fontSize: 12.5, color: c.muted }}>{t('Makes the link longer')}</span>
+          </span>
+        </label>
+      )}
+
+      <div
+        style={{
+          marginTop: 14,
+          padding: '12px 14px',
+          borderRadius: 16,
+          border: `1px dashed ${c.lineStrong}`,
+          fontFamily: 'ui-monospace, Menlo, monospace',
+          fontSize: 12.5,
+          lineHeight: 1.5,
+          color: link ? c.body : c.faint,
+          wordBreak: 'break-all',
+          maxHeight: 62,
+          overflow: 'hidden',
+        }}
+      >
+        {link || t('Making your link…')}
+      </div>
+      {link.length > 6000 && <p style={{ margin: '8px 2px 0', fontFamily: font, fontSize: 13, color: c.warn }}>{t('This link is long. Some apps cut long links — try it without the photo.')}</p>}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 10, marginTop: 16 }}>
+        <Button
+          variant="dark"
+          icon="copy"
+          disabled={!link}
+          onClick={async () => toast((await copyText(link)) ? t('Link copied — paste it anywhere') : t('Could not copy the link'))}
+        >
+          {t('Copy link')}
+        </Button>
+        {canShare ? (
+          <Button
+            variant="primary"
+            icon="share"
+            disabled={!link}
+            onClick={() => navigator.share({ title: `${cv.personal.name || 'CV'} — CV`, url: link }).catch(() => {})}
+          >
+            {t('Share…')}
+          </Button>
+        ) : (
+          <Button icon="eye" disabled={!link} onClick={() => window.open(link, '_blank', 'noopener')}>
+            {t('Open link')}
+          </Button>
+        )}
+      </div>
+      <p style={{ margin: '14px 2px 0', fontFamily: font, fontSize: 13, lineHeight: 1.5, color: c.muted, textAlign: 'center' }}>
+        {t('Edited your CV later? Share a new link — an old link keeps the old version.')}
+      </p>
+    </Sheet>
+  )
+}
+
+function ImportSheet({ open, onClose, blank, onUse }: { open: boolean; onClose: () => void; blank: () => CVData; onUse: (r: ImportResult) => void }) {
+  const { t } = useLang()
+  const [text, setText] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const [result, setResult] = useState<ImportResult | null>(null)
+  const file = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    setText('')
+    setErr('')
+    setResult(null)
+  }, [open])
+
+  const read = (raw: string) => {
+    const r = parseCVText(raw, blank())
+    const f = r.found
+    if (!f.name && !f.email && !f.jobs && !f.skills && !f.schools) {
+      setErr(t('We could not find CV sections in that text. Check it is your CV, or type it in instead.'))
+      return
+    }
+    setErr('')
+    setResult(r)
+  }
+
+  const onFile = async (f: File) => {
+    setBusy(true)
+    setErr('')
+    try {
+      const raw = f.type === 'application/pdf' || /\.pdf$/i.test(f.name) ? await pdfToText(f) : await f.text()
+      if (raw.replace(/\s/g, '').length < 40) throw new Error('empty')
+      setText(raw)
+      read(raw)
+    } catch {
+      setErr(t('That file could not be read. If it is a scanned PDF (a photo of a CV), copy the text and paste it instead.'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const rows: { label: string; value: string; ok: boolean }[] = result
+    ? [
+        { label: t('Name'), value: result.data.personal.name, ok: result.found.name },
+        { label: t('Email'), value: result.data.personal.email, ok: result.found.email },
+        { label: t('Phone'), value: result.data.personal.phone, ok: result.found.phone },
+        { label: t('Summary'), value: result.found.summary ? t('Found') : '', ok: result.found.summary },
+        { label: t('Work experience'), value: t(result.found.jobs === 1 ? '{n} job' : '{n} jobs', { n: result.found.jobs }), ok: result.found.jobs > 0 },
+        { label: t('Education'), value: t(result.found.schools === 1 ? '{n} entry' : '{n} entries', { n: result.found.schools }), ok: result.found.schools > 0 },
+        { label: t('Skills'), value: String(result.found.skills), ok: result.found.skills > 0 },
+        { label: t('Projects'), value: String(result.found.projects), ok: result.found.projects > 0 },
+      ]
+    : []
+
+  return (
+    <Sheet open={open} onClose={onClose} title={result ? undefined : t('Import your old CV')}>
+      {!result ? (
+        <div style={{ display: 'grid', gap: 14 }}>
+          <p style={{ margin: '-4px 0 0', fontFamily: font, fontSize: 14, lineHeight: 1.55, color: c.muted }}>
+            {t('Choose your CV as a PDF, or your LinkedIn profile saved as PDF (LinkedIn → More → Save to PDF). We fill in what we can — you check the rest.')}
+          </p>
+          <button
+            onClick={() => file.current?.click()}
+            disabled={busy}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              width: '100%',
+              textAlign: 'left',
+              padding: 16,
+              borderRadius: 20,
+              border: `2px dashed ${c.lineStrong}`,
+              background: c.sunken,
+              cursor: busy ? 'wait' : 'pointer',
+            }}
+          >
+            <span style={{ width: 48, height: 48, borderRadius: 16, background: c.brand, color: '#fff', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+              <Icon name="upload" size={22} />
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: 'block', fontFamily: font, fontSize: 16, fontWeight: 700, color: c.ink }}>{busy ? t('Reading your file…') : t('Choose a PDF')}</span>
+              <span style={{ display: 'block', fontFamily: font, fontSize: 13, color: c.muted, marginTop: 2 }}>{t('Your CV or LinkedIn profile')}</span>
+            </span>
+          </button>
+          <input
+            ref={file}
+            type="file"
+            accept="application/pdf,.pdf,text/plain,.txt"
+            hidden
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              e.target.value = ''
+              if (f) onFile(f)
+            }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: font, fontSize: 12.5, fontWeight: 600, color: c.faint, textTransform: 'uppercase', letterSpacing: '.06em' }}>
+            <span style={{ flex: 1, height: 1, background: c.line }} />
+            {t('or paste the text')}
+            <span style={{ flex: 1, height: 1, background: c.line }} />
+          </div>
+          <TextArea aria-label={t('CV text')} placeholder={t('Paste your CV or LinkedIn profile text here…')} value={text} rows={6} onChange={(e) => setText(e.target.value)} />
+          {err && <p style={{ margin: 0, padding: '10px 12px', borderRadius: radius.md, background: c.warnSoft, fontFamily: font, fontSize: 13.5, lineHeight: 1.5, color: c.warn }}>{err}</p>}
+          <Button variant="primary" block icon="sparkle" disabled={busy || text.trim().length < 40} onClick={() => read(text)}>
+            {t('Read my CV')}
+          </Button>
+          <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', fontFamily: font, fontSize: 12.5, color: c.muted }}>
+            <Icon name="shield" size={15} /> {t('Read on this device. Nothing is uploaded.')}
+          </p>
+        </div>
+      ) : (
+        <div>
+          <div style={{ textAlign: 'center' }}>
+            <Badge icon="check" tone="good" />
+            <h2 style={sheetTitle}>{t('Here is what we found')}</h2>
+            <p style={sheetLead}>{t('It is a draft — check each section after, especially job titles and dates.')}</p>
+          </div>
+          <div style={{ display: 'grid', marginTop: 16, borderRadius: 18, border: `1px solid ${c.line}`, overflow: 'hidden' }}>
+            {rows.map((row, i) => (
+              <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', borderTop: i ? `1px solid ${c.line}` : 'none', fontFamily: font, fontSize: 14 }}>
+                <span style={{ width: 22, height: 22, borderRadius: '50%', display: 'grid', placeItems: 'center', flexShrink: 0, background: row.ok ? c.good : '#ebe9f1', color: row.ok ? '#fff' : c.faint }}>
+                  <Icon name={row.ok ? 'check' : 'x'} size={12} stroke={3} />
+                </span>
+                <span style={{ color: c.body, flexShrink: 0 }}>{row.label}</span>
+                <span style={{ flex: 1, minWidth: 0, textAlign: 'right', color: row.ok ? c.ink : c.faint, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {row.ok ? row.value : t('not found')}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 10, marginTop: 18 }}>
+            <Button variant="muted" onClick={() => setResult(null)}>
+              {t('Try again')}
+            </Button>
+            <Button variant="dark" icon="check" onClick={() => onUse(result)}>
+              {t('Use this')}
+            </Button>
+          </div>
+        </div>
+      )}
     </Sheet>
   )
 }
@@ -985,10 +1367,11 @@ function RolesSheet({
   onAdd: () => void
   onRemove: (v: RoleVersion) => void
 }) {
+  const { t } = useLang()
   return (
-    <Sheet open={open} onClose={onClose} title="Your CV versions">
+    <Sheet open={open} onClose={onClose} title={t('Your CV versions')}>
       <p style={{ margin: '-4px 0 16px', fontFamily: font, fontSize: 14, color: c.muted, lineHeight: 1.55 }}>
-        One CV, a version for each job. Your jobs and skills are shared — each version shows the ones that fit its role. To rename one, change “Job you want” in About you.
+        {t('One CV, a version for each job. Your jobs and skills are shared — each version shows the ones that fit its role. To rename one, change “Job you want” in About you.')}
       </p>
       <div style={{ display: 'grid', gap: 8 }}>
         {versions.map((v) => {
@@ -999,16 +1382,16 @@ function RolesSheet({
                 <span style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${on ? c.brand : c.lineStrong}`, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
                   {on && <span style={{ width: 10, height: 10, borderRadius: '50%', background: c.brand }} />}
                 </span>
-                <span style={{ fontFamily: font, fontSize: 15.5, fontWeight: on ? 700 : 550, color: on ? c.brandInk : c.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.role || 'Untitled'}</span>
+                <span style={{ fontFamily: font, fontSize: 15.5, fontWeight: on ? 700 : 550, color: on ? c.brandInk : c.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.role || t('Pick a job')}</span>
               </button>
-              {versions.length > 1 && <IconButton icon="trash" label={`Delete the ${v.role || 'untitled'} version`} variant="plain" size={40} onClick={() => onRemove(v)} />}
+              {versions.length > 1 && <IconButton icon="trash" label={t('Delete the {role} CV?', { role: v.role || t('untitled') })} variant="plain" size={40} onClick={() => onRemove(v)} />}
             </div>
           )
         })}
       </div>
       <div style={{ marginTop: 16 }}>
         <Button variant="primary" block icon="plus" onClick={onAdd}>
-          CV for another job
+          {t('CV for another job')}
         </Button>
       </div>
     </Sheet>
@@ -1016,18 +1399,19 @@ function RolesSheet({
 }
 
 function NewRoleSheet({ open, onClose, onCreate, taken }: { open: boolean; onClose: () => void; onCreate: (title: string) => void; taken: string[] }) {
+  const { t } = useLang()
   const [title, setTitle] = useState('')
   useEffect(() => {
     if (open) setTitle('')
   }, [open])
-  const t = title.trim()
-  const dup = taken.some((r) => r.trim().toLowerCase() === t.toLowerCase())
+  const x = title.trim()
+  const dup = taken.some((r) => r.trim().toLowerCase() === x.toLowerCase())
   return (
-    <Sheet open={open} onClose={onClose} title="CV for another job">
+    <Sheet open={open} onClose={onClose} title={t('CV for another job')}>
       <p style={{ margin: '-4px 0 16px', fontFamily: font, fontSize: 14, color: c.muted, lineHeight: 1.55 }}>
-        Pick a job. We choose the skills and projects that fit it and put the strongest first — you can change anything after.
+        {t('Pick a job. We choose the skills and projects that fit it and put the strongest first — you can change anything after.')}
       </p>
-      <TextField label="Job title" placeholder="e.g. UI/UX Designer" value={title} onChange={(e) => setTitle(e.target.value)} list="role-presets-2" enterKeyHint="done" />
+      <TextField label={t('Job title')} placeholder="e.g. UI/UX Designer" value={title} onChange={(e) => setTitle(e.target.value)} list="role-presets-2" enterKeyHint="done" />
       <datalist id="role-presets-2">
         {ROLE_PRESETS.map((r) => (
           <option key={r.title} value={r.title} />
@@ -1040,9 +1424,9 @@ function NewRoleSheet({ open, onClose, onCreate, taken }: { open: boolean; onClo
           </Chip>
         ))}
       </div>
-      {dup && <p style={{ margin: '0 0 12px', fontFamily: font, fontSize: 13, color: c.warn }}>You already have a CV for {t}.</p>}
-      <Button variant="primary" block size="lg" icon="sparkle" disabled={!t || dup} onClick={() => onCreate(t)}>
-        {t ? `Create CV for ${t}` : 'Create CV'}
+      {dup && <p style={{ margin: '0 0 12px', fontFamily: font, fontSize: 13, color: c.warn }}>{t('You already have a CV for {role}.', { role: x })}</p>}
+      <Button variant="primary" block size="lg" icon="sparkle" disabled={!x || dup} onClick={() => onCreate(x)}>
+        {x ? t('Create CV for {role}', { role: x }) : t('Create CV')}
       </Button>
     </Sheet>
   )
@@ -1056,6 +1440,7 @@ function MoreSheet({
   onSelect,
   onNew,
   onExample,
+  onImport,
   onBackup,
   onRestore,
   onStartOver,
@@ -1067,10 +1452,12 @@ function MoreSheet({
   onSelect: (id: string) => void
   onNew: () => void
   onExample: () => void
+  onImport: () => void
   onBackup: () => void
   onRestore: () => void
   onStartOver: () => void
 }) {
+  const { t, lang, setLang } = useLang()
   const row = (icon: IconName, label: string, sub: string, onClick: () => void, tone?: 'bad') => (
     <button
       onClick={onClick}
@@ -1088,7 +1475,7 @@ function MoreSheet({
   )
 
   return (
-    <Sheet open={open} onClose={onClose} title="Your CVs">
+    <Sheet open={open} onClose={onClose} title={t('Your CVs')}>
       <div style={{ display: 'grid', gap: 8 }}>
         {docs.map((d) => {
           const on = d.id === activeId
@@ -1105,8 +1492,8 @@ function MoreSheet({
                 <span style={{ display: 'block', fontFamily: font, fontSize: 15, fontWeight: 650, color: c.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {d.data.personal.name || d.name}
                 </span>
-                <span style={{ display: 'block', fontFamily: font, fontSize: 12.5, color: c.muted, marginTop: 1 }}>
-                  {d.versions.map((v) => v.role || 'Untitled').join(' · ')}
+                <span style={{ display: 'block', fontFamily: font, fontSize: 12.5, color: c.muted, marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {d.versions.map((v) => v.role || t('Pick a job')).join(' · ')}
                 </span>
               </span>
               {on && <Icon name="check" size={18} style={{ color: c.brand }} />}
@@ -1116,20 +1503,32 @@ function MoreSheet({
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 8, marginTop: 10 }}>
         <Button icon="plus" onClick={onNew}>
-          New CV
+          {t('New CV')}
         </Button>
-        <Button onClick={onExample}>See example</Button>
+        <Button onClick={onExample}>{t('See example')}</Button>
       </div>
 
-      <Eyebrow style={{ margin: '24px 2px 4px' }}>Keep it safe</Eyebrow>
+      <Eyebrow style={{ margin: '24px 2px 10px' }}>{t('Language')}</Eyebrow>
+      <Segmented
+        full
+        value={lang}
+        options={[
+          { v: 'en', l: 'English' },
+          { v: 'bn', l: 'বাংলা' },
+        ]}
+        onChange={setLang}
+      />
+
+      <Eyebrow style={{ margin: '24px 2px 4px' }}>{t('Keep it safe')}</Eyebrow>
       <p style={{ margin: '0 2px 4px', fontFamily: font, fontSize: 13, color: c.muted, lineHeight: 1.5 }}>
-        Your CV is saved in this browser only — nothing is uploaded. A backup file moves it to another phone or computer.
+        {t('Your CV is saved in this browser only — nothing is uploaded. A backup file moves it to another phone or computer.')}
       </p>
-      {row('download', 'Download backup', 'A small file with this CV and all its versions', onBackup)}
-      {row('upload', 'Restore backup', 'Open a backup file made here', onRestore)}
-      {row('trash', 'Start over', 'Clear this CV and begin again', onStartOver, 'bad')}
+      {row('upload', t('Import your old CV'), t('From a PDF or your LinkedIn profile'), onImport)}
+      {row('download', t('Download backup'), t('A small file with this CV and all its versions'), onBackup)}
+      {row('file', t('Restore backup'), t('Open a backup file made here'), onRestore)}
+      {row('trash', t('Start over'), t('Clear this CV and begin again'), onStartOver, 'bad')}
       <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginTop: 18, fontFamily: font, fontSize: 14, fontWeight: 600, color: c.muted, textDecoration: 'none' }}>
-        <Icon name="home" size={16} /> Back to portfolio
+        <Icon name="home" size={16} /> {t('Back to portfolio')}
       </a>
     </Sheet>
   )
@@ -1139,30 +1538,35 @@ function MoreSheet({
 
 function StartScreen({
   sample,
+  langButton,
   onScratch,
   onExample,
+  onImport,
   onRestore,
-  restoreInput,
 }: {
   sample: () => CVData
+  langButton: React.ReactNode
   onScratch: () => void
   onExample: () => void
+  onImport: () => void
   onRestore: () => void
-  restoreInput: React.ReactNode
 }) {
+  const { t } = useLang()
   const demo = useMemo(() => sample(), [sample])
   const features: { icon: IconName; t: string }[] = [
-    { icon: 'bolt', t: 'Ready in minutes' },
-    { icon: 'swap', t: 'One CV, every job' },
-    { icon: 'shield', t: 'Stays on your device' },
+    { icon: 'bolt', t: t('Ready in minutes') },
+    { icon: 'swap', t: t('One CV, every job') },
+    { icon: 'shield', t: t('Stays on your device') },
   ]
   return (
     <div className="native-cursor studio" style={{ minHeight: '100dvh', background: c.canvas, fontFamily: font, display: 'flex', justifyContent: 'center', padding: '16px 16px 32px' }}>
       <div style={{ width: '100%', maxWidth: 460, display: 'flex', flexDirection: 'column', gap: 22 }}>
         <header style={{ display: 'flex', alignItems: 'center', padding: '4px 0' }}>
-          <a href="/" aria-label="Back to portfolio" style={{ display: 'flex' }}>
+          <a href="/" aria-label={t('Back to portfolio')} style={{ display: 'flex' }}>
             <MahmudLogo size="sm" />
           </a>
+          <span style={{ flex: 1 }} />
+          {langButton}
         </header>
 
         <div
@@ -1201,9 +1605,9 @@ function StartScreen({
         </div>
 
         <div>
-          <h1 style={{ margin: 0, fontFamily: font, fontSize: 32, lineHeight: 1.1, fontWeight: 800, letterSpacing: '-.03em', color: c.ink }}>Make a CV that fits the job</h1>
+          <h1 style={{ margin: 0, fontFamily: font, fontSize: 32, lineHeight: 1.15, fontWeight: 800, letterSpacing: '-.03em', color: c.ink }}>{t('Make a CV that fits the job')}</h1>
           <p style={{ margin: '12px 0 0', fontFamily: font, fontSize: 16, lineHeight: 1.6, color: c.body }}>
-            Fill it in once. Pick the job you want, and your CV picks the right skills and projects for it. Free, no sign-up.
+            {t('Fill it in once. Pick the job you want, and your CV picks the right skills and projects for it. Free, no sign-up.')}
           </p>
         </div>
 
@@ -1220,16 +1624,20 @@ function StartScreen({
 
         <div style={{ display: 'grid', gap: 10 }}>
           <Button variant="primary" size="lg" block onClick={onScratch}>
-            Start my CV
+            {t('Start my CV')}
           </Button>
-          <Button size="lg" block onClick={onExample}>
-            See an example first
+          <Button size="lg" block icon="upload" onClick={onImport}>
+            {t('Import my old CV')}
           </Button>
-          <Button variant="ghost" block icon="upload" onClick={onRestore}>
-            I have a backup file
-          </Button>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 10 }}>
+            <Button variant="ghost" onClick={onExample}>
+              {t('See an example')}
+            </Button>
+            <Button variant="ghost" onClick={onRestore}>
+              {t('Restore a backup')}
+            </Button>
+          </div>
         </div>
-        {restoreInput}
       </div>
     </div>
   )

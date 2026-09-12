@@ -3,6 +3,7 @@
 import { portfolioData } from '@/data/portfolio'
 import { useCVDocs } from '@/hooks/useCVDocs'
 import Studio from '@/components/cv/studio/Studio'
+import { LangProvider } from '@/components/cv/studio/i18n'
 
 export type CVTemplate =
   | 'profile-split'
@@ -178,5 +179,9 @@ export default function CVPage() {
     }
   }
 
-  return <Studio api={api} blank={buildDefaultCVData} sample={buildSampleCVData} onExport={handleExport} onImport={handleImport} />
+  return (
+    <LangProvider>
+      <Studio api={api} blank={buildDefaultCVData} sample={buildSampleCVData} onExport={handleExport} onImport={handleImport} />
+    </LangProvider>
+  )
 }
