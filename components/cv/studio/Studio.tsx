@@ -1060,9 +1060,7 @@ function DownloadSheet({
       )}
 
       <div style={{ marginTop: 18, padding: 14, borderRadius: 16, background: c.sunken, fontFamily: font, fontSize: 13.5, lineHeight: 1.6, color: c.body }}>
-        <b style={{ color: c.ink }}>In the print window that opens:</b>
-        <div>1. Set Destination to Save as PDF</div>
-        <div>2. Turn off “Headers and footers”, so no web address prints on your CV</div>
+        In the print window that opens, set <b style={{ color: c.ink }}>Destination</b> to <b style={{ color: c.ink }}>Save as PDF</b>, then save.
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 10, marginTop: 18 }}>

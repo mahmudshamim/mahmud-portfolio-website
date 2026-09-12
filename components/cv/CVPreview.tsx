@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { CVData, CVTemplate } from '@/app/cv/page'
-import { fileSafe, printElement } from './print'
+import { fileSafe, printPaged } from './print'
 import { MdEmail, MdPhone, MdLocationOn, MdLanguage, MdPerson, MdWork, MdSchool, MdCode, MdBuild, MdInsertDriveFile, MdExpandMore } from 'react-icons/md'
 
 type Props = {
@@ -14,10 +15,12 @@ type Props = {
   registerDownload?: (fn: () => void, busy: boolean) => void
 }
 
-/* Paper, in CSS pixels at 96 dpi. The print stylesheet uses the same sizes
-   in millimetres: A4 is 210 x 297mm, every page gets a 12mm bottom margin,
-   and every page after the first a 12mm top margin (the first page's top
-   is the template's own, so colour bands can reach the edge). */
+/* Paper, in CSS pixels at 96 dpi: A4 is 210 x 297mm. Every page keeps a
+   12mm margin at the bottom, and every page after the first a 12mm margin
+   at the top (the first page's top belongs to the template, so colour
+   bands can reach the edge). The margins are drawn inside each sheet, for
+   the preview and for print alike, because a real page margin is where
+   browsers print their date, title and web address. */
 const A4_W = 794
 const A4_H = 1122
 const PAGE_MARGIN = 45
@@ -79,6 +82,12 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
   const contentRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
   const [pages, setPages] = useState<Page[]>([{ start: 0, end: A4_H - PAGE_MARGIN }])
+  const pagesRef = useRef(pages)
+  pagesRef.current = pages
+  /* The measured copy lives in a portal on <body>: inside the phone's
+     hidden Preview tab it would have no layout, and nothing to measure. */
+  const [host, setHost] = useState<HTMLElement | null>(null)
+  useEffect(() => setHost(document.body), [])
 
   useEffect(() => {
     const node = frameRef.current
@@ -113,7 +122,7 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
       cancelAnimationFrame(raf)
       imgs.forEach((img) => img.removeEventListener('load', run))
     }
-  }, [cvData, selectedTemplate])
+  }, [cvData, selectedTemplate, host])
 
   /*
    * Print, not html2canvas. The browser's own print engine gives real text,
@@ -122,7 +131,10 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
    * name the file from document.title, so the CV is named after its owner.
    */
   const handleDownload = () => {
-    printElement(document.getElementById('cv-preview-content'), `${fileSafe(cvData.personal.name) || 'Resume'}-CV`)
+    const node = contentRef.current
+    /* Paginate afresh: the last measurement may predate the final keystroke. */
+    const sheets = node ? paginate(node) : pagesRef.current
+    printPaged(node, sheets, PAGE_MARGIN, `${fileSafe(cvData.personal.name) || 'Resume'}-CV`)
   }
 
   useEffect(() => {
@@ -136,9 +148,13 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
     <div style={{ position: 'relative' }}>
       {/* The measured copy, and the one that prints: laid out at full size
           so its positions are real, but out of sight. */}
-      <div aria-hidden style={{ position: 'absolute', left: -10000, top: 0, width: A4_W, visibility: 'hidden', pointerEvents: 'none' }}>
-        <CVDocument cvData={cvData} template={selectedTemplate} id="cv-preview-content" innerRef={contentRef} />
-      </div>
+      {host &&
+        createPortal(
+          <div aria-hidden data-cv-measure style={{ position: 'absolute', left: -10000, top: 0, width: A4_W, visibility: 'hidden', pointerEvents: 'none' }}>
+            <CVDocument cvData={cvData} template={selectedTemplate} id="cv-preview-content" innerRef={contentRef} />
+          </div>,
+          host
+        )}
 
       {/* Each page as its own sheet, with the same margins as the PDF. */}
       <div ref={frameRef} style={{ width: '100%' }}>

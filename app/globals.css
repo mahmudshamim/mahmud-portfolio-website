@@ -203,17 +203,13 @@ body {
 }
 
 @media print {
-  /* 12mm top and bottom on every page, so a second page does not start
-     flush against the paper edge. The first page keeps its top at zero:
-     the template's own padding (or colour band) is the top margin there.
-     The on-screen preview draws its pages with the same numbers. */
+  /* No page margin, on purpose: browsers print their own header and footer
+     (date, page title, web address) inside the page margin, and with none
+     there is nowhere to put them. The CV's margins are drawn inside each
+     printed sheet instead (components/cv/print.ts). */
   @page {
     size: A4;
-    margin: 12mm 0;
-  }
-
-  @page :first {
-    margin-top: 0;
+    margin: 0;
   }
 
   html,
