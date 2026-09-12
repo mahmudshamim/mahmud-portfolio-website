@@ -30,18 +30,25 @@
 }
 
 * {
-  cursor: none;
   box-sizing: border-box;
 }
 
-/* The custom cursor belongs to the portfolio, not to the CV builder.
-   A tool people type in needs the real pointer: an I-beam over a field, a
-   resize handle on the divider, and the native hit feedback they already
-   trust. `revert` hands each element back its UA default rather than forcing
-   one cursor everywhere. */
-.native-cursor,
-.native-cursor * {
-  cursor: revert;
+/* The portfolio draws its own cursor (components/Cursor.tsx), and that
+   component puts this class on <html> only while it is mounted. Everywhere
+   else — the CV studio, a shared CV — the system pointer stays: an I-beam
+   over a field, a hand over a button.
+
+   This used to be a global `* { cursor: none }` with a `cursor: revert`
+   escape hatch on the CV page. But cursor is inherited, and `revert` on an
+   element the browser has no rule for falls back to inheriting — so every
+   plain block on the CV page inherited `none` from <body>, and the pointer
+   vanished over text. Scoping the rule removes the need for an escape hatch.
+
+   :where() keeps specificity at zero, as `*` had, so the portfolio's own
+   cursor: pointer styles behave exactly as before. */
+:where(html.custom-cursor),
+:where(html.custom-cursor) * {
+  cursor: none;
 }
 
 /* CV studio motion and scrollbars. Sheets rise, dialogs fade; the site's

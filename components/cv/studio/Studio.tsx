@@ -280,7 +280,7 @@ export default function Studio({
           onRestore={() => restoreInput.current?.click()}
         />
         {restoreField}
-        <div className="native-cursor">{importSheet}</div>
+        {importSheet}
         {toastNode}
       </>
     )
@@ -466,7 +466,7 @@ export default function Studio({
   if (compact) {
     const fname = firstName(profile.personal.name)
     return (
-      <div className="native-cursor studio" style={{ minHeight: '100dvh', background: c.canvas, fontFamily: font }}>
+      <div className="studio" style={{ minHeight: '100dvh', background: c.canvas, fontFamily: font }}>
         <div style={{ maxWidth: 620, margin: '0 auto', padding: '0 16px', paddingBottom: 'calc(128px + env(safe-area-inset-bottom))' }}>
           {tab === 'edit' && !page && (
             <>
@@ -610,7 +610,7 @@ export default function Studio({
 
   /* ── Desktop: content | live CV | design ──────────────────────────── */
   return (
-    <div className="native-cursor studio" style={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: c.canvas, fontFamily: font }}>
+    <div className="studio" style={{ height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: c.canvas, fontFamily: font }}>
       <header style={{ height: 68, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12, padding: '0 20px', background: c.surface, borderBottom: `1px solid ${c.line}` }}>
         <a href="/" aria-label={t('Back to portfolio')} style={{ display: 'flex', textDecoration: 'none' }}>
           <MahmudLogo size="sm" />
@@ -1559,7 +1559,7 @@ function StartScreen({
     { icon: 'shield', t: t('Stays on your device') },
   ]
   return (
-    <div className="native-cursor studio" style={{ minHeight: '100dvh', background: c.canvas, fontFamily: font, display: 'flex', justifyContent: 'center', padding: '16px 16px 32px' }}>
+    <div className="studio" style={{ minHeight: '100dvh', background: c.canvas, fontFamily: font, display: 'flex', justifyContent: 'center', padding: '16px 16px 32px' }}>
       <div style={{ width: '100%', maxWidth: 460, display: 'flex', flexDirection: 'column', gap: 22 }}>
         <header style={{ display: 'flex', alignItems: 'center', padding: '4px 0' }}>
           <a href="/" aria-label={t('Back to portfolio')} style={{ display: 'flex' }}>

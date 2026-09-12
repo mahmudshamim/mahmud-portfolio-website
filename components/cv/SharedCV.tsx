@@ -42,7 +42,7 @@ export default function SharedCV() {
   }, [state])
 
   return (
-    <div className="native-cursor studio" style={{ minHeight: '100dvh', background: '#e9e7f1', fontFamily: font }}>
+    <div className="studio" style={{ minHeight: '100dvh', background: '#e9e7f1', fontFamily: font }}>
       <header
         style={{
           position: 'sticky',

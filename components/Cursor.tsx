@@ -23,6 +23,13 @@ export default function Cursor() {
   const particlesRef = useRef<Particle[]>([])
   const particleRafRef = useRef<number>(0)
 
+  // Hide the system pointer only while this cursor exists (see globals.css).
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.add('custom-cursor')
+    return () => root.classList.remove('custom-cursor')
+  }, [])
+
   // Cursor ring + dot animation
   useEffect(() => {
     const dot = dotRef.current
