@@ -9,20 +9,20 @@ Welcome to my portfolio website built with **Next.js**, **Framer Motion**, and *
 - **Styling:** CSS, Tailwind CSS
 - **Design:** Figma, UI/UX Design
 
-## 🚀 Key Features
+## Key Features
 
 - **Dynamic CV Builder:** Create professional CVs with multiple templates.
 - **ATS Checker:** Verify your CV against industry-standard ATS systems.
 - **Interactive Hero:** A physics-based constellation background using Matter.js.
 - **Responsive Design:** Optimized for all screen sizes.
 
-## 📁 Project Structure
+## Project Structure
 
 - `/app`: Next.js 15+ App Router for pages and API routes.
 - `/components`: Dynamic and interactive UI components.
 - `/data`: Centralized data for projects, skills, and experience.
 - `/public`: Static assets like profile photos and project thumbnails.
 
-## 📝 License
+## License
 
 MIT License © 2026 Mahmud Shamim

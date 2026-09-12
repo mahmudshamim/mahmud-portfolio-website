@@ -114,7 +114,9 @@ export default function SharedCV() {
                 <span style={{ display: 'block', fontSize: 16, fontWeight: 700, color: '#15131d' }}>Make a CV like this for free</span>
                 <span style={{ display: 'block', fontSize: 13.5, color: '#716d80', marginTop: 2 }}>No sign-up. Works on your phone.</span>
               </span>
-              <span style={{ color: '#a3a0b1', fontSize: 22 }}>›</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a3a0b1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="m9 6 6 6-6 6" />
+              </svg>
             </a>
           </>
         )}

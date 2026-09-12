@@ -81,6 +81,8 @@ const PATHS: Record<string, React.ReactNode> = {
   phone: <><rect x="6" y="2" width="12" height="20" rx="3" /><path d="M11 18h2" /></>,
   share: <><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" /></>,
   copy: <><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></>,
+  hand: <><path d="M18 11V6a2 2 0 0 0-4 0v5" /><path d="M14 10V4a2 2 0 0 0-4 0v6" /><path d="M10 10.5V6a2 2 0 0 0-4 0v8" /><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.3l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15" /></>,
+  sliders: <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />,
 }
 
 export type IconName = keyof typeof PATHS
@@ -409,6 +411,48 @@ export function Segmented<T extends string>({ value, options, onChange, full }: 
         )
       })}
     </div>
+  )
+}
+
+/** A labelled range with its value on the right. Styled in globals.css. */
+export function Slider({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  onChange,
+  format,
+  disabled,
+}: {
+  label: string
+  value: number
+  min: number
+  max: number
+  step?: number
+  onChange: (v: number) => void
+  format?: (v: number) => string
+  disabled?: boolean
+}) {
+  const pct = ((Math.min(max, Math.max(min, value)) - min) / (max - min)) * 100
+  return (
+    <label style={{ display: 'grid', gap: 6, opacity: disabled ? 0.45 : 1 }}>
+      <span style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontFamily: font, fontSize: 13.5, color: c.body }}>
+        <span style={{ fontWeight: 600 }}>{label}</span>
+        <span style={{ color: c.muted, fontVariantNumeric: 'tabular-nums' }}>{format ? format(value) : value}</span>
+      </span>
+      <input
+        type="range"
+        className="studio-range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(Number(e.target.value))}
+        style={{ ['--pct' as string]: `${pct}%` } as React.CSSProperties}
+      />
+    </label>
   )
 }
 

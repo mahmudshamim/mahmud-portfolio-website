@@ -69,6 +69,37 @@ function normalise(data: CVData, blank: CVData): CVData {
   }
 }
 
+/*
+ * One-time clean-up of dashes in CVs saved before the site dropped them.
+ *
+ * The example CV used to be full of em dashes, in its date ranges and its
+ * project lines, and copies of it live on in people's browsers.
+ * A dash after a year becomes " - " so date ranges still read as ranges;
+ * any other em dash becomes a comma. It walks every string in a document,
+ * versions included, because hidden-job keys are built from the same text
+ * and must change with it. It runs once per browser: a dash someone types
+ * afterwards is theirs to keep.
+ */
+const DASH_FLAG = 'cv-dashes-cleaned-v1'
+const EM = '\u2014'
+const EN = '\u2013'
+
+function undash(text: string) {
+  return text
+    .replace(new RegExp(`((?:19|20)\\d{2})\\s*[${EM}${EN}]\\s*`, 'g'), '$1 - ')
+    .replace(new RegExp(`\\s+[${EM}${EN}]\\s+`, 'g'), ', ')
+    .replace(new RegExp(`[${EM}${EN}]`, 'g'), '-')
+}
+
+function undashDeep<T>(value: T): T {
+  if (typeof value === 'string') return undash(value) as T
+  if (Array.isArray(value)) return value.map(undashDeep) as T
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, undashDeep(v)])) as T
+  }
+  return value
+}
+
 /**
  * Owns every CV the browser holds.
  *
@@ -125,6 +156,15 @@ export function useCVDocs(makeBlank: () => CVData, makeSample: () => CVData) {
 
     if (!next.docs.some((d) => d.id === next!.activeId)) {
       next.activeId = next.docs[0].id
+    }
+
+    try {
+      if (!window.localStorage.getItem(DASH_FLAG)) {
+        next = { ...next, docs: next.docs.map((d) => ({ ...undashDeep(d), id: d.id, updatedAt: d.updatedAt })) }
+        window.localStorage.setItem(DASH_FLAG, '1')
+      }
+    } catch {
+      /* Private mode: skip the clean-up rather than block loading. */
     }
 
     setStore(next)

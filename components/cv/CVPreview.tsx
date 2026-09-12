@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { CVData, CVTemplate } from '@/app/cv/page'
 import { fileSafe, printElement } from './print'
-import { MdEmail, MdPhone, MdLocationOn, MdLanguage, MdPerson, MdWork, MdSchool, MdCode, MdBuild } from 'react-icons/md'
+import { MdEmail, MdPhone, MdLocationOn, MdLanguage, MdPerson, MdWork, MdSchool, MdCode, MdBuild, MdInsertDriveFile, MdExpandMore } from 'react-icons/md'
 
 type Props = {
   cvData: CVData
@@ -14,62 +14,112 @@ type Props = {
   registerDownload?: (fn: () => void, busy: boolean) => void
 }
 
+/* Paper, in CSS pixels at 96 dpi. The print stylesheet uses the same sizes
+   in millimetres: A4 is 210 x 297mm, every page gets a 12mm bottom margin,
+   and every page after the first a 12mm top margin (the first page's top
+   is the template's own, so colour bands can reach the edge). */
+const A4_W = 794
+const A4_H = 1122
+const PAGE_MARGIN = 45
+const PAGE_GAP = 28
+
+type Page = { start: number; end: number }
+
+/**
+ * Where the printer will break the document, following the same rules as
+ * the print stylesheet: never inside an entry, never through a line of text.
+ *
+ * Atoms are the things a break must not cut: marked entries, and any
+ * element that holds text directly. Very tall atoms are backgrounds or
+ * columns, not content, and are ignored.
+ */
+function paginate(root: HTMLElement): Page[] {
+  const box = root.getBoundingClientRect()
+  if (!box.height) return [{ start: 0, end: 0 }]
+  const atoms: [number, number][] = []
+  root.querySelectorAll<HTMLElement>('*').forEach((el) => {
+    const isEntry = el.hasAttribute('data-cv-entry')
+    const holdsText = Array.from(el.childNodes).some((n) => n.nodeType === 3 && n.textContent?.trim())
+    if (!isEntry && !holdsText && el.tagName !== 'IMG') return
+    const r = el.getBoundingClientRect()
+    if (r.height > 0 && r.height < A4_H * 0.5) atoms.push([r.top - box.top, r.bottom - box.top])
+  })
+  /* Trailing padding alone should never make a page of its own. */
+  const contentEnd = Math.min(box.height, atoms.reduce((m, a) => Math.max(m, a[1]), 0) + 12)
+  const straddles = (y: number) => atoms.some(([t, b]) => t < y - 1 && b > y + 1)
+
+  const pages: Page[] = []
+  let start = 0
+  while (pages.length < 20) {
+    const room = A4_H - PAGE_MARGIN - (pages.length ? PAGE_MARGIN : 0)
+    const limit = start + room
+    if (limit >= contentEnd) {
+      pages.push({ start, end: Math.max(start, contentEnd) })
+      break
+    }
+    let end = limit
+    if (straddles(limit)) {
+      const tops = atoms
+        .map((a) => a[0])
+        .filter((y) => y > start + room * 0.35 && y < limit)
+        .sort((a, b) => b - a)
+      end = tops.find((y) => !straddles(y)) ?? limit
+    }
+    pages.push({ start, end })
+    start = end
+  }
+  return pages
+}
+
+const samePages = (a: Page[], b: Page[]) =>
+  a.length === b.length && a.every((p, i) => Math.abs(p.start - b[i].start) < 1 && Math.abs(p.end - b[i].end) < 1)
+
 export default function CVPreview({ cvData, selectedTemplate, registerDownload }: Props) {
-  const previewFrameRef = useRef<HTMLDivElement>(null)
-  const [previewScale, setPreviewScale] = useState(1)
-  /* The sheet used to be pinned to exactly one A4 page with overflow hidden,
-     so a longer CV was invisible on screen as well as missing from the PDF. */
+  const frameRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
-  const [contentHeight, setContentHeight] = useState(1122)
-  const A4_W = 794
-  const A4_H = 1122
+  const [scale, setScale] = useState(1)
+  const [pages, setPages] = useState<Page[]>([{ start: 0, end: A4_H - PAGE_MARGIN }])
 
   useEffect(() => {
-    const node = previewFrameRef.current
+    const node = frameRef.current
     if (!node) return
-
-    const updateScale = () => {
-      const nextScale = Math.min(1, node.clientWidth / A4_W)
-      setPreviewScale(nextScale)
-    }
-
-    updateScale()
-
-    const observer = new ResizeObserver(updateScale)
-    observer.observe(node)
-    window.addEventListener('resize', updateScale)
-
-    return () => {
-      observer.disconnect()
-      window.removeEventListener('resize', updateScale)
-    }
-  }, [])
-
-  useEffect(() => {
-    const node = contentRef.current
-    if (!node) return
-    const measure = () => setContentHeight(Math.max(A4_H, node.scrollHeight))
-    measure()
-    const observer = new ResizeObserver(measure)
+    const update = () => setScale(Math.min(1, node.clientWidth / A4_W))
+    update()
+    const observer = new ResizeObserver(update)
     observer.observe(node)
     return () => observer.disconnect()
   }, [])
 
+  /* Re-paginate when the document changes size: typing, a new template, a
+     photo finishing loading, or the preview tab coming into view. */
+  useEffect(() => {
+    const node = contentRef.current
+    if (!node) return
+    let raf = 0
+    const run = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        const next = paginate(node)
+        setPages((prev) => (samePages(prev, next) ? prev : next))
+      })
+    }
+    run()
+    const observer = new ResizeObserver(run)
+    observer.observe(node)
+    const imgs = Array.from(node.querySelectorAll('img'))
+    imgs.forEach((img) => img.addEventListener('load', run))
+    return () => {
+      observer.disconnect()
+      cancelAnimationFrame(raf)
+      imgs.forEach((img) => img.removeEventListener('load', run))
+    }
+  }, [cvData, selectedTemplate])
+
   /*
-   * Print, not html2canvas.
-   *
-   * The old path rasterised the document to a JPEG and wrapped it in a PDF:
-   * no selectable text, no clickable links, nothing for a screen reader, and
-   *, the real problem for a CV, nothing an applicant tracking system can
-   * parse. The tool scored your CV for ATS friendliness and then handed you a
-   * file no ATS could read.
-   *
-   * It also pinned the capture to exactly one A4 page, so anything past
-   * 1122px was silently dropped.
-   *
-   * The browser's own print engine gives real text, real links, and automatic
-   * pagination for free. Chrome and Edge name the file from document.title,
-   * so the CV is named after its owner rather than after me.
+   * Print, not html2canvas. The browser's own print engine gives real text,
+   * real links and pagination, which is what an applicant tracking system
+   * needs; a rasterised JPEG inside a PDF gave none of that. Chrome and Edge
+   * name the file from document.title, so the CV is named after its owner.
    */
   const handleDownload = () => {
     printElement(document.getElementById('cv-preview-content'), `${fileSafe(cvData.personal.name) || 'Resume'}-CV`)
@@ -79,64 +129,48 @@ export default function CVPreview({ cvData, selectedTemplate, registerDownload }
     registerDownload?.(handleDownload, false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cvData, selectedTemplate])
+
+  const total = pages.length * A4_H + (pages.length - 1) * PAGE_GAP
+
   return (
-    <div>
-      {/* No download button here: the toolbar owns that action now, and two
-          buttons doing the same thing on one screen is one too many.
-          `handleDownload` is published upward via `registerDownload`. */}
+    <div style={{ position: 'relative' }}>
+      {/* The measured copy, and the one that prints: laid out at full size
+          so its positions are real, but out of sight. */}
+      <div aria-hidden style={{ position: 'absolute', left: -10000, top: 0, width: A4_W, visibility: 'hidden', pointerEvents: 'none' }}>
+        <CVDocument cvData={cvData} template={selectedTemplate} id="cv-preview-content" innerRef={contentRef} />
+      </div>
 
-      {/* CV Preview */}
-      <div
-        ref={previewFrameRef}
-        style={{ width: '100%', margin: '0 auto' }}
-      >
-        <div style={{ width: '100%', height: contentHeight * previewScale, position: 'relative' }}>
-          <div
-            style={{
-              width: A4_W,
-              minHeight: A4_H,
-              background: '#fff',
-              boxShadow: '0 8px 32px rgba(15,23,42,0.12)',
-              borderRadius: 4,
-              position: 'relative',
-              transform: `scale(${previewScale})`,
-              transformOrigin: 'top left',
-            }}
-          >
-            <CVDocument cvData={cvData} template={selectedTemplate} id="cv-preview-content" innerRef={contentRef} />
-
-            {/* Where the printer will actually break. Without this the second
-                page is a surprise you only meet in the PDF. */}
-            {Array.from({ length: Math.max(0, Math.ceil(contentHeight / A4_H) - 1) }, (_, i) => (
+      {/* Each page as its own sheet, with the same margins as the PDF. */}
+      <div ref={frameRef} style={{ width: '100%' }}>
+        <div style={{ position: 'relative', height: total * scale }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, width: A4_W, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+            {pages.map((p, i) => (
               <div
                 key={i}
-                data-page-guide
-                aria-hidden
                 style={{
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  top: (i + 1) * A4_H,
-                  borderTop: '1px dashed #94a3b8',
-                  pointerEvents: 'none',
+                  position: 'relative',
+                  width: A4_W,
+                  height: A4_H,
+                  marginBottom: i < pages.length - 1 ? PAGE_GAP : 0,
+                  background: '#fff',
+                  boxShadow: '0 8px 32px rgba(15,23,42,0.12)',
+                  borderRadius: 4,
+                  overflow: 'hidden',
                 }}
               >
-                <span
-                  style={{
-                    position: 'absolute',
-                    right: 8,
-                    top: 6,
-                    fontFamily: 'var(--font-dm-sans)',
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: '#64748b',
-                    background: '#f1f5f9',
-                    borderRadius: 4,
-                    padding: '2px 7px',
-                  }}
-                >
-                  Page {i + 2}
-                </span>
+                <div style={{ position: 'absolute', left: 0, right: 0, top: i ? PAGE_MARGIN : 0, height: p.end - p.start, overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', left: 0, top: -p.start, width: A4_W }}>
+                    <CVDocument cvData={cvData} template={selectedTemplate} />
+                  </div>
+                </div>
+                {pages.length > 1 && (
+                  <span
+                    aria-hidden
+                    style={{ position: 'absolute', right: 14, bottom: 12, fontFamily: 'var(--font-dm-sans)', fontSize: 11, fontWeight: 600, color: '#94a3b8' }}
+                  >
+                    {`Page ${i + 1} of ${pages.length}`}
+                  </span>
+                )}
               </div>
             ))}
           </div>
@@ -196,6 +230,7 @@ export function CVDocument({
     '--cv-rule-h': ds.headingRule === 'none' ? '0px' : '2px',
     '--cv-photo-radius': ds.photoShape === 'circle' ? '50%' : ds.photoShape === 'rounded' ? '10px' : '0px',
     '--cv-photo-size': `${ds.photoSize}px`,
+    '--cv-page-min': `${A4_H - PAGE_MARGIN}px`,
   } as React.CSSProperties
 
   /* A heading with nothing under it reads as a mistake, and on a blank CV the
@@ -237,28 +272,28 @@ export function CVDocument({
       <AccentRuleTemplate {...templateProps} />
     )}
     {template === 'dark-pro' && (
-      <DarkProTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+      <DarkProTemplate {...templateProps} />
     )}
     {template === 'clean-minimal' && (
-      <CleanMinimalTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+      <CleanMinimalTemplate {...templateProps} />
     )}
     {template === 'tech-blue' && (
-      <TechBlueTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+      <TechBlueTemplate {...templateProps} />
     )}
     {template === 'executive' && (
-      <ExecutiveTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+      <ExecutiveTemplate {...templateProps} />
     )}
     {template === 'sidebar-light' && (
-      <SidebarLightTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+      <SidebarLightTemplate {...templateProps} />
     )}
     {template === 'timeline' && (
-      <TimelineTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+      <TimelineTemplate {...templateProps} />
     )}
     {template === 'bold-header' && (
-      <BoldHeaderTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+      <BoldHeaderTemplate {...templateProps} />
     )}
     {template === 'creative-panel' && (
-      <CreativePanelTemplate personal={personal} skills={activeSkills} projects={projects} experience={experience} education={education} customSections={customSections} sectionOrder={sectionOrder} showSections={showSections} photo={photo} />
+      <CreativePanelTemplate {...templateProps} />
     )}
     {template === 'aurora' && <AuroraTemplate {...templateProps} />}
     {template === 'soft-card' && <SoftCardTemplate {...templateProps} />}
@@ -349,7 +384,7 @@ function DarkProTemplate({ personal, skills, projects, experience, education, cu
           background: '#1a1a2e',
           color: '#e2e2f0',
           padding: 24,
-          minHeight: 1123,
+          minHeight: 'var(--cv-page-min)',
         }}
       >
         <div style={{ marginBottom: 24, textAlign: 'center' }}>
@@ -403,7 +438,7 @@ function DarkProTemplate({ personal, skills, projects, experience, education, cu
             return (
               <Section key={sectionId} title="Experience">
                 {experience.map((e, i) => (
-                  <div key={i} style={{ marginBottom: 16 }}>
+                  <div key={i} data-cv-entry style={{ marginBottom: 16 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <strong>{e.role}</strong>
                       <span style={{ color: '#888', fontSize: 11 }}>{e.date}</span>
@@ -420,7 +455,7 @@ function DarkProTemplate({ personal, skills, projects, experience, education, cu
             return (
               <Section key={sectionId} title="Projects">
                 {projects.filter((p) => p.featured).map((p) => (
-                  <div key={p.id} style={{ marginBottom: 14 }}>
+                  <div key={p.id} data-cv-entry style={{ marginBottom: 14 }}>
                     <strong style={{ fontSize: 13 }}>{p.name}</strong>
                     <span style={{ marginLeft: 8, fontSize: 10, color: p.color, background: p.color + '18', padding: '1px 6px', borderRadius: 4 }}>
                       {p.category}
@@ -437,7 +472,7 @@ function DarkProTemplate({ personal, skills, projects, experience, education, cu
             return (
               <Section key={sectionId} title="Education">
                 {education.map((e, i) => (
-                  <div key={i}>
+                  <div key={i} data-cv-entry>
                     <strong>{e.degree}</strong>
                     <p style={{ color: '#555' }}>{e.school} · {e.date}</p>
                   </div>
@@ -485,7 +520,7 @@ function CleanMinimalTemplate({ personal, skills, projects, experience, educatio
           {showSections.experience && (
             <MinSection title="Experience">
               {experience.map((e, i) => (
-                <div key={i} style={{ marginBottom: 16 }}>
+                <div key={i} data-cv-entry style={{ marginBottom: 16 }}>
                   <strong style={{ fontSize: 13 }}>{e.role}</strong>
                   <p style={{ color: '#777', fontSize: 11, margin: '2px 0' }}>{e.company} · {e.date}</p>
                   <BulletText content={e.desc} />
@@ -496,7 +531,7 @@ function CleanMinimalTemplate({ personal, skills, projects, experience, educatio
           {showSections.education && (
             <MinSection title="Education">
               {education.map((e, i) => (
-                <div key={i}>
+                <div key={i} data-cv-entry>
                   <strong>{e.degree}</strong>
                   <p style={{ color: '#555' }}>{e.school}</p>
                   <p style={{ color: '#888', fontSize: 11 }}>{e.date}</p>
@@ -520,7 +555,7 @@ function CleanMinimalTemplate({ personal, skills, projects, experience, educatio
           {showSections.projects && (
             <MinSection title="Projects">
               {projects.filter((p) => p.featured).map((p) => (
-                <div key={p.id} style={{ marginBottom: 14 }}>
+                <div key={p.id} data-cv-entry style={{ marginBottom: 14 }}>
                   <strong>{p.name}</strong>
                   <p style={{ color: '#555', lineHeight: 1.5 }}>{p.shortDesc}</p>
                   <p style={{ fontSize: 10, color: '#999', fontFamily: 'monospace', marginTop: 4 }}>
@@ -597,11 +632,11 @@ function TechBlueTemplate({ personal, skills, projects, experience, education, c
 
       {/* Tab bar */}
       <div style={{ background: c.sidebar, borderBottom: `1px solid ${c.line}`, display: 'flex' }}>
-        <div style={{ padding: '6px 20px', fontSize: 11, color: c.white, borderBottom: `2px solid #388bfd`, borderRight: `1px solid ${c.line}` }}>
-          📄 profile.json
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 20px', fontSize: 11, color: c.white, borderBottom: `2px solid #388bfd`, borderRight: `1px solid ${c.line}` }}>
+          <MdInsertDriveFile size={12} /> profile.json
         </div>
-        <div style={{ padding: '6px 20px', fontSize: 11, color: c.gray, borderRight: `1px solid ${c.line}` }}>
-          📄 experience.json
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 20px', fontSize: 11, color: c.gray, borderRight: `1px solid ${c.line}` }}>
+          <MdInsertDriveFile size={12} /> experience.json
         </div>
       </div>
 
@@ -610,10 +645,10 @@ function TechBlueTemplate({ personal, skills, projects, experience, education, c
         {/* File explorer sidebar */}
         <div style={{ width: 180, background: c.sidebar, borderRight: `1px solid ${c.line}`, padding: '16px 0', fontSize: 11, minHeight: 1000 }}>
           <p style={{ color: c.gray, padding: '0 16px', marginBottom: 10, fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Explorer</p>
-          <div style={{ color: c.gray, padding: '3px 16px', fontSize: 10 }}>▾ CV_BUILDER</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 3, color: c.gray, padding: '3px 16px', fontSize: 10 }}><MdExpandMore size={12} /> CV_BUILDER</div>
           {['profile.json','experience.json','skills.json','projects.json','education.json'].map((f) => (
-            <div key={f} style={{ padding: '3px 28px', color: f === 'profile.json' ? c.white : c.gray, fontSize: 11, cursor: 'default' }}>
-              {f === 'profile.json' ? '📄' : '  '} {f}
+            <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '3px 28px', color: f === 'profile.json' ? c.white : c.gray, fontSize: 11, cursor: 'default' }}>
+              <MdInsertDriveFile size={11} style={{ opacity: f === 'profile.json' ? 1 : 0.5 }} /> {f}
             </div>
           ))}
 
@@ -661,7 +696,7 @@ function TechBlueTemplate({ personal, skills, projects, experience, education, c
             <>
               <Line indent={1}>{key('experience')}{sym(': [')}</Line>
               {experience.map((e, i) => (
-                <div key={i}>
+                <div key={i} data-cv-entry>
                   <Line indent={2}>{sym('{')}</Line>
                   <Line indent={3}>{key('role')}{sym(': ')}{str(e.role)}{sym(',')}</Line>
                   <Line indent={3}>{key('company')}{sym(': ')}{str(e.company)}{sym(',')}</Line>
@@ -696,7 +731,7 @@ function TechBlueTemplate({ personal, skills, projects, experience, education, c
             <>
               <Line indent={1}>{key('education')}{sym(': [')}</Line>
               {education.map((e, i) => (
-                <div key={i}>
+                <div key={i} data-cv-entry>
                   <Line indent={2}>{sym('{')}</Line>
                   <Line indent={3}>{key('degree')}{sym(': ')}{str(e.degree)}{sym(',')}</Line>
                   <Line indent={3}>{key('school')}{sym(': ')}{str(e.school)}{sym(',')}</Line>
@@ -809,7 +844,7 @@ function ExecutiveTemplate({ personal, skills, projects, experience, education, 
             {showSections.projects && (
               <ExecSection title="Key Projects">
                 {projects.filter((p) => p.featured).slice(0, 3).map((p) => (
-                  <div key={p.id} style={{ marginBottom: 12 }}>
+                  <div key={p.id} data-cv-entry style={{ marginBottom: 12 }}>
                     <strong style={{ color: p.color }}>{p.name}</strong>
                     <p style={{ color: '#555', margin: '2px 0', lineHeight: 1.5 }}>{p.shortDesc}</p>
                   </div>
@@ -819,7 +854,7 @@ function ExecutiveTemplate({ personal, skills, projects, experience, education, 
             {showSections.education && (
               <ExecSection title="Education">
                 {education.map((e, i) => (
-                  <div key={i}>
+                  <div key={i} data-cv-entry>
                     <strong>{e.degree}</strong>
                     <p style={{ color: '#555' }}>{e.school}</p>
                     <p style={{ color: '#888', fontSize: 11 }}>{e.date}</p>
@@ -867,7 +902,7 @@ function SidebarLightTemplate({ personal, skills, projects, experience, educatio
           <div>
             <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#555', borderBottom: '1px solid #b0c4d0', paddingBottom: 6, marginBottom: 10 }}>Education</p>
             {education.map((e, i) => (
-              <div key={i} style={{ marginBottom: 12 }}>
+              <div key={i} data-cv-entry style={{ marginBottom: 12 }}>
                 <strong style={{ fontSize: 12 }}>{e.degree}</strong>
                 <p style={{ fontSize: 11, color: '#555', margin: '2px 0' }}>{e.school}</p>
                 <p style={{ fontSize: 10, color: '#888' }}>{e.date}</p>
@@ -924,7 +959,7 @@ function SidebarLightTemplate({ personal, skills, projects, experience, educatio
           {showSections.experience && (
             <LightSection title="Work Experience">
               {experience.map((e, i) => (
-                <div key={i} style={{ marginBottom: 18 }}>
+                <div key={i} data-cv-entry style={{ marginBottom: 18 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                     <strong style={{ fontSize: 13 }}>{e.role}</strong>
                     <span style={{ fontSize: 10, color: '#888' }}>{e.date}</span>
@@ -939,7 +974,7 @@ function SidebarLightTemplate({ personal, skills, projects, experience, educatio
           {showSections.projects && (
             <LightSection title="Projects">
               {projects.filter((p) => p.featured).map((p) => (
-                <div key={p.id} style={{ marginBottom: 14 }}>
+                <div key={p.id} data-cv-entry style={{ marginBottom: 14 }}>
                   <strong>{p.name}</strong>
                   <p style={{ color: '#555', margin: '3px 0', lineHeight: 1.6 }}>{p.shortDesc}</p>
                   <p style={{ fontSize: 10, color: '#999', fontFamily: 'monospace' }}>{p.tech.join(' · ')}</p>
@@ -1004,7 +1039,7 @@ function TimelineTemplate({ personal, skills, projects, experience, education, c
             <div style={{ marginBottom: 22 }}>
               <p style={{ fontSize: 11, fontWeight: 700, fontFamily: 'sans-serif', letterSpacing: '0.12em', textTransform: 'uppercase', borderBottom: '1.5px solid #1a1a1a', paddingBottom: 4, marginBottom: 10 }}>Education</p>
               {education.map((e, i) => (
-                <div key={i} style={{ marginBottom: 10 }}>
+                <div key={i} data-cv-entry style={{ marginBottom: 10 }}>
                   <strong style={{ fontSize: 11, fontFamily: 'sans-serif' }}>{e.degree}</strong>
                   <p style={{ fontSize: 10, color: '#666', margin: '2px 0' }}>{e.school}</p>
                   <p style={{ fontSize: 10, color: '#999' }}>{e.date}</p>
@@ -1026,7 +1061,7 @@ function TimelineTemplate({ personal, skills, projects, experience, education, c
           {showSections.experience && (
             <TimelineSection title="Work Experience" icon={<MdWork size={14} color="#fff" />}>
               {experience.map((e, i) => (
-                <div key={i} style={{ marginBottom: 20, paddingLeft: 16, position: 'relative' }}>
+                <div key={i} data-cv-entry style={{ marginBottom: 20, paddingLeft: 16, position: 'relative' }}>
                   {/* Timeline dot */}
                   <div style={{ position: 'absolute', left: -20, top: 4, width: 8, height: 8, borderRadius: '50%', border: '2px solid #1a1a1a', background: '#fff' }} />
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1129,7 +1164,7 @@ function BoldHeaderTemplate({ personal, skills, projects, experience, education,
           {showSections.education && (
             <BoldSection title="Education" color="#2980b9">
               {education.map((e, i) => (
-                <div key={i} style={{ marginBottom: 14 }}>
+                <div key={i} data-cv-entry style={{ marginBottom: 14 }}>
                   <strong style={{ fontSize: 12 }}>{e.degree}</strong>
                   <p style={{ color: '#2980b9', fontSize: 11, margin: '2px 0' }}>{e.school}</p>
                   <p style={{ color: '#999', fontSize: 10 }}>{e.date}</p>
@@ -1151,7 +1186,7 @@ function BoldHeaderTemplate({ personal, skills, projects, experience, education,
           {showSections.experience && (
             <BoldSection title="Work Experience" color="#2980b9">
               {experience.map((e, i) => (
-                <div key={i} style={{ marginBottom: 18, paddingLeft: 12, borderLeft: '3px solid #e8f4fb' }}>
+                <div key={i} data-cv-entry style={{ marginBottom: 18, paddingLeft: 12, borderLeft: '3px solid #e8f4fb' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                     <strong style={{ fontSize: 13 }}>{e.role}</strong>
                     <span style={{ fontSize: 10, color: '#999', whiteSpace: 'nowrap' }}>{e.date}</span>
@@ -1166,7 +1201,7 @@ function BoldHeaderTemplate({ personal, skills, projects, experience, education,
           {showSections.projects && (
             <BoldSection title="Projects" color="#2980b9">
               {projects.filter((p) => p.featured).map((p) => (
-                <div key={p.id} style={{ marginBottom: 14, paddingLeft: 12, borderLeft: '3px solid #e8f4fb' }}>
+                <div key={p.id} data-cv-entry style={{ marginBottom: 14, paddingLeft: 12, borderLeft: '3px solid #e8f4fb' }}>
                   <strong style={{ fontSize: 12 }}>{p.name}</strong>
                   <span style={{ marginLeft: 8, fontSize: 10, color: p.color, background: p.color + '18', padding: '1px 6px', borderRadius: 3 }}>{p.category}</span>
                   <p style={{ color: '#555', margin: '4px 0', lineHeight: 1.5 }}>{p.shortDesc}</p>
@@ -1245,7 +1280,7 @@ function CreativePanelTemplate({ personal, skills, projects, experience, educati
           <div>
             <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#4a90d9', marginBottom: 12 }}>Education</p>
             {education.map((e, i) => (
-              <div key={i} style={{ marginBottom: 12 }}>
+              <div key={i} data-cv-entry style={{ marginBottom: 12 }}>
                 <strong style={{ fontSize: 11, color: '#fff' }}>{e.degree}</strong>
                 <p style={{ fontSize: 10, color: '#8aa8c8', margin: '2px 0' }}>{e.school}</p>
                 <p style={{ fontSize: 10, color: '#607080' }}>{e.date}</p>
@@ -1267,7 +1302,7 @@ function CreativePanelTemplate({ personal, skills, projects, experience, educati
         {showSections.experience && (
           <PanelSection title="Work Experience">
             {experience.map((e, i) => (
-              <div key={i} style={{ marginBottom: 20, paddingBottom: 20, borderBottom: i < experience.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+              <div key={i} data-cv-entry style={{ marginBottom: 20, paddingBottom: 20, borderBottom: i < experience.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
                     <strong style={{ fontSize: 13, color: '#1a1f2e' }}>{e.role}</strong>
@@ -1285,7 +1320,7 @@ function CreativePanelTemplate({ personal, skills, projects, experience, educati
           <PanelSection title="Projects">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               {projects.filter((p) => p.featured).map((p) => (
-                <div key={p.id} style={{ background: '#f8f9fc', borderRadius: 8, padding: '12px 14px', borderTop: `3px solid ${p.color}` }}>
+                <div key={p.id} data-cv-entry style={{ background: '#f8f9fc', borderRadius: 8, padding: '12px 14px', borderTop: `3px solid ${p.color}` }}>
                   <strong style={{ fontSize: 12 }}>{p.name}</strong>
                   <p style={{ color: '#666', margin: '4px 0 6px', lineHeight: 1.5, fontSize: 11 }}>{p.shortDesc}</p>
                   <p style={{ fontSize: 10, color: '#999', fontFamily: 'monospace' }}>{p.tech.join(', ')}</p>
@@ -1506,7 +1541,7 @@ function ProfileSplitTemplate({ personal, skills, projects, experience, educatio
           {showSections.education && (
             <RuleSection title="Education">
               {education.map((e, i) => (
-                <div key={i} style={{ marginBottom: 14 }}>
+                <div key={i} data-cv-entry style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 10.5, color: '#888' }}>{e.date}</div>
                   <div style={{ fontWeight: 700, marginTop: 2 }}>{e.degree}</div>
                   <div style={{ color: '#666', marginTop: 1 }}>{e.school}</div>
@@ -1559,7 +1594,7 @@ function ProfileSplitTemplate({ personal, skills, projects, experience, educatio
           {showSections.experience && (
             <RuleSection title="Experience">
               {experience.map((e, i) => (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '78px 1fr', gap: 14, marginBottom: 16 }}>
+                <div key={i} data-cv-entry style={{ display: 'grid', gridTemplateColumns: '78px 1fr', gap: 14, marginBottom: 16 }}>
                   <div style={{ fontSize: 10, color: '#999', lineHeight: 1.5, paddingTop: 2 }}>{e.date}</div>
                   <div>
                     <div style={{ fontWeight: 700 }}>{e.role}</div>
@@ -1574,7 +1609,7 @@ function ProfileSplitTemplate({ personal, skills, projects, experience, educatio
           {showSections.projects && (
             <RuleSection title="Projects">
               {projects.filter((p) => p.featured).map((p) => (
-                <div key={p.id} style={{ marginBottom: 12 }}>
+                <div key={p.id} data-cv-entry style={{ marginBottom: 12 }}>
                   <div style={{ fontWeight: 700 }}>{p.name}</div>
                   <div style={{ color: '#555', lineHeight: 1.6 }}>{p.shortDesc}</div>
                   <div style={{ fontSize: 9.5, color: '#999', marginTop: 3 }}>{p.tech.join(' · ')}</div>
@@ -1617,7 +1652,7 @@ function SwissGridTemplate({ personal, skills, projects, experience, education, 
       {showSections.experience && (
         <Row label="Experience">
           {experience.map((e, i) => (
-            <div key={i} style={{ marginBottom: i === experience.length - 1 ? 0 : 14 }}>
+            <div key={i} data-cv-entry style={{ marginBottom: i === experience.length - 1 ? 0 : 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                 <span style={{ fontWeight: 700 }}>{e.role}</span>
                 <span style={{ fontSize: 10, color: '#888', whiteSpace: 'nowrap' }}>{e.date}</span>
@@ -1632,7 +1667,7 @@ function SwissGridTemplate({ personal, skills, projects, experience, education, 
       {showSections.projects && (
         <Row label="Projects">
           {projects.filter((p) => p.featured).map((p) => (
-            <div key={p.id} style={{ marginBottom: 10 }}>
+            <div key={p.id} data-cv-entry style={{ marginBottom: 10 }}>
               <span style={{ fontWeight: 700 }}>{p.name}</span>
               <span style={{ color: '#555' }}>: {p.shortDesc}</span>
               <div style={{ fontSize: 9.5, color: '#999', marginTop: 2 }}>{p.tech.join(' / ')}</div>
@@ -1646,7 +1681,7 @@ function SwissGridTemplate({ personal, skills, projects, experience, education, 
       {showSections.education && (
         <Row label="Education">
           {education.map((e, i) => (
-            <div key={i} style={{ marginBottom: 8 }}>
+            <div key={i} data-cv-entry style={{ marginBottom: 8 }}>
               <div style={{ fontWeight: 700 }}>{e.degree}</div>
               <div style={{ color: '#666' }}>{e.school} · {e.date}</div>
             </div>
@@ -1693,7 +1728,7 @@ function AtsCompactTemplate({ personal, skills, projects, experience, education,
         <>
           <H>Experience</H>
           {experience.map((e, i) => (
-            <div key={i} style={{ marginBottom: 10 }}>
+            <div key={i} data-cv-entry style={{ marginBottom: 10 }}>
               <div style={{ fontWeight: 700 }}>{e.role}, {e.company}</div>
               <div style={{ fontSize: 10.5, color: '#444' }}>{e.date}</div>
               <BulletText content={e.desc} />
@@ -1706,7 +1741,7 @@ function AtsCompactTemplate({ personal, skills, projects, experience, education,
         <>
           <H>Projects</H>
           {projects.filter((p) => p.featured).map((p) => (
-            <div key={p.id} style={{ marginBottom: 8 }}>
+            <div key={p.id} data-cv-entry style={{ marginBottom: 8 }}>
               <span style={{ fontWeight: 700 }}>{p.name}</span>: {p.shortDesc}
               <div style={{ fontSize: 10.5, color: '#444' }}>Tech: {p.tech.join(', ')}</div>
             </div>
@@ -1720,7 +1755,7 @@ function AtsCompactTemplate({ personal, skills, projects, experience, education,
         <>
           <H>Education</H>
           {education.map((e, i) => (
-            <div key={i} style={{ marginBottom: 6 }}>
+            <div key={i} data-cv-entry style={{ marginBottom: 6 }}>
               <span style={{ fontWeight: 700 }}>{e.degree}</span>, {e.school} ({e.date})
             </div>
           ))}
@@ -1769,7 +1804,7 @@ function AccentRuleTemplate({ personal, skills, projects, experience, education,
         {showSections.experience && (
           <RuleSection title="Experience" color={accent}>
             {experience.map((e, i) => (
-              <div key={i} style={{ marginBottom: 15, paddingLeft: 12, borderLeft: `2px solid color-mix(in srgb, ${accent} 14%, white)` }}>
+              <div key={i} data-cv-entry style={{ marginBottom: 15, paddingLeft: 12, borderLeft: `2px solid color-mix(in srgb, ${accent} 14%, white)` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                   <span style={{ fontWeight: 700 }}>{e.role}</span>
                   <span style={{ fontSize: 10, color: '#9ca3af', whiteSpace: 'nowrap' }}>{e.date}</span>
@@ -1784,7 +1819,7 @@ function AccentRuleTemplate({ personal, skills, projects, experience, education,
         {showSections.projects && (
           <RuleSection title="Projects" color={accent}>
             {projects.filter((p) => p.featured).map((p) => (
-              <div key={p.id} style={{ marginBottom: 11 }}>
+              <div key={p.id} data-cv-entry style={{ marginBottom: 11 }}>
                 <div style={{ fontWeight: 700 }}>{p.name}</div>
                 <div style={{ color: '#4b5563', lineHeight: 1.6 }}>{p.shortDesc}</div>
                 <div style={{ fontSize: 9.5, color: '#9ca3af', marginTop: 2 }}>{p.tech.join(' · ')}</div>
@@ -1808,7 +1843,7 @@ function AccentRuleTemplate({ personal, skills, projects, experience, education,
           {showSections.education && (
             <RuleSection title="Education" color={accent}>
               {education.map((e, i) => (
-                <div key={i} style={{ marginBottom: 9 }}>
+                <div key={i} data-cv-entry style={{ marginBottom: 9 }}>
                   <div style={{ fontWeight: 700 }}>{e.degree}</div>
                   <div style={{ color: '#6b7280' }}>{e.school}</div>
                   <div style={{ color: '#9ca3af', fontSize: 10 }}>{e.date}</div>

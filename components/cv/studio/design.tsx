@@ -5,7 +5,7 @@ import type { CVData, CVTemplate } from '@/app/cv/page'
 import { DEFAULT_DOC_STYLE } from '@/app/cv/page'
 import { CVDocument } from '../CVPreview'
 import { matchJob, type RoleVersion } from './model'
-import { Button, Eyebrow, Icon, Segmented, TextArea, TextField, c, font, radius } from './ui'
+import { Button, Eyebrow, Icon, Segmented, Slider, TextArea, TextField, Toggle, c, font, radius } from './ui'
 
 export const TEMPLATES: { id: CVTemplate; label: string; note: string }[] = [
   { id: 'profile-split', label: 'Profile', note: 'Clean, two columns' },
@@ -30,7 +30,25 @@ export const TEMPLATES: { id: CVTemplate; label: string; note: string }[] = [
 
 export const templateLabel = (id: CVTemplate) => TEMPLATES.find((t) => t.id === id)?.label ?? 'Profile'
 
-const ACCENTS = ['#2563eb', '#5b47e0', '#0f766e', '#be123c', '#b45309', '#111827']
+const ACCENTS = ['#2563eb', '#5b47e0', '#0f766e', '#be123c', '#b45309', '#111827', '#0891b2', '#16a34a', '#db2777', '#475569']
+
+const INKS = [
+  { v: '#222222', l: 'Black' },
+  { v: '#374151', l: 'Graphite' },
+  { v: '#1e293b', l: 'Navy' },
+] as const
+
+/* Templates drawn from the style variables. The older ones keep their own
+   colours and type, so the panel says so instead of appearing broken. */
+const STYLED = new Set<CVTemplate>(['profile-split', 'swiss-grid', 'ats-compact', 'accent-rule', 'aurora', 'soft-card', 'elegant', 'metro', 'monogram', 'compact-pro'])
+
+const SECTION_TOGGLES: { k: keyof CVData['showSections']; l: string }[] = [
+  { k: 'summary', l: 'Summary' },
+  { k: 'experience', l: 'Work experience' },
+  { k: 'projects', l: 'Projects' },
+  { k: 'skills', l: 'Skills' },
+  { k: 'education', l: 'Education' },
+]
 
 const DENSITY = {
   compact: { margin: 32, sectionGap: 16, lineHeight: 1.45, scale: 0.95 },
@@ -106,6 +124,9 @@ export function DesignPanel({
   const setDoc = (patch: Partial<CVData['docStyle']>) => setProfile((p) => ({ ...p, docStyle: { ...p.docStyle, ...patch } }))
   const density = (Object.keys(DENSITY) as (keyof typeof DENSITY)[]).find((k) => DENSITY[k].margin === ds.margin && DENSITY[k].sectionGap === ds.sectionGap)
   const current = TEMPLATES.find((t) => t.id === version.template) ?? TEMPLATES[0]
+  const styled = STYLED.has(version.template)
+  const customAccent = !ACCENTS.includes(ds.accent)
+  const [fine, setFine] = useState(false)
 
   return (
     <div style={{ display: 'grid', gap: 22, minWidth: 0 }}>
@@ -134,70 +155,155 @@ export function DesignPanel({
         )}
       </div>
 
-      <div>
-        <Eyebrow style={{ marginBottom: 12 }}>Colour</Eyebrow>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          {ACCENTS.map((a) => (
-            <button
-              key={a}
-              onClick={() => setDoc({ accent: a })}
-              aria-label={`Colour ${a}`}
-              aria-pressed={ds.accent === a}
-              style={{ width: 38, height: 38, borderRadius: '50%', background: a, cursor: 'pointer', border: 'none', boxShadow: ds.accent === a ? `0 0 0 3px ${c.surface}, 0 0 0 5.5px ${a}` : 'inset 0 0 0 1px rgba(0,0,0,.08)', transition: 'box-shadow .15s' }}
-            />
-          ))}
-        </div>
-      </div>
+      {!styled && (
+        <p style={{ margin: '-8px 0 0', padding: '10px 12px', borderRadius: radius.md, background: c.sunken, fontFamily: font, fontSize: 13, lineHeight: 1.5, color: c.body }}>
+          {`${current.label} keeps its own colours and type, so colour, font and size below change the other templates. Photo and sections work everywhere.`}
+        </p>
+      )}
 
-      <div>
-        <Eyebrow style={{ marginBottom: 10 }}>Font</Eyebrow>
-        <Segmented
-          full
-          value={ds.typeface === 'serif' ? 'serif' : 'sans'}
-          options={[
-            { v: 'sans', l: 'Modern' },
-            { v: 'serif', l: 'Classic' },
-          ]}
-          onChange={(v) => setDoc({ typeface: v, headingFont: 'match' })}
-        />
-      </div>
-
-      <div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
-          <Eyebrow>Spacing</Eyebrow>
-          <span style={{ fontFamily: font, fontSize: 12.5, color: c.muted }}>Compact helps fit one page</span>
+      <div style={{ display: 'grid', gap: 22, opacity: styled ? 1 : 0.55, transition: 'opacity .2s' }}>
+        <div>
+          <Eyebrow style={{ marginBottom: 12 }}>Colour</Eyebrow>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {ACCENTS.map((a) => (
+              <button
+                key={a}
+                onClick={() => setDoc({ accent: a })}
+                aria-label={`Colour ${a}`}
+                aria-pressed={ds.accent === a}
+                style={{ width: 34, height: 34, borderRadius: '50%', background: a, cursor: 'pointer', border: 'none', boxShadow: ds.accent === a ? `0 0 0 3px ${c.surface}, 0 0 0 5.5px ${a}` : 'inset 0 0 0 1px rgba(0,0,0,.08)', transition: 'box-shadow .15s' }}
+              />
+            ))}
+            <label
+              title="Pick any colour"
+              style={{
+                position: 'relative',
+                width: 34,
+                height: 34,
+                borderRadius: '50%',
+                display: 'grid',
+                placeItems: 'center',
+                color: '#fff',
+                cursor: 'pointer',
+                background: customAccent ? ds.accent : 'conic-gradient(#ef4444, #f59e0b, #22c55e, #06b6d4, #6366f1, #d946ef, #ef4444)',
+                boxShadow: customAccent ? `0 0 0 3px ${c.surface}, 0 0 0 5.5px ${ds.accent}` : 'none',
+              }}
+            >
+              {!customAccent && <Icon name="plus" size={16} stroke={2.6} />}
+              <input
+                type="color"
+                aria-label="Pick any colour"
+                value={/^#[0-9a-f]{6}$/i.test(ds.accent) ? ds.accent : '#2563eb'}
+                onChange={(e) => setDoc({ accent: e.target.value })}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', border: 'none', padding: 0 }}
+              />
+            </label>
+          </div>
         </div>
-        <Segmented
-          full
-          value={density ?? ''}
-          options={[
-            { v: 'compact', l: 'Compact' },
-            { v: 'comfortable', l: 'Normal' },
-            { v: 'spacious', l: 'Airy' },
-          ]}
-          onChange={(v) => setDoc(DENSITY[v])}
-        />
+
+        <div>
+          <Eyebrow style={{ marginBottom: 10 }}>Text colour</Eyebrow>
+          <Segmented full value={INKS.find((i) => i.v === ds.ink)?.v ?? ''} options={INKS.map((i) => ({ v: i.v, l: i.l }))} onChange={(v) => setDoc({ ink: v })} />
+        </div>
+
+        <div>
+          <Eyebrow style={{ marginBottom: 10 }}>Font</Eyebrow>
+          <Segmented
+            full
+            value={ds.typeface}
+            options={[
+              { v: 'sans', l: 'Modern' },
+              { v: 'serif', l: 'Classic' },
+              { v: 'mono', l: 'Technical' },
+            ]}
+            onChange={(v) => setDoc({ typeface: v })}
+          />
+        </div>
+
+        <div>
+          <Eyebrow style={{ marginBottom: 10 }}>Headings</Eyebrow>
+          <Segmented
+            full
+            value={ds.headingFont}
+            options={[
+              { v: 'match', l: 'Same font' },
+              { v: 'sans', l: 'Modern' },
+              { v: 'serif', l: 'Classic' },
+            ]}
+            onChange={(v) => setDoc({ headingFont: v })}
+          />
+        </div>
+
+        <div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
+            <Eyebrow>Spacing</Eyebrow>
+            <span style={{ fontFamily: font, fontSize: 12.5, color: c.muted }}>Compact helps fit one page</span>
+          </div>
+          <Segmented
+            full
+            value={density ?? ''}
+            options={[
+              { v: 'compact', l: 'Compact' },
+              { v: 'comfortable', l: 'Normal' },
+              { v: 'spacious', l: 'Airy' },
+            ]}
+            onChange={(v) => setDoc(DENSITY[v])}
+          />
+          <button
+            onClick={() => setFine((f) => !f)}
+            aria-expanded={fine}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 7, marginTop: 12, fontFamily: font, fontSize: 13.5, fontWeight: 650, color: c.brandInk, background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer' }}
+          >
+            <Icon name="sliders" size={16} />
+            {fine ? 'Hide fine-tuning' : 'Fine-tune size and spacing'}
+          </button>
+          {fine && (
+            <div style={{ display: 'grid', gap: 14, marginTop: 10, padding: 14, borderRadius: radius.md, background: c.sunken }}>
+              <Slider label="Text size" value={ds.scale} min={0.85} max={1.2} step={0.01} format={(v) => `${Math.round(v * 100)}%`} onChange={(v) => setDoc({ scale: v })} />
+              <Slider label="Line spacing" value={ds.lineHeight} min={1.3} max={2} step={0.05} format={(v) => v.toFixed(2)} onChange={(v) => setDoc({ lineHeight: v })} />
+              <Slider label="Page margins" value={ds.margin} min={24} max={72} step={2} format={(v) => `${v}px`} onChange={(v) => setDoc({ margin: v })} />
+              <Slider label="Space between sections" value={ds.sectionGap} min={8} max={44} step={2} format={(v) => `${v}px`} onChange={(v) => setDoc({ sectionGap: v })} />
+            </div>
+          )}
+        </div>
       </div>
 
       <div>
         <Eyebrow style={{ marginBottom: 10 }}>Photo</Eyebrow>
         <Segmented
           full
-          value={ds.photoShape === 'hidden' ? 'hidden' : ds.photoShape === 'circle' ? 'circle' : 'square'}
+          value={ds.photoShape}
           options={[
             { v: 'circle', l: 'Round' },
+            { v: 'rounded', l: 'Soft' },
             { v: 'square', l: 'Square' },
             { v: 'hidden', l: 'Hide' },
           ]}
           onChange={(v) => setDoc({ photoShape: v })}
         />
+        <div style={{ marginTop: 12 }}>
+          <Slider label="Photo size" value={ds.photoSize} min={60} max={140} step={2} format={(v) => `${v}px`} disabled={ds.photoShape === 'hidden'} onChange={(v) => setDoc({ photoSize: v })} />
+        </div>
+      </div>
+
+      <div>
+        <Eyebrow style={{ marginBottom: 6 }}>Sections on the CV</Eyebrow>
+        <div style={{ display: 'grid' }}>
+          {SECTION_TOGGLES.map(({ k, l }, i) => (
+            <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: i ? `1px solid ${c.line}` : 'none', fontFamily: font, fontSize: 14.5, color: c.body, cursor: 'pointer' }}>
+              <span style={{ flex: 1 }}>{l}</span>
+              <Toggle on={profile.showSections[k]} onChange={(v) => setProfile((p) => ({ ...p, showSections: { ...p.showSections, [k]: v } }))} label={`Show ${l} on the CV`} />
+            </label>
+          ))}
+        </div>
+        <p style={{ margin: '4px 0 0', fontFamily: font, fontSize: 12.5, lineHeight: 1.5, color: c.muted }}>Turning a section off hides it in every version of this CV.</p>
       </div>
 
       <button
         onClick={() => setDoc({ ...DEFAULT_DOC_STYLE })}
         style={{ justifySelf: 'start', display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: font, fontSize: 13.5, color: c.muted, background: 'none', border: 'none', padding: '6px 0', cursor: 'pointer' }}
       >
-        <Icon name="swap" size={15} /> Reset colour, font and spacing
+        <Icon name="swap" size={15} /> Reset the design
       </button>
     </div>
   )

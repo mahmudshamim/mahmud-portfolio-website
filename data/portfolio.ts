@@ -66,7 +66,7 @@ export const portfolioData = {
 
   // Separate "currently learning" flag for UI display
   currentlyLearning: [
-    "React.js", "Tailwind CSS", "HTML/CSS Workflow", "Figma → Code", "Product Thinking"
+    "React.js", "Tailwind CSS", "HTML/CSS Workflow", "Figma to Code", "Product Thinking"
   ],
 
   projects: [

@@ -448,7 +448,10 @@ export default function Studio({
                 <IconButton icon="dots" label="More: your CVs, backup, start over" onClick={() => setSheet('more')} />
               </header>
               <div style={{ margin: '14px 2px 20px' }}>
-                <div style={{ fontFamily: font, fontSize: 15, color: c.muted }}>{fname ? `Hi ${fname} 👋` : 'Welcome 👋'}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: font, fontSize: 15, color: c.muted }}>
+                  <Icon name="hand" size={17} style={{ color: c.brand }} />
+                  {fname ? `Hi ${fname}` : 'Welcome'}
+                </div>
                 <h1 style={{ margin: '4px 0 0', fontFamily: font, fontSize: 31, lineHeight: 1.15, fontWeight: 800, letterSpacing: '-.025em', color: c.ink }}>Build your CV</h1>
               </div>
               {editHome}
@@ -516,7 +519,7 @@ export default function Studio({
             />
             {preview}
             <p style={{ margin: '14px 4px 0', fontFamily: font, fontSize: 13, color: c.muted, textAlign: 'center', lineHeight: 1.5 }}>
-              Pinch to zoom. A dashed line marks where a new page starts.
+              Pinch to zoom. Each sheet is one page of your PDF.
             </p>
           </div>
         </div>
@@ -1058,7 +1061,7 @@ function DownloadSheet({
 
       <div style={{ marginTop: 18, padding: 14, borderRadius: 16, background: c.sunken, fontFamily: font, fontSize: 13.5, lineHeight: 1.6, color: c.body }}>
         <b style={{ color: c.ink }}>In the print window that opens:</b>
-        <div>1. Destination → Save as PDF</div>
+        <div>1. Set Destination to Save as PDF</div>
         <div>2. Turn off “Headers and footers”, so no web address prints on your CV</div>
       </div>
 
@@ -1225,7 +1228,7 @@ function ImportSheet({ open, onClose, blank, onUse }: { open: boolean; onClose: 
       {!result ? (
         <div style={{ display: 'grid', gap: 14 }}>
           <p style={{ margin: '-4px 0 0', fontFamily: font, fontSize: 14, lineHeight: 1.55, color: c.muted }}>
-            Choose your CV as a PDF, or your LinkedIn profile saved as PDF (LinkedIn → More → Save to PDF). We fill in what we can, and you check the rest.
+            Choose your CV as a PDF, or your LinkedIn profile saved as a PDF (on LinkedIn, open your profile, tap More, then Save to PDF). We fill in what we can, and you check the rest.
           </p>
           <button
             onClick={() => file.current?.click()}
